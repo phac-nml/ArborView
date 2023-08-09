@@ -8,8 +8,8 @@
         }
 
         .scrollbar-window{
-            overflow: scroll;
-            height: 200px;
+            overflow: auto;
+            /*height: 200px;*/
         }
     </style>
     <script src="https://d3js.org/d3.v6.min.js"></script>
@@ -28,6 +28,8 @@
         var NEWICK = null;
         var temp_tree = null;
         var METADATA = null;
+        const default_color = "#999";
+        const clicked_color = "red";
         
 
         /** Code for parsing a newick tree to be used by D3
@@ -120,7 +122,7 @@
         // Specify the charts’ dimensions. The height is variable, depending on the layout.
         chart = (data) => {
                 // Specify the charts’ dimensions. The height is variable, depending on the layout.
-                const width = 1500;
+                const width = 2000;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 10;
@@ -188,12 +190,16 @@
                         .attr("transform", d => `translate(${source.y0},${source.x0})`)
                         .attr("fill-opacity", 0)
                         .attr("stroke-opacity", 0)
+                        .attr("id", (d) => {
+                            if(d.data.name){
+                                return d.data.name;
+                            }
+                        })
+                        .attr("class", "tree-node")
                         .on("click", (event, d) => {
                             d.children = d.children ? null : d._children;
                             let circle_pos = 1;
                             let trg_name_pos = 0;
-                            let clicked_color = 'red';
-                            let default_color = '#999';
                             let parent = event.target.closest('g');
                             let trg = parent.childNodes[circle_pos];
                             let node_name = parent.childNodes[trg_name_pos].innerHTML;
@@ -210,6 +216,7 @@
                             updated_nodes();
                             update(event, d);
                         });
+
                     nodeEnter.append("circle")
                         .attr("r", 2.5)
                         .attr("fill", d => d._children ? "#555" : "#999")
@@ -288,26 +295,24 @@
         var updated_nodes = () => {
             $("#SelectedNodes").html(function(){
                 let attribute = "";
+                // TODO need to add event listener so that when list values are clicked they are removed
                 for(const item of SELECTED_NODES.keys()){
-                    attribute = attribute + `<li>${item}</li>\n`;
+                    attribute = attribute + `<li class="selected-node">${item}</li>\n`;
                 }
-                attribute = "<ul>" + attribute + "</ul";
+                attribute = '<ul class="selected-nodes">' + attribute + "</ul>";
                 return attribute;
             });
         };
 
         var drawTree = (newick_) => {
             var tree = kn_parse(newick_);
-            // TODO need to get D3 to draw whole tree, and add event listeners to each node
             var node_out = chart(tree.root);
             $("#TreeData").append(node_out);
         };
 
-        
-        $(document).ready(function() {
-
-
-            $('#example').DataTable({
+        let CreateDataTable = () => {
+            $('#metadata').DataTable({
+                // TODO need to add a mandatory sample_id field and make it non-editable 
                 "createdRow": function(row, data, dataIndex){
                     var editableCells = $(row).find('.editable');
                     editableCells.attr('contenteditable', true);
@@ -322,7 +327,27 @@
                     });
                 }
             });
-        });
+        };
+
+        let CreateTable = (parsed_data) => {
+            let headers = parsed_data.columns;
+            let table_head = "";
+            let table_body = [];
+            for(const item of headers){
+                table_head = table_head + `<th>${item}</th>\n`;
+            }
+
+            for(const item of parsed_data){
+                table_body.push("<tr>\n");
+                for(const header of headers){
+                    table_body.push(`<td>${item[header]}</td>\n`);
+                }
+                table_body.push("</tr>\n");
+            }
+
+            $("#metadata").html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
+            CreateDataTable();
+        };
 
         // short hand for document, adding event handler to read in newick
         $(() => {
@@ -348,10 +373,8 @@
                 reader.onload = (evt) => {
                     let metadata = evt.target.result;
                     METADATA = d3.tsvParse(metadata);
+                    CreateTable(METADATA);
                     console.log(METADATA.columns);
-                    //for(const item in METADATA){
-                    //    console.log(item);
-                    //}
                     
                 };
                 reader.onerror = (evt) => {
@@ -359,6 +382,13 @@
                 };
             });
 
+            $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
+                let node_name = evt.target.textContent;
+                SELECTED_NODES.delete(node_name);
+                let unselected_data = $(`g #${node_name}`).children();
+                unselected_data[1].style.fill = default_color;
+                updated_nodes();
+            });
         });
 
 
@@ -375,479 +405,11 @@
             <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
         </div>
         <div class="TreeSelections" id="TreeSelections">
-            <div class="Tree inline-block-child" id="TreeData" style="height:500px;"></div>
-            <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes"></div>
+            <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
+            <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:500px"></div>
         </div>
         <div id="ClusterInfo" style="padding-top:50px;">
-            <table id="example" class="display" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Position</th>
-                        <th>Office</th>
-                        <th>Age</th>
-                        <th>Start date</th>
-                        <th>Salary</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="editable">Tiger Nixon</td>
-                        <td class="editable">System Architect</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">61</td>
-                        <td class="editable">2011/04/25</td>
-                        <td class="editable">$320,800</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Garrett Winters</td>
-                        <td class="editable">Accountant</td>
-                        <td class="editable">Tokyo</td>
-                        <td class="editable">63</td>
-                        <td class="editable">2011/07/25</td>
-                        <td class="editable">$170,750</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Ashton Cox</td>
-                        <td class="editable">Junior Technical Author</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">66</td>
-                        <td class="editable">2009/01/12</td>
-                        <td class="editable">$86,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Cedric Kelly</td>
-                        <td class="editable">Senior Javascript Developer</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">22</td>
-                        <td class="editable">2012/03/29</td>
-                        <td class="editable">$433,060</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Airi Satou</td>
-                        <td class="editable">Accountant</td>
-                        <td class="editable">Tokyo</td>
-                        <td class="editable">33</td>
-                        <td class="editable">2008/11/28</td>
-                        <td class="editable">$162,700</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Brielle Williamson</td>
-                        <td class="editable">Integration Specialist</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">61</td>
-                        <td class="editable">2012/12/02</td>
-                        <td class="editable">$372,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Herrod Chandler</td>
-                        <td class="editable">Sales Assistant</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">59</td>
-                        <td class="editable">2012/08/06</td>
-                        <td class="editable">$137,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Rhona Davidson</td>
-                        <td class="editable">Integration Specialist</td>
-                        <td class="editable">Tokyo</td>
-                        <td class="editable">55</td>
-                        <td class="editable">2010/10/14</td>
-                        <td class="editable">$327,900</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Colleen Hurst</td>
-                        <td class="editable">Javascript Developer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">39</td>
-                        <td class="editable">2009/09/15</td>
-                        <td class="editable">$205,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Sonya Frost</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">23</td>
-                        <td class="editable">2008/12/13</td>
-                        <td class="editable">$103,600</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jena Gaines</td>
-                        <td class="editable">Office Manager</td>
-                        <td class="editable">London</td>
-                        <td class="editable">30</td>
-                        <td class="editable">2008/12/19</td>
-                        <td class="editable">$90,560</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Quinn Flynn</td>
-                        <td class="editable">Support Lead</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">22</td>
-                        <td class="editable">2013/03/03</td>
-                        <td class="editable">$342,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Charde Marshall</td>
-                        <td class="editable">Regional Director</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">36</td>
-                        <td class="editable">2008/10/16</td>
-                        <td class="editable">$470,600</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Haley Kennedy</td>
-                        <td class="editable">Senior Marketing Designer</td>
-                        <td class="editable">London</td>
-                        <td class="editable">43</td>
-                        <td class="editable">2012/12/18</td>
-                        <td class="editable">$313,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Tatyana Fitzpatrick</td>
-                        <td class="editable">Regional Director</td>
-                        <td class="editable">London</td>
-                        <td class="editable">19</td>
-                        <td class="editable">2010/03/17</td>
-                        <td class="editable">$385,750</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Michael Silva</td>
-                        <td class="editable">Marketing Designer</td>
-                        <td class="editable">London</td>
-                        <td class="editable">66</td>
-                        <td class="editable">2012/11/27</td>
-                        <td class="editable">$198,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Paul Byrd</td>
-                        <td class="editable">Chief Financial Officer (CFO)</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">64</td>
-                        <td class="editable">2010/06/09</td>
-                        <td class="editable">$725,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Gloria Little</td>
-                        <td class="editable">Systems Administrator</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">59</td>
-                        <td class="editable">2009/04/10</td>
-                        <td class="editable">$237,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Bradley Greer</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">London</td>
-                        <td class="editable">41</td>
-                        <td class="editable">2012/10/13</td>
-                        <td class="editable">$132,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Dai Rios</td>
-                        <td class="editable">Personnel Lead</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">35</td>
-                        <td class="editable">2012/09/26</td>
-                        <td class="editable">$217,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jenette Caldwell</td>
-                        <td class="editable">Development Lead</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">30</td>
-                        <td class="editable">2011/09/03</td>
-                        <td class="editable">$345,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Yuri Berry</td>
-                        <td class="editable">Chief Marketing Officer (CMO)</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">40</td>
-                        <td class="editable">2009/06/25</td>
-                        <td class="editable">$675,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Caesar Vance</td>
-                        <td class="editable">Pre-Sales Support</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">21</td>
-                        <td class="editable">2011/12/12</td>
-                        <td class="editable">$106,450</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Doris Wilder</td>
-                        <td class="editable">Sales Assistant</td>
-                        <td class="editable">Sydney</td>
-                        <td class="editable">23</td>
-                        <td class="editable">2010/09/20</td>
-                        <td class="editable">$85,600</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Angelica Ramos</td>
-                        <td class="editable">Chief Executive Officer (CEO)</td>
-                        <td class="editable">London</td>
-                        <td class="editable">47</td>
-                        <td class="editable">2009/10/09</td>
-                        <td class="editable">$1,200,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Gavin Joyce</td>
-                        <td class="editable">Developer</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">42</td>
-                        <td class="editable">2010/12/22</td>
-                        <td class="editable">$92,575</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jennifer Chang</td>
-                        <td class="editable">Regional Director</td>
-                        <td class="editable">Singapore</td>
-                        <td class="editable">28</td>
-                        <td class="editable">2010/11/14</td>
-                        <td class="editable">$357,650</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Brenden Wagner</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">28</td>
-                        <td class="editable">2011/06/07</td>
-                        <td class="editable">$206,850</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Fiona Green</td>
-                        <td class="editable">Chief Operating Officer (COO)</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">48</td>
-                        <td class="editable">2010/03/11</td>
-                        <td class="editable">$850,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Shou Itou</td>
-                        <td class="editable">Regional Marketing</td>
-                        <td class="editable">Tokyo</td>
-                        <td class="editable">20</td>
-                        <td class="editable">2011/08/14</td>
-                        <td class="editable">$163,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Michelle House</td>
-                        <td class="editable">Integration Specialist</td>
-                        <td class="editable">Sydney</td>
-                        <td class="editable">37</td>
-                        <td class="editable">2011/06/02</td>
-                        <td class="editable">$95,400</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Suki Burks</td>
-                        <td class="editable">Developer</td>
-                        <td class="editable">London</td>
-                        <td class="editable">53</td>
-                        <td class="editable">2009/10/22</td>
-                        <td class="editable">$114,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Prescott Bartlett</td>
-                        <td class="editable">Technical Author</td>
-                        <td class="editable">London</td>
-                        <td class="editable">27</td>
-                        <td class="editable">2011/05/07</td>
-                        <td class="editable">$145,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Gavin Cortez</td>
-                        <td class="editable">Team Leader</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">22</td>
-                        <td class="editable">2008/10/26</td>
-                        <td class="editable">$235,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Martena Mccray</td>
-                        <td class="editable">Post-Sales support</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">46</td>
-                        <td class="editable">2011/03/09</td>
-                        <td class="editable">$324,050</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Unity Butler</td>
-                        <td class="editable">Marketing Designer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">47</td>
-                        <td class="editable">2009/12/09</td>
-                        <td class="editable">$85,675</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Howard Hatfield</td>
-                        <td class="editable">Office Manager</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">51</td>
-                        <td class="editable">2008/12/16</td>
-                        <td class="editable">$164,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Hope Fuentes</td>
-                        <td class="editable">Secretary</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">41</td>
-                        <td class="editable">2010/02/12</td>
-                        <td class="editable">$109,850</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Vivian Harrell</td>
-                        <td class="editable">Financial Controller</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">62</td>
-                        <td class="editable">2009/02/14</td>
-                        <td class="editable">$452,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Timothy Mooney</td>
-                        <td class="editable">Office Manager</td>
-                        <td class="editable">London</td>
-                        <td class="editable">37</td>
-                        <td class="editable">2008/12/11</td>
-                        <td class="editable">$136,200</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jackson Bradshaw</td>
-                        <td class="editable">Director</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">65</td>
-                        <td class="editable">2008/09/26</td>
-                        <td class="editable">$645,750</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Olivia Liang</td>
-                        <td class="editable">Support Engineer</td>
-                        <td class="editable">Singapore</td>
-                        <td class="editable">64</td>
-                        <td class="editable">2011/02/03</td>
-                        <td class="editable">$234,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Bruno Nash</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">London</td>
-                        <td class="editable">38</td>
-                        <td class="editable">2011/05/03</td>
-                        <td class="editable">$163,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Sakura Yamamoto</td>
-                        <td class="editable">Support Engineer</td>
-                        <td class="editable">Tokyo</td>
-                        <td class="editable">37</td>
-                        <td class="editable">2009/08/19</td>
-                        <td class="editable">$139,575</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Thor Walton</td>
-                        <td class="editable">Developer</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">61</td>
-                        <td class="editable">2013/08/11</td>
-                        <td class="editable">$98,540</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Finn Camacho</td>
-                        <td class="editable">Support Engineer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">47</td>
-                        <td class="editable">2009/07/07</td>
-                        <td class="editable">$87,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Serge Baldwin</td>
-                        <td class="editable">Data Coordinator</td>
-                        <td class="editable">Singapore</td>
-                        <td class="editable">64</td>
-                        <td class="editable">2012/04/09</td>
-                        <td class="editable">$138,575</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Zenaida Frank</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">63</td>
-                        <td class="editable">2010/01/04</td>
-                        <td class="editable">$125,250</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Zorita Serrano</td>
-                        <td class="editable">Software Engineer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">56</td>
-                        <td class="editable">2012/06/01</td>
-                        <td class="editable">$115,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jennifer Acosta</td>
-                        <td class="editable">Junior Javascript Developer</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">43</td>
-                        <td class="editable">2013/02/01</td>
-                        <td class="editable">$75,650</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Cara Stevens</td>
-                        <td class="editable">Sales Assistant</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">46</td>
-                        <td class="editable">2011/12/06</td>
-                        <td class="editable">$145,600</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Hermione Butler</td>
-                        <td class="editable">Regional Director</td>
-                        <td class="editable">London</td>
-                        <td class="editable">47</td>
-                        <td class="editable">2011/03/21</td>
-                        <td class="editable">$356,250</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Lael Greer</td>
-                        <td class="editable">Systems Administrator</td>
-                        <td class="editable">London</td>
-                        <td class="editable">21</td>
-                        <td class="editable">2009/02/27</td>
-                        <td class="editable">$103,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Jonas Alexander</td>
-                        <td class="editable">Developer</td>
-                        <td class="editable">San Francisco</td>
-                        <td class="editable">30</td>
-                        <td class="editable">2010/07/14</td>
-                        <td class="editable">$86,500</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Shad Decker</td>
-                        <td class="editable">Regional Director</td>
-                        <td class="editable">Edinburgh</td>
-                        <td class="editable">51</td>
-                        <td class="editable">2008/11/13</td>
-                        <td class="editable">$183,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Michael Bruce</td>
-                        <td class="editable">Javascript Developer</td>
-                        <td class="editable">Singapore</td>
-                        <td class="editable">29</td>
-                        <td class="editable">2011/06/27</td>
-                        <td class="editable">$183,000</td>
-                    </tr>
-                    <tr>
-                        <td class="editable">Donna Snider</td>
-                        <td class="editable">Customer Support</td>
-                        <td class="editable">New York</td>
-                        <td class="editable">27</td>
-                        <td class="editable">2011/01/25</td>
-                        <td class="editable">$112,000</td>
-                    </tr>
-                </tbody>
+            <table id="metadata" class="display" style="width:100%">
             </table>
         </div>
     </body>
