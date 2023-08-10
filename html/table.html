@@ -360,6 +360,13 @@
 
             if(SELECTED_NODES.size === 0){
                 console.log("No nodes selected!");
+                if($.fn.DataTable.isDataTable('#query-data')){
+                    // If selections are empty remove the table
+                    // Thank you SO for this: https://stackoverflow.com/questions/32713612/jquery-datatables-destroy-re-create
+                    $('#query-data').DataTable().destroy();
+                    $("#query-data tbody").empty()
+                    $("#query-data thead").empty()
+                };
                 return null;
             }
 
@@ -379,8 +386,10 @@
             if($.fn.DataTable.isDataTable('#query-data')){
                 // TODO probably faster to clear the table then add rows
                 $('#query-data').DataTable().destroy();
+                $("#query-data tbody").empty()
+                $("#query-data thead").empty()
             };
-            
+
             query_table = new DataTable("#query-data", {
                 columns: data_columns,
                 data: selected_data
@@ -417,7 +426,6 @@
                     alert(`Could not read file ${metadata_file}`);
                 };
             });
-
 
             $("#metadata-search-button").on('click', CreateQueryTable);
 
