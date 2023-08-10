@@ -322,21 +322,23 @@
                 className: ".editable",
                 // TODO this can be initialized as the table is made
                 // TODO need to add a mandatory sample_id field and make it non-editable 
-                "createdRow": function(row, data, dataIndex){
-                    var editableCells = $(row).find('.editable');
-                    editableCells.attr('contenteditable', true);
-                    editableCells.on('blur', function(){
-                        var cell = $(this);
-                        var newValue = cell.text();
-                        var columnIndex = cell.index();
-                        var rowData = dataTable.row(cell.closest('tr')).data();
-                        rowData[columnIndex] = newValue;
-                        dataTable.row(cell.closest('tr')).data(rowData).draw();
-                        // Need to add call to update the backend here, I used chatGPT to write the initial part, as I had no idea what I was doing
-                    });
-                }
+                //"createdRow": function(row, data, dataIndex){
+                //    var editableCells = $(row).find('.editable');
+                //    editableCells.attr('contenteditable', true);
+                //    editableCells.on('blur', function(){
+                //        var cell = $(this);
+                //        var newValue = cell.text();
+                //        var columnIndex = cell.index();
+                //        var rowData = dataTable.row(cell.closest('tr')).data();
+                //        rowData[columnIndex] = newValue;
+                //        dataTable.row(cell.closest('tr')).data(rowData).draw();
+                //        // Need to add call to update the backend here, I used chatGPT to write the initial part, as I had no idea what I was doing
+                //    });
+                //}
             });
             // TODO initializing table from json object would minimize copies
+            $("td").addClass("editable");
+            $("td").attr("contenteditable", true);
             ORIGINAL_DATA = data_table.data();
         };
 
@@ -416,10 +418,13 @@
             data_table.rows.add(filtered).draw();
             $("td").addClass("editable");
             $("td").attr("contenteditable", true);
+
         };
 
-        // short hand for document, adding event handler to read in newick
+
+
         $(() => {
+
             $("#tree-selector").change((event) => {
                 let reader = new FileReader();
                 let newick_file = event.target.files[0];
@@ -432,6 +437,12 @@
                     alert(`Could not read file ${newick_file}`);
                 };
 
+            });
+
+            $("#metadata").on("blur", ".editable", (evt)=>{
+                // This gives me elemet to look for, just need to update original element with it
+                // TODO alter original elemetns here
+                console.log(evt.target);
             });
 
             $("#metadata-selector").change((event) => {
@@ -460,7 +471,11 @@
                 unselected_data[1].style.fill = default_color;
                 updated_nodes();
             });
+
+
+
         });
+
 
 
 
