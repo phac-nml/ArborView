@@ -28,9 +28,14 @@
         var NEWICK = null;
         var temp_tree = null;
         var METADATA = null;
+        var TABLE_HEADERS = null;
+        var data_table = null;
+        var original_data = null;
+        var query_table = null;
         const default_color = "#999";
         const clicked_color = "red";
-        
+        const ID_FIELD = 0;
+        const SELECTED_NODES = new Set();
 
         /** Code for parsing a newick tree to be used by D3
          * The code is taken from Knhx.js written by Heng Li
@@ -115,7 +120,7 @@
         }
         //~~~~~~~~~ End of Heng Li's Code
 
-        const SELECTED_NODES = new Set();
+        
 
         // D3.js Tidy Tree code
         // Modified but taken from: https://observablehq.com/@d3/collapsible-tree
@@ -311,7 +316,8 @@
         };
 
         let CreateDataTable = () => {
-            $('#metadata').DataTable({
+            original_data = $('#metadata').DataTable({
+                // TODO this can be initialized as the table is made
                 // TODO need to add a mandatory sample_id field and make it non-editable 
                 "createdRow": function(row, data, dataIndex){
                     var editableCells = $(row).find('.editable');
@@ -327,10 +333,11 @@
                     });
                 }
             });
+            data_table = original_data;
         };
 
-        let CreateTable = (parsed_data) => {
-            let headers = parsed_data.columns;
+        let CreateTable = (parsed_data, table_id, table_headers) => {
+            let headers = table_headers;
             let table_head = "";
             let table_body = [];
             for(const item of headers){
@@ -345,8 +352,39 @@
                 table_body.push("</tr>\n");
             }
 
-            $("#metadata").html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
+            $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             CreateDataTable();
+        };
+
+        let CreateQueryTable = () => {
+
+            if(SELECTED_NODES.size === 0){
+                console.log("No nodes selected!");
+                return null;
+            }
+
+            let indices = [];
+            let data_columns = []
+            for(const item of TABLE_HEADERS){
+                data_columns.push({title: item});
+            }
+
+            data_table.column(ID_FIELD).data().map((value, idx) => {
+                if(SELECTED_NODES.has(value)){
+                    indices.push(idx);
+                }
+            });
+            
+            let selected_data = data_table.rows( indices ).data().toArray();
+            if($.fn.DataTable.isDataTable('#query-data')){
+                // TODO probably faster to clear the table then add rows
+                $('#query-data').DataTable().destroy();
+            };
+            
+            query_table = new DataTable("#query-data", {
+                columns: data_columns,
+                data: selected_data
+            });
         };
 
         // short hand for document, adding event handler to read in newick
@@ -368,19 +406,20 @@
             $("#metadata-selector").change((event) => {
                 let reader = new FileReader();
                 let metadata_file = event.target.files[0];
-                console.log(metadata_file);
                 reader.readAsText(metadata_file, "UTF-8");
                 reader.onload = (evt) => {
                     let metadata = evt.target.result;
                     METADATA = d3.tsvParse(metadata);
-                    CreateTable(METADATA);
-                    console.log(METADATA.columns);
-                    
+                    TABLE_HEADERS = METADATA.columns;
+                    CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                 };
                 reader.onerror = (evt) => {
                     alert(`Could not read file ${metadata_file}`);
                 };
             });
+
+
+            $("#metadata-search-button").on('click', CreateQueryTable);
 
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
                 let node_name = evt.target.textContent;
@@ -406,11 +445,13 @@
         </div>
         <div class="TreeSelections" id="TreeSelections">
             <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
+            <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
             <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:500px"></div>
         </div>
+
         <div id="ClusterInfo" style="padding-top:50px;">
-            <table id="metadata" class="display" style="width:100%">
-            </table>
+            <table id="query-data" class="display" style="width:100%"></table>
+            <table id="metadata" class="display" style="width:100%"></table>
         </div>
     </body>
 </html>
