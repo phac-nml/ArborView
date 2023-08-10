@@ -32,6 +32,7 @@
         var data_table = null;
         var original_data = null;
         var query_table = null;
+        var ORIGINAL_DATA = null;
         const default_color = "#999";
         const clicked_color = "red";
         const ID_FIELD = 0;
@@ -316,7 +317,9 @@
         };
 
         let CreateDataTable = () => {
-            original_data = $('#metadata').DataTable({
+            data_table = $('#metadata').DataTable({
+                stateSave: true,
+                className: ".editable",
                 // TODO this can be initialized as the table is made
                 // TODO need to add a mandatory sample_id field and make it non-editable 
                 "createdRow": function(row, data, dataIndex){
@@ -333,7 +336,8 @@
                     });
                 }
             });
-            data_table = original_data;
+            // TODO initializing table from json object would minimize copies
+            ORIGINAL_DATA = data_table.data();
         };
 
         let CreateTable = (parsed_data, table_id, table_headers) => {
@@ -343,15 +347,14 @@
             for(const item of headers){
                 table_head = table_head + `<th>${item}</th>\n`;
             }
-
             for(const item of parsed_data){
-                table_body.push("<tr>\n");
+                table_body.push('<tr>\n');
                 for(const header of headers){
-                    table_body.push(`<td>${item[header]}</td>\n`);
+                    table_body.push(`<td class="editable">${item[header]}</td>\n`);
                 }
                 table_body.push("</tr>\n");
             }
-
+            delete parsed_data;
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             CreateDataTable();
         };
@@ -381,7 +384,8 @@
                     indices.push(idx);
                 }
             });
-            
+            // TODO this could be made more performant by check what is new in the set and only getting that data and appending it to the table
+            // TODO clearing and adding could be added and would then only require initializing the datatable once
             let selected_data = data_table.rows( indices ).data().toArray();
             if($.fn.DataTable.isDataTable('#query-data')){
                 // TODO probably faster to clear the table then add rows
@@ -394,6 +398,24 @@
                 columns: data_columns,
                 data: selected_data
             });
+        };
+
+        let ResetTable = () => {
+            data_table.clear();
+            // Is there a more space efficient way to do this?
+            data_table.rows.add(ORIGINAL_DATA).draw();
+            $("td").addClass("editable");
+            $("td").attr("contenteditable", true);
+        };
+
+        let SubsetTable = () => {
+            let filtered = data_table.data().filter((value, idx) => {
+                return SELECTED_NODES.has(value[ID_FIELD]);
+            });
+            data_table.clear();
+            data_table.rows.add(filtered).draw();
+            $("td").addClass("editable");
+            $("td").attr("contenteditable", true);
         };
 
         // short hand for document, adding event handler to read in newick
@@ -427,7 +449,9 @@
                 };
             });
 
-            $("#metadata-search-button").on('click', CreateQueryTable);
+            //$("#metadata-search-button").on('click', CreateQueryTable);
+            $("#metadata-search-button").on('click', SubsetTable);
+            $("#reset-table-button").on('click', ResetTable);
 
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
                 let node_name = evt.target.textContent;
@@ -454,6 +478,7 @@
         <div class="TreeSelections" id="TreeSelections">
             <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
             <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
+            <button name="SearchMetadata" id="reset-table-button">Reset Table</button>
             <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:500px"></div>
         </div>
 
