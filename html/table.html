@@ -8,7 +8,8 @@
         }
 
         .scrollbar-window{
-            overflow: auto;
+            overflow: scroll;
+            overflow-x: auto;
             /*height: 200px;*/
         }
     </style>
@@ -33,6 +34,9 @@
         var original_data = null;
         var query_table = null;
         var ORIGINAL_DATA = null;
+        var ORIGINAL_VIEW_BOX = null;
+        var LAST_MOVE_X = 0;
+        var LAST_MOVE_Y = 0;
         const default_color = "#999";
         const clicked_color = "red";
         const ID_FIELD = 0;
@@ -123,6 +127,14 @@
 
         
 
+        /// D3 code related to zooming (thanks again Mike)
+        //let zoomed = ({transform}) => {
+        //    //$("g").attr("transform", transform);
+        //    $("g path").attr("transform", transform);
+        //};
+
+
+
         // D3.js Tidy Tree code
         // Modified but taken from: https://observablehq.com/@d3/collapsible-tree
         // Specify the charts’ dimensions. The height is variable, depending on the layout.
@@ -150,6 +162,7 @@
 
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
+                    .attr("id", "TreeSVG")
                     .attr("width", width)
                     .attr("height", dx)
                     .attr("viewBox", [-marginLeft, -marginTop, width, dx])
@@ -164,8 +177,6 @@
                 const gNode = svg.append("g")
                     .attr("cursor", "pointer")
                     .attr("pointer-events", "all");
-
-
 
                 function update(event, source) {
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
@@ -182,12 +193,25 @@
                         if (node.x > right.x) right = node;
                     });
 
+
+
                     const height = right.x - left.x + marginTop + marginBottom;
                     const transition = svg.transition()
                         .duration(duration)
                         .attr("height", height)
                         .attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+                    
+                    //svg.call(d3.zoom()
+                    //    .extent([[0, 0], [width, height]])
+                    //    .scaleExtent([1, 8])
+                    //    .on("zoom", zoomed));
+                    
+                    //svg.call(d3.zoom().on("zoom", () => {
+                    //    svg.attr("transform", d3.event.transform)
+                    //}));
+                    
+
 
                     // Update the nodes…
                     const node = gNode.selectAll("g")
@@ -316,6 +340,8 @@
             var tree = kn_parse(newick_);
             var node_out = chart(tree.root);
             $("#TreeData").append(node_out);
+            // For resetting the view
+            //ORIGINAL_VIEW_BOX = svg[0].getBoundingClientRect();
         };
 
         let CreateDataTable = () => {
@@ -340,13 +366,12 @@
             });
             // TODO initializing table from json object would minimize copies
             $("td").addClass("editable");
-            $("td").attr("contenteditable", true);
+            $("td:not(.sorting_1)").attr("contenteditable", true);
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
             data_table.rows().data().each((value, index) => {
                 ORIGINAL_DATA.set(value[ID_FIELD], value)
             });
-            console.log(ORIGINAL_DATA.values());
         };
 
         let CreateTable = (parsed_data, table_id, table_headers) => {
@@ -416,7 +441,7 @@
             // TODO perhaps metadata from d3 can be used here
             data_table.rows.add(Array.from(ORIGINAL_DATA.values())).draw();
             $("td").addClass("editable");
-            $("td").attr("contenteditable", true);
+            $("td:not(.sorting_1)").attr("contenteditable", true);
         };
 
         let SubsetTable = () => {
@@ -429,7 +454,6 @@
             $("td").attr("contenteditable", true);
 
         };
-
 
 
         $(() => {
@@ -447,6 +471,7 @@
                 };
 
             });
+
             // TODO look up alternative to blur, as only when content is changed does a look up need to be done
             $("#metadata").on("blur", ".editable", (evt)=>{
                 // This gives me elemet to look for, just need to update original element with it
@@ -481,6 +506,33 @@
             $("#metadata-search-button").on('click', SubsetTable);
             $("#reset-table-button").on('click', ResetTable);
 
+            $("#metadata").on('dblclick', '.sorting_1', (evt) => {
+
+                let identified_point = $(`.tree-node#${evt.target.textContent}`)
+                //.children("circle");
+                console.log(identified_point[0]);
+                let rect = identified_point[0].getBBox();
+                let translated_coords = identified_point[0].getAttribute('transform').replace('translate(', '').replace(")", '').split(",");
+                let rect_x = parseFloat(translated_coords[0]);
+                let rect_y = parseFloat(translated_coords[1]);
+                //let rect = identified_point[0].getBoundingClientRect();
+                //<g transform="translate(675.9000244140625, -6660.52783203125)" fill-opacity="1" stroke-opacity="1" id="SRR6807440" class="tree-node"><text dy="0.31em" x="6" text-anchor="start" stroke-linejoin="round" stroke-width="3" stroke="white">SRR6807440</text><circle r="2.5" fill="#999" stroke-width="10"></circle><text dy="0.31em" x="6" text-anchor="start">SRR6807440</text></g>
+                let svg = $("#TreeSVG");
+                let og_box = svg[0].getBBox()
+                //Static numbers are just me playing with the values of the first entry
+                let new_view = "" + (rect.x + rect_x) - 50 + " " + (rect.y + rect_y ) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
+                svg.attr("viewBox", new_view);
+                //console.log(rect);
+                //let view_box_rect = svg[0].getBoundingClientRect();
+                //let view_box_rect = svg[0].getBBox();
+                //console.log(view_box_rect);
+                //let dx = view_box_rect.x - rect.x;
+                //let dy = view_box_rect.y - rect.y;
+                //svg.attr('viewBox', `${dx} ${dy} ${view_box_rect.width} ${view_box_rect.height}`)
+            });
+
+            //$("#SelectedNodes .sorting_1").attr("contenteditable", false);
+
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
                 let node_name = evt.target.textContent;
                 SELECTED_NODES.delete(node_name);
@@ -489,9 +541,12 @@
                 updated_nodes();
             });
 
-
-
+            $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
+                console.log("scrolling");
+            });
         });
+
+
 
     </script>
 </head>
