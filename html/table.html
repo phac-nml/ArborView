@@ -128,7 +128,10 @@
         // Specify the charts’ dimensions. The height is variable, depending on the layout.
         chart = (data) => {
                 // Specify the charts’ dimensions. The height is variable, depending on the layout.
-                const width = 2000;
+                //console.log(window.innerWidth);
+                //console.log(window.innerHeight);
+                //const width = 2000;
+                const width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 10;
@@ -180,7 +183,6 @@
                     });
 
                     const height = right.x - left.x + marginTop + marginBottom;
-
                     const transition = svg.transition()
                         .duration(duration)
                         .attr("height", height)
@@ -502,16 +504,16 @@
             <label for="metadata-selector">Select a tab delimited metadata file</label>
             <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
         </div>
-        <div class="TreeSelections" id="TreeSelections">
-            <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
+        <div class="TreeSelections" id="TreeSelections" style="width:100%">
+            <!--<div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>-->
+            <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="width:80%;height:50vh;float:left"></div>
             <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
             <button name="SearchMetadata" id="reset-table-button">Reset Table</button>
-            <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:500px"></div>
+            <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:50vh;width:20%;float:right"></div>
         </div>
 
-        <div id="ClusterInfo" style="padding-top:50px;">
-            <table id="query-data" class="display" style="width:100%"></table>
-            <table id="metadata" class="display" style="width:100%"></table>
+        <div id="ClusterInfo" style="padding-top:0px;">
+            <table id="metadata" class="display" style="width:100%; height:50vh"></table>
         </div>
     </body>
 </html>
