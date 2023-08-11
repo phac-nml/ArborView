@@ -339,7 +339,12 @@
             // TODO initializing table from json object would minimize copies
             $("td").addClass("editable");
             $("td").attr("contenteditable", true);
-            ORIGINAL_DATA = data_table.data();
+            // Saving data as a map, to allow for updating of metadata
+            ORIGINAL_DATA = new Map();
+            data_table.rows().data().each((value, index) => {
+                ORIGINAL_DATA.set(value[ID_FIELD], value)
+            });
+            console.log(ORIGINAL_DATA.values());
         };
 
         let CreateTable = (parsed_data, table_id, table_headers) => {
@@ -356,7 +361,8 @@
                 }
                 table_body.push("</tr>\n");
             }
-            delete parsed_data;
+            //delete parsed_data;
+            parsed_data = null;
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             CreateDataTable();
         };
@@ -405,7 +411,8 @@
         let ResetTable = () => {
             data_table.clear();
             // Is there a more space efficient way to do this?
-            data_table.rows.add(ORIGINAL_DATA).draw();
+            // TODO perhaps metadata from d3 can be used here
+            data_table.rows.add(Array.from(ORIGINAL_DATA.values())).draw();
             $("td").addClass("editable");
             $("td").attr("contenteditable", true);
         };
@@ -438,11 +445,18 @@
                 };
 
             });
-
+            // TODO look up alternative to blur, as only when content is changed does a look up need to be done
             $("#metadata").on("blur", ".editable", (evt)=>{
                 // This gives me elemet to look for, just need to update original element with it
-                // TODO alter original elemetns here
-                console.log(evt.target);
+                // TODO alter original elements here
+                let row_values = evt.target.closest("tr").childNodes;
+                console.log(row_values);
+                let edited_value = row_values[0].textContent;
+                let retrieved_value = ORIGINAL_DATA.get(edited_value);
+                for(let i = 0; i < retrieved_value.length; i++){
+                    retrieved_value[i] = row_values[i].textContent;
+
+                }
             });
 
             $("#metadata-selector").change((event) => {
@@ -454,6 +468,7 @@
                     METADATA = d3.tsvParse(metadata);
                     TABLE_HEADERS = METADATA.columns;
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
+                    METADATA = null;
                 };
                 reader.onerror = (evt) => {
                     alert(`Could not read file ${metadata_file}`);
@@ -475,9 +490,6 @@
 
 
         });
-
-
-
 
     </script>
 </head>
