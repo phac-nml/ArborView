@@ -515,21 +515,13 @@
                 let translated_coords = identified_point[0].getAttribute('transform').replace('translate(', '').replace(")", '').split(",");
                 let rect_x = parseFloat(translated_coords[0]);
                 let rect_y = parseFloat(translated_coords[1]);
-                //let rect = identified_point[0].getBoundingClientRect();
-                //<g transform="translate(675.9000244140625, -6660.52783203125)" fill-opacity="1" stroke-opacity="1" id="SRR6807440" class="tree-node"><text dy="0.31em" x="6" text-anchor="start" stroke-linejoin="round" stroke-width="3" stroke="white">SRR6807440</text><circle r="2.5" fill="#999" stroke-width="10"></circle><text dy="0.31em" x="6" text-anchor="start">SRR6807440</text></g>
                 let svg = $("#TreeSVG");
                 let og_box = svg[0].getBBox()
                 //Static numbers are just me playing with the values of the first entry
+                // TODO leaving off here, need to play with values to get the selected item centered
                 let new_view = "" + (rect.x + rect_x) - 50 + " " + (rect.y + rect_y ) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
                 svg.attr("viewBox", new_view);
-                //console.log(rect);
-                //let view_box_rect = svg[0].getBoundingClientRect();
-                //let view_box_rect = svg[0].getBBox();
-                //console.log(view_box_rect);
-                //let dx = view_box_rect.x - rect.x;
-                //let dy = view_box_rect.y - rect.y;
-                //svg.attr('viewBox', `${dx} ${dy} ${view_box_rect.width} ${view_box_rect.height}`)
-            });
+
 
             //$("#SelectedNodes .sorting_1").attr("contenteditable", false);
 
