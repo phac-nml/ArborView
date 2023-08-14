@@ -430,7 +430,8 @@
         };
 
         let CreateNodeLegend = (array_tuples) => {
-            let node_leg = $("#Legend");
+            let node_leg = $("#Legend ul");
+            node_leg.empty();
             for(const item of array_tuples){
                 console.log(item);
                 node_leg.append(`<li style="color:${item[1]}">${item[0]}<li>`)
@@ -521,9 +522,8 @@
 
 
             // TODO need to change from sorting_1, to  :first
-            $("#metadata").on('dblclick', 'tr:not(:first-child)', (evt) => {
+            $("#metadata").on('dblclick', 'tr td:first-child', (evt) => {
                 let identified_point = $(`.tree-node#${evt.target.textContent}`)
-                console.log(identified_point[0]);
                 let rect = identified_point[0].getBBox();
                 let translated_coords = identified_point[0].getAttribute('transform').replace('translate(', '').replace(")", '').split(",");
                 let rect_x = parseFloat(translated_coords[0]);
