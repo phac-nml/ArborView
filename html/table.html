@@ -430,11 +430,11 @@
         };
 
         let CreateNodeLegend = (array_tuples) => {
-            let node_leg = $("#Legend ul");
-            node_leg.empty();
+            $("#Legend").empty();
+            let node_leg = $("#Legend");
             for(const item of array_tuples){
                 console.log(item);
-                node_leg.append(`<li style="color:${item[1]}">${item[0]}<li>`)
+                node_leg.append(`<li id="legend-value" style="color:${item[1]}">${item[0]}</li>`)
             }
         };
 
@@ -451,7 +451,7 @@
             // TODO perhaps metadata from d3 can be used here
             data_table.rows.add(Array.from(ORIGINAL_DATA.values())).draw();
             $("td").addClass("editable");
-            $("td:not(.sorting_1)").attr("contenteditable", true);
+            $("td:not(:first-child)").attr("contenteditable", true);
         };
 
         let SubsetTable = () => {
@@ -461,7 +461,7 @@
             data_table.clear();
             data_table.rows.add(filtered).draw();
             $("td").addClass("editable");
-            $("td").attr("contenteditable", true);
+            $("td:not(:first-child)").attr("contenteditable", true);
 
         };
 
@@ -561,6 +561,7 @@
                 let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42});
                 
                 let colour_idx = 0;
+                colour_legend.length = 0; // clear out old data
                 for(const item in break_down_values){
                     let query_string = `#${break_down_values[item].join(", #")}`;
                     let values_update = $(query_string).children("circle").map((idx, elm) => {
@@ -569,7 +570,6 @@
                     colour_legend.push([item, colours[colour_idx]])
                     colour_idx++;
                 }
-                console.log(colour_legend);
                 CreateNodeLegend(colour_legend);    
         });
 
