@@ -2,7 +2,6 @@
 <html>
 <head>
     <style>
-
         .inline-block-child {
             display: inline-block;
         }
@@ -13,6 +12,10 @@
             /*height: 200px;*/
         }
     </style>
+
+    <!-- Random colour library for creating some nice highlighted trees    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.6.1/randomColor.min.js" integrity="sha512-vPeZ7JCboHcfpqSx5ZD+/jpEhS4JpXxfz9orSvAPPj0EKUVShU2tgy7XkU+oujBJKnWmu4hU7r9MMQNWPfXsYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <!-- Below switching to tidy tree 0.5.1 as the dev broke 0.5.0 -->
 
@@ -37,6 +40,7 @@
         var ORIGINAL_VIEW_BOX = null;
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
+        const colour_legend = new Array;
         const default_color = "#999";
         const clicked_color = "red";
         const ID_FIELD = 0;
@@ -125,20 +129,11 @@
         }
         //~~~~~~~~~ End of Heng Li's Code
 
-        
-
-        /// D3 code related to zooming (thanks again Mike)
-        //let zoomed = ({transform}) => {
-        //    //$("g").attr("transform", transform);
-        //    $("g path").attr("transform", transform);
-        //};
-
-
 
         // D3.js Tidy Tree code
         // Modified but taken from: https://observablehq.com/@d3/collapsible-tree
         // Specify the charts’ dimensions. The height is variable, depending on the layout.
-        chart = (data) => {
+        let chart = (data) => {
                 // Specify the charts’ dimensions. The height is variable, depending on the layout.
                 //console.log(window.innerWidth);
                 //console.log(window.innerHeight);
@@ -227,7 +222,13 @@
                                 return d.data.name;
                             }
                         })
-                        .attr("class", "tree-node")
+                        
+                        .attr("class", (d) => {
+                            if(!d.children){
+                                return "tree-node leaf-node";
+                            }
+                            return "tree-node"
+                        })
                         .on("click", (event, d) => {
                             d.children = d.children ? null : d._children;
                             let circle_pos = 1;
@@ -323,7 +324,7 @@
         // ~~~~~~ End of D3.js copy pasted code
 
 
-        var updated_nodes = () => {
+        let updated_nodes = () => {
             $("#SelectedNodes").html(function(){
                 let attribute = "";
                 // TODO need to add event listener so that when list values are clicked they are removed
@@ -335,43 +336,29 @@
             });
         };
 
-        var drawTree = (newick_) => {
+        let drawTree = (newick_) => {
             let tree = kn_parse(newick_);
             let node_out = chart(tree.root);
             $("#TreeData").append(node_out);
-            // For resetting the view
-            //ORIGINAL_VIEW_BOX = svg[0].getBoundingClientRect();
+
         };
+
 
         let CreateDataTable = () => {
             data_table = $('#metadata').DataTable({
                 stateSave: true,
                 className: ".editable",
-                // TODO this can be initialized as the table is made
-                // TODO need to add a mandatory sample_id field and make it non-editable 
-                //"createdRow": function(row, data, dataIndex){
-                //    var editableCells = $(row).find('.editable');
-                //    editableCells.attr('contenteditable', true);
-                //    editableCells.on('blur', function(){
-                //        var cell = $(this);
-                //        var newValue = cell.text();
-                //        var columnIndex = cell.index();
-                //        var rowData = dataTable.row(cell.closest('tr')).data();
-                //        rowData[columnIndex] = newValue;
-                //        dataTable.row(cell.closest('tr')).data(rowData).draw();
-                //        // Need to add call to update the backend here, I used chatGPT to write the initial part, as I had no idea what I was doing
-                //    });
-                //}
             });
             // TODO initializing table from json object would minimize copies
             $("td").addClass("editable");
-            $("td:not(.sorting_1)").attr("contenteditable", true);
+            $("td:not(:first-child)").attr("contenteditable", true);
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
             data_table.rows().data().each((value, index) => {
                 ORIGINAL_DATA.set(value[ID_FIELD], value)
             });
         };
+
 
         let CreateTable = (parsed_data, table_id, table_headers) => {
             let headers = table_headers;
@@ -432,6 +419,29 @@
                 columns: data_columns,
                 data: selected_data
             });
+        };
+
+        let CreateColoringGroups = (array_vals) => {
+            let new_obj = new Object();
+            for(const item of array_vals){
+                new_obj[item] = new Array;
+            }
+            return new_obj;
+        };
+
+        let CreateNodeLegend = (array_tuples) => {
+            let node_leg = $("#Legend");
+            for(const item of array_tuples){
+                console.log(item);
+                node_leg.append(`<li style="color:${item[1]}">${item[0]}<li>`)
+            }
+        };
+
+        let PopulateGroups = (json_groups, query_key) => {
+            ORIGINAL_DATA.forEach((value, key) => {
+                json_groups[value[query_key]].push(key);
+            });
+            return json_groups;
         };
 
         let ResetTable = () => {
@@ -506,12 +516,12 @@
                 };
             });
 
-            //$("#metadata-search-button").on('click', CreateQueryTable);
             $("#metadata-search-button").on('click', SubsetTable);
             $("#reset-table-button").on('click', ResetTable);
 
-            $("#metadata").on('dblclick', '.sorting_1', (evt) => {
 
+            // TODO need to change from sorting_1, to  :first
+            $("#metadata").on('dblclick', 'tr:not(:first-child)', (evt) => {
                 let identified_point = $(`.tree-node#${evt.target.textContent}`)
                 console.log(identified_point[0]);
                 let rect = identified_point[0].getBBox();
@@ -536,7 +546,37 @@
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
                 console.log("scrolling");
             });
+
+            $("#metadata").on("dblclick", "thead th:not(:first)", (evt) => {
+                // TODO add a list of headers somewhere to select colouring from
+                let unq_data = data_table.column(evt.target).data().unique();
+                let column_index = data_table.column(evt.target)[0];
+
+                // Need to create groupings of the each set of ID's belonging to each value grouping
+                let break_down_values = unq_data.toArray();
+                
+                // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
+                let group_vals = CreateColoringGroups(break_down_values);
+                break_down_values = PopulateGroups(group_vals, column_index);
+                let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42});
+                
+                let colour_idx = 0;
+                for(const item in break_down_values){
+                    let query_string = `#${break_down_values[item].join(", #")}`;
+                    let values_update = $(query_string).children("circle").map((idx, elm) => {
+                        elm.style.fill = colours[colour_idx];
+                    });
+                    colour_legend.push([item, colours[colour_idx]])
+                    colour_idx++;
+                }
+                console.log(colour_legend);
+                CreateNodeLegend(colour_legend);    
         });
+
+
+        });
+
+
 
 
 
@@ -558,6 +598,10 @@
             <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
             <button name="SearchMetadata" id="reset-table-button">Reset Table</button>
             <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:50vh;width:20%;float:right"></div>
+            <!-- Need to have the legend be scrollable and situated under the selected nodes-->
+            <div id="colour-legend" class="Tree inline-block-child scrollbar-window">
+                <ul id="Legend"></ul>
+            </div>
         </div>
 
         <div id="ClusterInfo" style="padding-top:0px;">
