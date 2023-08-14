@@ -318,7 +318,6 @@
                 });
                 
                 update(null, root);
-
                 return svg.node();
             }
         // ~~~~~~ End of D3.js copy pasted code
@@ -337,8 +336,8 @@
         };
 
         var drawTree = (newick_) => {
-            var tree = kn_parse(newick_);
-            var node_out = chart(tree.root);
+            let tree = kn_parse(newick_);
+            let node_out = chart(tree.root);
             $("#TreeData").append(node_out);
             // For resetting the view
             //ORIGINAL_VIEW_BOX = svg[0].getBoundingClientRect();
@@ -469,7 +468,12 @@
                 reader.onerror = (evt) => {
                     alert(`Could not read file ${newick_file}`);
                 };
+            });
 
+            $("#ResetTree").on("click", (evt) => {
+                let svg = $("#TreeSVG");
+                let og_box = svg[0].getBBox();
+                svg.attr("viewBox", `${og_box.x + og_box.x} ${og_box.y} ${og_box.width} ${og_box.height}`);
             });
 
             // TODO look up alternative to blur, as only when content is changed does a look up need to be done
@@ -509,7 +513,6 @@
             $("#metadata").on('dblclick', '.sorting_1', (evt) => {
 
                 let identified_point = $(`.tree-node#${evt.target.textContent}`)
-                //.children("circle");
                 console.log(identified_point[0]);
                 let rect = identified_point[0].getBBox();
                 let translated_coords = identified_point[0].getAttribute('transform').replace('translate(', '').replace(")", '').split(",");
@@ -517,14 +520,10 @@
                 let rect_y = parseFloat(translated_coords[1]);
                 let svg = $("#TreeSVG");
                 let og_box = svg[0].getBBox()
-                //Static numbers are just me playing with the values of the first entry
-                // TODO leaving off here, need to play with values to get the selected item centered
-                let new_view = "" + (rect.x + rect_x) - 50 + " " + (rect.y + rect_y ) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
+                let new_view = "" + ((rect.x + rect_x) - (og_box.width * 0.15)) + " " + ((rect.y + rect_y ) - (og_box.height * 0.02)) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
                 svg.attr("viewBox", new_view);
             });
 
-
-            //$("#SelectedNodes .sorting_1").attr("contenteditable", false);
 
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
                 let node_name = evt.target.textContent;
@@ -554,6 +553,7 @@
         </div>
         <div class="TreeSelections" id="TreeSelections" style="width:100%">
             <!--<div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>-->
+            <button name="ResetTree" id="ResetTree">Reset Tree View</button>
             <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="width:80%;height:50vh;float:left"></div>
             <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
             <button name="SearchMetadata" id="reset-table-button">Reset Table</button>
