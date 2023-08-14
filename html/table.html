@@ -561,7 +561,7 @@
                 let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42});
                 
                 let colour_idx = 0;
-                colour_legend.length = 0; // clear out old data
+                colour_legend.length = 0; // clear out old data, so new legend created each time
                 for(const item in break_down_values){
                     let query_string = `#${break_down_values[item].join(", #")}`;
                     let values_update = $(query_string).children("circle").map((idx, elm) => {
