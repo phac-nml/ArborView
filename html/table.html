@@ -12,6 +12,7 @@
             /*height: 200px;*/
         }
     </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Random colour library for creating some nice highlighted trees    -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.6.1/randomColor.min.js" integrity="sha512-vPeZ7JCboHcfpqSx5ZD+/jpEhS4JpXxfz9orSvAPPj0EKUVShU2tgy7XkU+oujBJKnWmu4hU7r9MMQNWPfXsYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -340,9 +341,14 @@
         };
 
         let drawTree = (newick_) => {
+            console.log('render a tree from Newick')
             let tree = kn_parse(newick_);
             let node_out = chart(tree.root);
             $("#TreeData").append(node_out);
+            let nodeSizeBoxHorizontal = document.querySelector('#TreeData').clientHeight - document.querySelector('#tree_menu_buttons').clientHeight
+            document.querySelector('#SelectedNodes').style.maxHeight = `${nodeSizeBoxHorizontal}px`
+            
+
 
         };
 
@@ -491,6 +497,7 @@
                 let og_box = svg.getBBox();
                 svg.setAttribute("viewBox", `${og_box.x + og_box.x},${og_box.y},${og_box.width},${og_box.height}`);
                 svg.style.width = `${og_box.width}`
+                document.querySelector('#TreeData').scrollLeft = document.querySelector('#TreeData').clientWidth/2
             });
 
             // TODO look up alternative to blur, as only when content is changed does a look up need to be done
@@ -600,9 +607,11 @@
         });
 
         zoom_tree = function(times=1){
-            const [x, y, w, h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(item =>{return parseInt(item)} )
-            document.querySelector('#TreeSVG').setAttribute('viewBox', `0,${y},${w},${h}`)
-            document.querySelector('#TreeSVG').style.width = w*times;
+            //const [x, y, w, h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(item =>{return parseInt(item)} )
+            //document.querySelector('#TreeSVG').setAttribute('viewBox', `0,${y},${w},${h}`) //get c
+            document.querySelector('#TreeSVG').style.width = document.querySelector('#TreeSVG').getBBox().width*times;
+            document.querySelector('#TreeData').scrollLeft=document.querySelector('#TreeSVG').getBBox().width/2
+            
 
         }
 
@@ -611,30 +620,86 @@
     </script>
 </head>
     <body>
-        <div>
-            <label for="tree-selector">Select a Newick File </label>
-            <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-        </div>
-        <div>
-            <label for="metadata-selector">Select a tab delimited metadata file</label>
-            <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
-        </div>
-        <div class="TreeSelections" id="TreeSelections" style="width:100%">
-            <!--<div class="Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>-->
-            <button name="ResetTree" id="ResetTree">Reset Tree View</button>
-            <button id="Zoom1.5x" onclick="zoom_tree(1.5)">Zoom 1.5x</button>
-            <div class="Tree inline-block-child scrollbar-window" id="TreeData" style="border:1px black solid;width:80%;height:70vh;float:left"></div>
-            <button name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
-            <button name="SearchMetadata" id="reset-table-button">Reset Table</button>
-            <div class="Tree inline-block-child scrollbar-window" id="SelectedNodes" style="height:30vh;width:20%;float:right"></div>
-            <!-- Need to have the legend be scrollable and situated under the selected nodes-->
-            <!--div id="colour-legend" class="Tree inline-block-child scrollbar-window">
-                <ul id="Legend"></ul>
-            </div-->
-        </div>
+        <div class="container-fluid m-0 ">
+            <div class="row border">
+                <div class="col-3">
+                    <label for="tree-selector">Select a Newick File </label>
+                </div>
+                <div class="col-9">
+                    <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
+                </div>
+            </div>
+            <div class="row border ">
+                <div class="col-3">
+                    <label for="metadata-selector">Select a tab delimited metadata file</label>
+                </div>
+                <div class="col-9">   
+                    <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
+                </div>    
+            </div>
+          
 
-        <div id="ClusterInfo" style="padding-top:0px;">
-            <table id="metadata" class="display" style="width:100%; height:50vh"></table>
-        </div>
+        
+            <div class="row"> <!-- id="TreeSelections" style=""-->
+
+                <div class="col-10 Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
+                <div class="col-2 border border-primary">
+                    <div id="tree_menu_buttons">
+                        <div class="row">
+                            <div class="col-12 p-0">
+                                <button class="w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
+                            </div>    
+                        </div>  
+                        <div class="row">
+                            <div class="col-12 p-0">
+                                <button class="w-100" onclick="zoom_tree(2)">Zoom 2x</button>
+                            </div>    
+                        </div>  
+                        <div class="row">
+                            <div class="col-12 p-0">
+                                <button class="w-100" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
+                            </div>    
+                        </div>      
+                        <div class="row">
+                            <div class="col-12 p-0">
+                                <button class="w-100" name="SearchMetadata" id="reset-table-button">Reset Table</button>
+                            </div>    
+                        </div> 
+                    </div>
+                    <div class="row">
+                                <div class="col-12 p-0 w-100 border-primary  Tree inline-block-child scrollbar-window" id="SelectedNodes" style=""></div>
+                               
+                    </div> 
+                                
+                         
+                    
+                        
+                    
+                </div>
+                
+             </div>
+             
+             <div id="ClusterInfo" class="row border border-primary">
+                <div class="col-12 overflow-auto">
+                    <table id="metadata" class="display overflow-scroll" style="width:100%; height:50vh"></table>
+                </div>    
+            </div>
+            <!--div id="colour-legend" class="row border  Tree inline-block-child scrollbar-window">
+                    <ul id="Legend"></ul>
+                
+                <div class="border border-primary  Tree scrollbar-window" id="TreeData" style="height:70vh">
+                </div>
+             </div-->   
+              
+                
+                    
+                
+                <!-- Need to have the legend be scrollable and situated under the selected nodes-->
+                
+            
+        </div>  
+        
+
+        
     </body>
 </html>
