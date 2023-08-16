@@ -47,6 +47,7 @@
         const ID_FIELD = 0;
         const SELECTED_NODES = new Set();
         const right_mouse = 3;
+        const middle_mouse = 2;
         const left_mouse = 1;
 
         /** Code for parsing a newick tree to be used by D3
@@ -274,7 +275,9 @@
                             
                             if(event.which === left_mouse){
                                 LeafNode(event, d);
-                            }else if(event.which == right_mouse){
+                            // The right mouse button is required for inspecting elements...
+                            //}else if(event.which == right_mouse){
+                            }else if(event.which == middle_mouse){
                                 CustomSubTree(event, d);
                             }
                             
@@ -517,9 +520,9 @@
             document.oncontextmenu = (event) => {
                 // Disables context menu for TreeData div, e.g. default web menu does not appear
                 let item_id = event.target.closest("div").id;
-                if(item_id === "TreeData"){
-                    return false;
-                }
+                //if(item_id === "TreeData"){
+                //    return false;
+                //}
                 return true;
             };
 
