@@ -43,10 +43,11 @@
         var LAST_MOVE_Y = 0;
         const colour_legend = new Array;
         const default_color = "#999";
-        const clicked_color = "red";
+        const clicked_color = "blue";
         const ID_FIELD = 0;
         const SELECTED_NODES = new Set();
         const right_mouse = 3;
+        const center_mouse = 2;
         const left_mouse = 1;
 
         /** Code for parsing a newick tree to be used by D3
@@ -147,17 +148,19 @@
         let LeafNode = (event, d) => {
             d.children = d.children ? null : d._children;
             let circle_pos = 1;
-            let trg_name_pos = 0;
-            let parent = event.target.closest('g');
-            let trg = parent.childNodes[circle_pos];
-            let node_name = parent.childNodes[trg_name_pos].innerHTML;
+            let trg_name_pos = 2;
+            let parent = event.target.closest('g').childNodes;
+            let trg = parent[circle_pos];
+            let node_name = parent[trg_name_pos].innerHTML;
             if(!d._children){
                 // TODO append these to a stack or pop from it if it is not clicked
                 if(trg.style.fill === clicked_color){
                     trg.style.fill = default_color;
+                    parent[trg_name_pos].style.fontWeight = "normal";
                     SELECTED_NODES.delete(node_name);
                 }else{
                     trg.style.fill = clicked_color;
+                    parent[trg_name_pos].style.fontWeight = "bold";
                     SELECTED_NODES.add(node_name);
                 }
             }
@@ -274,7 +277,8 @@
                             
                             if(event.which === left_mouse){
                                 LeafNode(event, d);
-                            }else if(event.which == right_mouse){
+                            //}else if(event.which == right_mouse){
+                            }else if(event.which == center_mouse){
                                 CustomSubTree(event, d);
                             }
                             
@@ -517,9 +521,9 @@
             document.oncontextmenu = (event) => {
                 // Disables context menu for TreeData div, e.g. default web menu does not appear
                 let item_id = event.target.closest("div").id;
-                if(item_id === "TreeData"){
-                    return false;
-                }
+                //if(item_id === "TreeData"){
+                //    return false;
+                //}
                 return true;
             };
 
@@ -616,6 +620,7 @@
                 SELECTED_NODES.delete(node_name);
                 let unselected_data = $(`g #${node_name}`).children();
                 unselected_data[1].style.fill = default_color;
+                unselected_data[1].style.fontWeight = "normal";
                 updated_nodes();
             });
 
