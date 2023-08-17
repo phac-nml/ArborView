@@ -41,13 +41,14 @@
         var ORIGINAL_VIEW_BOX = null;
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
+        var focused_element = null; // Focused element to have its colour reset
         const colour_legend = new Array;
         const default_color = "#999";
-        const clicked_color = "red";
+        const clicked_color = "blue";
         const ID_FIELD = 0;
         const SELECTED_NODES = new Set();
         const right_mouse = 3;
-        const middle_mouse = 2;
+        const center_mouse = 2;
         const left_mouse = 1;
 
         /** Code for parsing a newick tree to be used by D3
@@ -148,25 +149,25 @@
         let LeafNode = (event, d) => {
             d.children = d.children ? null : d._children;
             let circle_pos = 1;
-            let trg_name_pos = 0;
-            let parent = event.target.closest('g');
-            let trg = parent.childNodes[circle_pos];
-            let node_name = parent.childNodes[trg_name_pos].innerHTML;
+            let trg_name_pos = 2;
+            let parent = event.target.closest('g').childNodes;
+            let trg = parent[circle_pos];
+            let node_name = parent[trg_name_pos].innerHTML;
             if(!d._children){
                 // TODO append these to a stack or pop from it if it is not clicked
                 if(trg.style.fill === clicked_color){
                     trg.style.fill = default_color;
+                    parent[trg_name_pos].style.fontWeight = "normal";
+                    parent[trg_name_pos].style.fill = "black";
                     SELECTED_NODES.delete(node_name);
                 }else{
                     trg.style.fill = clicked_color;
+                    parent[trg_name_pos].style.fontWeight = "bold";
+                    parent[trg_name_pos].style.fill = "black";
                     SELECTED_NODES.add(node_name);
                 }
             }
         };
-
-
-
-
 
         // D3.js Tidy Tree code
         // Modified but taken from: https://observablehq.com/@d3/collapsible-tree
@@ -275,9 +276,8 @@
                             
                             if(event.which === left_mouse){
                                 LeafNode(event, d);
-                            // The right mouse button is required for inspecting elements...
                             //}else if(event.which == right_mouse){
-                            }else if(event.which == middle_mouse){
+                            }else if(event.which == center_mouse){
                                 CustomSubTree(event, d);
                             }
                             
@@ -418,6 +418,7 @@
             CreateDataTable();
         };
 
+        // TODO this is dead code and should be removed
         let CreateQueryTable = () => {
 
             if(SELECTED_NODES.size === 0){
@@ -443,6 +444,7 @@
                     indices.push(idx);
                 }
             });
+
             // TODO this could be made more performant by check what is new in the set and only getting that data and appending it to the table
             // TODO clearing and adding could be added and would then only require initializing the datatable once
             let selected_data = data_table.rows( indices ).data().toArray();
@@ -516,10 +518,13 @@
                 
             });
 
-            // Below disables the right click menu for the page
+            // ! Below disables the right click menu for the page
             document.oncontextmenu = (event) => {
                 // Disables context menu for TreeData div, e.g. default web menu does not appear
                 let item_id = event.target.closest("div").id;
+                //if(item_id === "TreeData"){
+                //    return false;
+                //}
                 //if(item_id === "TreeData"){
                 //    return false;
                 //}
@@ -542,6 +547,13 @@
 
             $("#ResetTree").on("click", (evt) => {
                 //let svg = $("#TreeSVG");
+                if(focused_element !== null){
+                    // Revert any focused node back to its original colours
+                    // TODO update colour as a constant
+                    // TODO discuss with Kirill if the colour should stay as it may be useful when looking throught the tree
+                    // TODO perhaps this should be dropped as there is a redraw tree option
+                    focused_element.setAttribute('fill', "black");
+                }
                 let svg = document.querySelector('#TreeSVG')
                 let og_box = svg.getBBox();
                 svg.setAttribute("viewBox", `${og_box.x + og_box.x},${og_box.y},${og_box.width},${og_box.height}`);
@@ -583,13 +595,25 @@
             $("#reset-table-button").on('click', ResetTable);
 
 
-            // TODO need to change from sorting_1, to  :first
             // Zoom in on double click
             $("#metadata").on('click', 'tr td:first-child', (evt) => {
+
+
                 console.log(`Node: ${evt.target.textContent}`)
                 let identified_point = document.querySelector(`#${evt.target.textContent}`)
-                //let identified_point = $(`.tree-node#${evt.target.textContent}`)
-                identified_point.setAttribute('fill', 'red')
+                let identified_point_id = identified_point.childNodes[0].innerHTML; // gets nodes name
+                let is_selected = SELECTED_NODES.has(identified_point_id);
+                if(focused_element !== null && !is_selected){
+                    // Return elements state unluss it is already adjusted due to being selected 
+                    focused_element.setAttribute('fill', "black");
+                    
+                }
+                focused_element = identified_point; // Save reference to new point
+
+                if(!is_selected){
+                    // Highlight selected item unless it is already highlighted due to being selected
+                    identified_point.setAttribute('fill', 'DodgerBlue');
+                }
                 let rect = identified_point.getBBox();
                 let translated_coords = identified_point.getAttribute('transform').replace('translate(', '').replace(")", '').split(",");
                 let rect_x = parseFloat(translated_coords[0]);
@@ -597,14 +621,16 @@
                 console.log(`point x: ${rect_x} y: ${rect_y}`)
                 let svg = document.querySelector('#TreeSVG')
                 
-                const [original_x,original_y,original_w,original_h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(n => {return parseInt(n)})    
+                //const [original_x,original_y,original_w,original_h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(n => {return parseInt(n)})    
+                // Removed above line so DOM element is not retrieved twice
+                const [original_x,original_y,original_w,original_h] = svg.getAttribute('viewBox').split(',').map(n => {return parseInt(n)})    
 
                 
                 
                 //let zoom_zero_viewbox = document.querySelector('#TreeSVG').getAttribute('viewBox')
                 //document.querySelector('#TreeSVG').setAttribute('viewBox', '0 0 2000 4775.19921875')
                 let og_box = svg.getBBox()
-                console.log(og_box)
+                //console.log(og_box)
                 //let new_view = "" + ((rect.x + rect_x) - (og_box.width * 0.15)) + " " + ((rect.y + rect_y ) - (og_box.height * 0.02)) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
                 let new_view = `${rect_x-(svg.clientWidth/2)+100} ${rect_y-200} ${og_box.width/2} ${og_box.height}`
                 //console.log(`new_view = ${new_view}`)
@@ -619,6 +645,8 @@
                 SELECTED_NODES.delete(node_name);
                 let unselected_data = $(`g #${node_name}`).children();
                 unselected_data[1].style.fill = default_color;
+                unselected_data[2].style.fontWeight = "normal";
+                unselected_data[2].style.fill = "black";
                 updated_nodes();
             });
 
@@ -650,8 +678,7 @@
                     colour_idx++;
                 }
                 CreateNodeLegend(colour_legend);    
-        });
-
+            });
 
         });
 
