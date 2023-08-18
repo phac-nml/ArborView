@@ -199,7 +199,6 @@
                 let title = CreateMenuItem("h4", "Node Options");
 
                 let collapse_tree = CreateMenuItem("p", "Collapse/Un-collapse branch", ColourMouseOver, func);
-                //collapse_subtree.style.textAlign = "left";
 
                 // TODO need to remove selected nodes when drawing subtree
                 let create_subtree = CreateMenuItem("p", "Display Sub-tree", ColourMouseOver, () => {
@@ -221,6 +220,8 @@
 
         // Tree specific code for this project implementation
         let CustomSubTree = (event, data) => {
+            SELECTED_NODES.clear();
+            updated_nodes();
             $("#TreeData").empty();
             if(data !== null){
                 let svg_chart = chart(data.data);
@@ -270,11 +271,12 @@
             let trg = parent[circle_pos];
             let node_name = parent[trg_name_pos].innerHTML;
             if(!d._children){
-                // TODO append these to a stack or pop from it if it is not clicked
                 if(trg.style.fill === clicked_color){
                     trg.style.fill = default_color;
                     parent[trg_name_pos].style.fontWeight = "normal";
                     parent[trg_name_pos].style.fill = "black";
+                    // TODO perhaps move this to its own function (class would be preferable)
+                    // So that when nodes are appended the legend updates and colours nodes
                     SELECTED_NODES.delete(node_name);
                 }else{
                     trg.style.fill = clicked_color;
@@ -378,8 +380,11 @@
                             d.children = d.children ? null : d._children;
                             if(event.which == left_mouse){
                                 // Likely have to move dropdown logic here
-                                // TODO left off here, for sub tree collapsing
-                                NodeDropDownMenu(event, d, () => {update(event, d)});
+                                // TODO add functionality for if subtree is collapsed and contains selected nodes
+                                // that those nodes are dropped from the selection and the legend is updated
+                                NodeDropDownMenu(event, d, () => {
+                                    update(event, d);
+                                });
                             }
                         });
 
