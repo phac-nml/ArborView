@@ -47,10 +47,76 @@
         const default_color = "#999";
         const clicked_color = "blue";
         const ID_FIELD = 0;
+        // Refactoring selected nodes to make it easier to update the legend and selected nodes on dom changes
         const SELECTED_NODES = new Set();
         const right_mouse = 3;
         const center_mouse = 2;
         const left_mouse = 1;
+
+        // Class for selected nodes
+        class SelectedNodes {
+            static nodes = new Map();
+            static #circle_pos = 1;
+            static #name_pos = 2;
+            static #default_color = "#999";
+            static #clicked_color = "blue";
+            static selection_id = "#SelectedNodes";
+
+            static getNodeData(element){
+                let parent = element.target.closest("g");
+                let child_nodes = parent.childNodes;
+                let circle = child_nodes[SelectedNodes.#circle_pos];
+                let text = child_nodes[SelectedNodes.#name_pos];
+                return [parent, circle, text];
+
+            }
+
+            static addNodes(element) {    
+            /* Function to update the set of nodes, going forward each node should probably contain the element by ID and the html element
+            
+            This class is also being refactored as it should never get a none leaf-node
+
+            param element: a html "g" element to update the colour of
+            */
+                //let parent = element.target.closest("g");
+                //let child_nodes = parent.childNodes;
+                //let circle = child_nodes[this.#circle_pos];
+                //let text = child_nodes[this.#name_pos];
+                let parent, circle, text = getNodeData(element);
+                if(!nodes.has(text.innerHTML)){
+                    nodes[text.innerHTML] = parent;
+                    text.style.fontWeight = "bold";
+                    text.style.fill = "black";
+                    circle.style.fill = SelectedNodes.#clicked_color;
+                }else{
+                    alert(`${text} already exists in map.`)
+                }
+            }
+
+            static unselectNode(element){
+                // Function tied to an on click event removing it from the map, legend and de-colouring it
+                let parent, circle, text = getNodeData(element);
+                text.style.fontWeight = "normal";
+                text.style.fill = "black";
+                circle.fill = SelectedNodes.#default_color
+                nodes.delete(text.innerHTML);
+
+            }
+
+            static drawSelectedNodes(){
+                // Redraw the menu of selected nodes
+                // and re-colour selected ones
+                
+                $(SelectedNodes.legend_id).html(() => {
+                    let attributes = new Array;
+                    for(const item of SelectedNodes.nodes.keys()){
+                        attributes.push(`<li class="selected-node">${item}</li>`);
+                    }
+                    return `<ul class="selected-nodes">\n${attributes.join("\n")}\n</ul>`; 
+                });
+            }
+        }
+
 
         /** Code for parsing a newick tree to be used by D3
          * The code is taken from Knhx.js written by Heng Li
