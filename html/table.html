@@ -178,21 +178,21 @@
             return drop_down_menu;
         }
 
-        let NodeDropDownMenu = (event, data) => {
+        let NodeDropDownMenu = (event, data, func) => {
             // Rendering dropdown menu on click, it may be better to render a hidden menu for each node in a div
             // This would clutter the dom however
 
             if(event.target.parentNode.classList.contains("inner-node")){
                 let drop_down_menu = CreateDropDownDiv(event);
                 let title = CreateMenuItem("h4", "Node Options");
-                let collapse_tree = CreateMenuItem("p", "Collapse Sub-Tree", ColourMouseOver, () => {
-                    collapse_subtree = true;
-                });
+                let collapse_tree = CreateMenuItem("p", "Collapse/Un-Collapse Sub-Tree", ColourMouseOver, func);
 
                 let create_subtree = CreateMenuItem("p", "Display Sub-tree", ColourMouseOver, () => {
                     CustomSubTree(event, data);
                 });
-                let select_child_nodes = CreateMenuItem("p", "Select all Children", ColourMouseOver);
+                let select_child_nodes = CreateMenuItem("p", "Select all Children", ColourMouseOver, () => {
+                    SelectChildren(event, data);
+                });
 
                 AppendToParent(drop_down_menu, title, collapse_tree, create_subtree, select_child_nodes);            
                 document.body.appendChild(drop_down_menu);
@@ -206,8 +206,6 @@
 
         // Tree specific code for this project implementation
         let CustomSubTree = (event, data) => {
-            console.log(data);
-            console.log(event, data);
             $("#TreeData").empty();
             if(data !== null){
                 let svg_chart = chart(data.data);
@@ -215,10 +213,44 @@
             }
         };
 
+        // Helper function to recurse through child nodes
+        let RecurseTree = (data) => {
+            let children = new Array;
+            let ids = new Array;
+            children.push(...data._children);
+            while (children.length){
+                let child = children.pop();
+                if(!child._children){
+                    ids.push(child.data.name);
+                }else{
+                    children.push(...child._children)
+                }
+            }
+            return ids;
+        };
+
+        // Select all children of an inner-node
+        let SelectChildren = (event, data) => {
+            const circle_pos = 1;
+            const trg_name_pos = 2;
+            let selected_children = RecurseTree(data);
+            let selceted_children_jq = `#TreeSVG #${selected_children.join(", #TreeSVG #")}`;
+            $(`${selceted_children_jq}`).each((i, d) => {
+                SELECTED_NODES.add(d.id);
+                let child_nodes = d.childNodes;
+                child_nodes[circle_pos].fill = clicked_color;
+                child_nodes[trg_name_pos].style.fontWeight = "bold";
+                child_nodes[trg_name_pos].style.fill = "black";
+            })
+            updated_nodes();
+
+        };
+
+
         let LeafNode = (event, d) => {
             d.children = d.children ? null : d._children;
-            let circle_pos = 1;
-            let trg_name_pos = 2;
+            const circle_pos = 1;
+            const trg_name_pos = 2;
             let parent = event.target.closest('g').childNodes;
             let trg = parent[circle_pos];
             let node_name = parent[trg_name_pos].innerHTML;
@@ -285,14 +317,12 @@
                 
 
                 function update(event, source) {
-                    console.log("Updating! ", data);
                     //$("#TestSubTree").append(chart(source));
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse();
                     const links = root.links();
 
                     // Compute the new tree layout.
-                    console.log(root);
                     tree(root);
 
                     let left = root;
@@ -334,23 +364,9 @@
                             if(event.which == left_mouse){
                                 // Likely have to move dropdown logic here
                                 // TODO left off here, for sub tree collapsing
-                                NodeDropDownMenu(event, d, update);
+                                NodeDropDownMenu(event, d, () => {update(event, d)});
                             }
-                            
-                            //if(event.which === left_mouse){
-                            //    LeafNode(event, d);
-                            ////}else if(event.which == right_mouse){
-                            //}else if(event.which === center_mouse){
-                            //    // TODO
-                            //    // Need to add in second method for a menu listing options of subtree or too select children
-                            //    //CustomSubTree(event, d);
-                            //    
-                            //    NodeDropDownMenu(event, d);
-                            //}
-                            
-                            //updated_nodes();
-                            //update(event, d._children);
-                            });
+                        });
 
                     nodeEnter.append("circle")
                         .attr("r", 2.5)
@@ -540,7 +556,6 @@
             $("#Legend").empty();
             let node_leg = $("#Legend");
             for(const item of array_tuples){
-                console.log(item);
                 node_leg.append(`<li id="legend-value" style="color:${item[1]}">${item[0]}</li>`)
             }
         };
