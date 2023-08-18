@@ -141,6 +141,11 @@
         let CreateMenuItem = (node_type, text, evt_list_func, on_click) => {
             // TODO in refactor pass object
             let node = document.createElement(node_type);
+            // TODO pass object of default values
+            if(node_type !== "h4"){ // Not liking the way this is formatted
+                node.style.cursor = "default";
+            }
+            node.style.margin = "2px";
             node.innerHTML = text;
             if(evt_list_func !== undefined){
                 evt_list_func(node);
@@ -154,10 +159,10 @@
         let ColourMouseOver = (node) => {
             // TODO can probably make an object to do all this
             node.addEventListener("mouseenter", (event) => {
-                event.target.style.color = "orange";
+                event.target.style.backgroundColor = "LightSalmon";
             });
             node.addEventListener("mouseleave", (event) => {
-                    event.target.style.color = "";
+                    event.target.style.backgroundColor = "";
             });
         };
 
@@ -166,12 +171,19 @@
         };
 
         let CreateDropDownDiv = (event) => {
+            const div_height_adj = 5;
             let drop_down_menu = document.createElement("div");
             drop_down_menu.style.background = "white";
             drop_down_menu.style.position = "absolute";
             drop_down_menu.style.left = event.x+'px';
-            drop_down_menu.style.top = event.y+'px';
-            drop_down_menu.setAttribute("id", "PopdownMenu");
+            drop_down_menu.style.top = (event.y - div_height_adj)+'px';
+            drop_down_menu.style.borderStyle = "solid";
+            drop_down_menu.style.borderWidth = "2px";
+            drop_down_menu.style.backgroundColor = "linen";
+            drop_down_menu.setAttribute("id", "PopDownMenu");
+            drop_down_menu.addEventListener("click", (event) => {
+                drop_down_menu.remove();
+            });
             drop_down_menu.addEventListener("mouseleave", (event) => {
                 event.target.remove();
             });
@@ -185,11 +197,15 @@
             if(event.target.parentNode.classList.contains("inner-node")){
                 let drop_down_menu = CreateDropDownDiv(event);
                 let title = CreateMenuItem("h4", "Node Options");
-                let collapse_tree = CreateMenuItem("p", "Collapse/Un-Collapse Sub-Tree", ColourMouseOver, func);
 
+                let collapse_tree = CreateMenuItem("p", "Collapse/Un-collapse branch", ColourMouseOver, func);
+                //collapse_subtree.style.textAlign = "left";
+
+                // TODO need to remove selected nodes when drawing subtree
                 let create_subtree = CreateMenuItem("p", "Display Sub-tree", ColourMouseOver, () => {
                     CustomSubTree(event, data);
                 });
+
                 let select_child_nodes = CreateMenuItem("p", "Select all Children", ColourMouseOver, () => {
                     SelectChildren(event, data);
                 });
@@ -201,7 +217,6 @@
                 // TODO refactor function name
                 updated_nodes();
             }
-
         };
 
         // Tree specific code for this project implementation
