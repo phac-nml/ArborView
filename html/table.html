@@ -39,6 +39,7 @@
         var query_table = null;
         var ORIGINAL_DATA = null;
         var ORIGINAL_VIEW_BOX = null;
+        var ORIGINAL_WIDTH_SVG = 0;  
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
         const colour_legend = new Array;
@@ -139,6 +140,7 @@
                 //console.log(window.innerWidth);
                 //console.log(window.innerHeight);
                 //const width = 2000;
+                
                 const width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
@@ -159,12 +161,16 @@
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
-                    //.attr("width", width)
-                    //.attr("height", dx)
+                    .attr("width", width)
+                    .attr("height", dx)
+                    //.call(d3.zoom().on("zoom", function () {
+                    //    svg.attr("transform", d3.zoomTransform(this))
+                    //}))
                     //.attr("viewBox", [0, -dx, width, dx])
                     //.attr("viewBox", [0, -marginTop, width, dx])
-                    .attr("style", "width:95%; height: auto; font: 10px sans-serif; user-select: none;");
-                    
+                    .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: none;`)
+                     
+                  
 
                 const gLink = svg.append("g")
                     .attr("fill", "none")
@@ -193,14 +199,17 @@
                     });
 
 
-
+                    ORIGINAL_WIDTH_SVG=width
                     const height = right.x - left.x + marginTop + marginBottom;
                     const transition = svg.transition()
                         .duration(duration)
                         .attr("height", height)
-                        .attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
+                        .attr("viewBox", [0, left.x - marginTop, width, height])
+                        //.attr("viewBox", [0, left.x - marginTop, width, height])
+                        //.attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
                     
+                        
                     //svg.call(d3.zoom()
                     //    .extent([[0, 0], [width, height]])
                     //    .scaleExtent([1, 8])
@@ -323,6 +332,7 @@
                 });
                 
                 update(null, root);
+                
                 return svg.node();
             }
         // ~~~~~~ End of D3.js copy pasted code
@@ -333,23 +343,21 @@
                 let attribute = "";
                 // TODO need to add event listener so that when list values are clicked they are removed
                 for(const item of SELECTED_NODES.keys()){
-                    attribute = attribute + `<li class="selected-node">${item}</li>\n`;
+                    attribute = attribute + `<div class="d-flex border-bottom align-items-center selected-node"><div class="flex-grow-1">${item}</div><div><button onclick="delete_sel_node(this)" data-node-id="${item}" class="btn btn-danger m-1 btn-sm">x</button></div></div>\n`;
                 }
-                attribute = '<ul class="selected-nodes">' + attribute + "</ul>";
+                //attribute = '<ul class="selected-nodes">' + attribute + "</ul>";
                 return attribute;
             });
         };
 
         let drawTree = (newick_) => {
-            console.log('render a tree from Newick')
+            console.log('render a tree from Newick file')
             let tree = kn_parse(newick_);
-            let node_out = chart(tree.root);
+            let node_out = chart(tree.root); //rendered svg tree object DOM
+            //console.log(node_out)
             $("#TreeData").append(node_out);
-            let nodeSizeBoxHorizontal = document.querySelector('#TreeData').clientHeight - document.querySelector('#tree_menu_buttons').clientHeight
-            document.querySelector('#SelectedNodes').style.maxHeight = `${nodeSizeBoxHorizontal}px`
-            
-
-
+            document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+            document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
 
 
@@ -438,13 +446,21 @@
             return new_obj;
         };
 
+        //fill legend with items
         let CreateNodeLegend = (array_tuples) => {
             $("#Legend").empty();
             let node_leg = $("#Legend");
+            
             for(const item of array_tuples){
                 console.log(item);
-                node_leg.append(`<li id="legend-value" style="color:${item[1]}">${item[0]}</li>`)
+                let row_legend_node = $(`<div class="row flex-nowrap align-items-center"> </div>`)
+
+                row_legend_node.append(`
+                <div class="col-2" style="width: 20px; padding: 10px; background-color: ${item[1]}; border: 1px solid black"></div>\n
+                <div class="col-10">${item[0]}</div>`)
+                node_leg.append(row_legend_node)
             }
+            //node_leg.append(legend_items_div)
         };
 
         let PopulateGroups = (json_groups, query_key) => {
@@ -495,8 +511,9 @@
                 //let svg = $("#TreeSVG");
                 let svg = document.querySelector('#TreeSVG')
                 let og_box = svg.getBBox();
-                svg.setAttribute("viewBox", `${og_box.x + og_box.x},${og_box.y},${og_box.width},${og_box.height}`);
+                //svg.setAttribute("viewBox", `${og_box.x + og_box.x},${og_box.y},${og_box.width},${og_box.height}`);
                 svg.style.width = `${og_box.width}`
+                //scroll to middle of the div
                 document.querySelector('#TreeData').scrollLeft = document.querySelector('#TreeData').clientWidth/2
             });
 
@@ -535,9 +552,9 @@
 
 
             // TODO need to change from sorting_1, to  :first
-            // Zoom in on double click
+            // Zoom in on a NODE on single click event
             $("#metadata").on('click', 'tr td:first-child', (evt) => {
-                console.log(`Node: ${evt.target.textContent}`)
+                console.log(`ZOOMING on node ${evt.target.textContent}`)
                 let identified_point = document.querySelector(`#${evt.target.textContent}`)
                 //let identified_point = $(`.tree-node#${evt.target.textContent}`)
                 identified_point.setAttribute('fill', 'red')
@@ -548,27 +565,39 @@
                 console.log(`point x: ${rect_x} y: ${rect_y}`)
                 let svg = document.querySelector('#TreeSVG')
                 
-                const [original_x,original_y,original_w,original_h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(n => {return parseInt(n)})    
+                //const [original_x,original_y,original_w,original_h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(n => {return parseInt(n)})    
 
+                document.querySelector(`#${evt.target.textContent}`).scrollIntoView({block: "center", inline:"center"})
                 
-                
+                //add nodes to the selected node list
+                SELECTED_NODES.add(`${evt.target.textContent}`)
+                updated_nodes()
+
                 //let zoom_zero_viewbox = document.querySelector('#TreeSVG').getAttribute('viewBox')
                 //document.querySelector('#TreeSVG').setAttribute('viewBox', '0 0 2000 4775.19921875')
-                let og_box = svg.getBBox()
-                console.log(og_box)
+                //let og_box = svg.getBBox()
+             
                 //let new_view = "" + ((rect.x + rect_x) - (og_box.width * 0.15)) + " " + ((rect.y + rect_y ) - (og_box.height * 0.02)) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
-                let new_view = `${rect_x-(svg.clientWidth/2)+100} ${rect_y-200} ${og_box.width/2} ${og_box.height}`
+                //let new_view = `${rect_x-(svg.clientWidth/2)+100} ${rect_y-200} ${og_box.width/2} ${og_box.height}`
                 //console.log(`new_view = ${new_view}`)
                 //svg.setAttribute('viewBox', `${rect_x} ${rect_y} ${svg.getAttribute('width')} 2000`)
-                svg.setAttribute("viewBox", new_view);
+                //svg.setAttribute("viewBox", new_view);
                 
             });
 
 
-            $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
-                let node_name = evt.target.textContent;
+            $("#SelectedNodes").on('dblclick', '.selected-node', delete_sel_node = (evt) => {
+                console.log(evt.dataset)
+                let node_name = ''
+                if (evt.target !== undefined){
+                    node_name = evt.target.textContent;
+                }else{
+                    node_name = evt.dataset.nodeId
+                }    
+                console.log(node_name)
                 SELECTED_NODES.delete(node_name);
                 let unselected_data = $(`g #${node_name}`).children();
+                console.log(unselected_data)
                 unselected_data[1].style.fill = default_color;
                 updated_nodes();
             });
@@ -606,12 +635,54 @@
 
         });
 
-        zoom_tree = function(times=1){
-            //const [x, y, w, h] = document.querySelector('#TreeSVG').getAttribute('viewBox').split(',').map(item =>{return parseInt(item)} )
-            //document.querySelector('#TreeSVG').setAttribute('viewBox', `0,${y},${w},${h}`) //get c
-            document.querySelector('#TreeSVG').style.width = document.querySelector('#TreeSVG').getBBox().width*times;
-            document.querySelector('#TreeData').scrollLeft=document.querySelector('#TreeSVG').getBBox().width/2
+        zoom_tree = function(){
+  
+            const zoom_times = parseFloat(document.querySelector('#zoom_slider').value)
+            const tree_data_elm = document.querySelector('#TreeData')
+            const tree_svg = document.querySelector('#TreeSVG')
+            document.querySelector('#zoom_slider_value').textContent =  zoom_times 
+            //const original_width = document.querySelector('#TreeSVG').getBBox().width //get original width of the SVG at 1x zoom
+            //document.querySelector('#TreeSVG').style.width = width *  zoom_times 
             
+         
+            const new_width = ORIGINAL_WIDTH_SVG  * zoom_times //use global value as getBBox() at high zooms gives wrong values
+            const prev_width = parseFloat(document.querySelector('#TreeSVG').style.width)
+
+            //Previous x and y scroll positions before applying a zoom
+            const prev_x_scroll_pos = tree_data_elm.scrollLeft
+            const prev_y_scroll_pos = tree_data_elm.scrollTop
+            document.querySelector('#TreeSVG').style.width = new_width ; //modify width of SVG tree
+            
+            //store new translated x and y coordinates after zooming 
+            let zoom_x_translated = 0 
+            let zoom_y_translated = 0
+     
+            const scaleChange = new_width/prev_width //sometimes the specified zoom factor is not exact, use this value instead
+            
+            //keeping zoom centered on an element
+            if(new_width > prev_width){
+                console.log("zooming in")
+                //get previous scroll position which is the left most x-coordinate position of a view
+                //translate that coordiante to a new zoomed state
+                //add 1/4 view field length scaled to a new zoomed state coordinate
+                zoom_x_translated =  prev_x_scroll_pos*scaleChange + (tree_data_elm.clientWidth/4)*(scaleChange)
+                zoom_y_translated =  prev_y_scroll_pos*scaleChange + (tree_data_elm.clientHeight/4)*(scaleChange)
+      
+            
+            }else{
+                //Zooming out 
+                console.log("zooming out")
+                //Scale current scroll position (previous scroll + 1/4 view field distance) to a new coordinate zoomed out state
+                //Substract the 1/4 offeset/margin that is already in the needed zoomed out state (no adjustments)
+                zoom_x_translated =  prev_x_scroll_pos*scaleChange - (tree_data_elm.clientWidth/4)
+                zoom_y_translated =  prev_y_scroll_pos*scaleChange - (tree_data_elm.clientHeight/4)
+            
+            }
+            
+         
+            
+            document.querySelector('#TreeData').scrollTo(zoom_x_translated,zoom_y_translated)
+
 
         }
 
@@ -642,39 +713,38 @@
         
             <div class="row"> <!-- id="TreeSelections" style=""-->
 
-                <div class="col-10 Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;"></div>
+                <div class="col-10 Tree inline-block-child scrollbar-window" id="TreeData" style="height:500px;">
+                        <div id="colour-legend" class="position-absolute border  
+                        Tree inline-block-child scrollbar-window" style="margin-left:-12px">
+                            <div id="Legend" class="container" style="max-height: 100px;">
+                            </div> 
+                    </div>  
+                </div>
                 <div class="col-2 border border-primary">
-                    <div id="tree_menu_buttons">
-                        <div class="row">
-                            <div class="col-12 p-0">
+                    <div id="tree_menu_buttons" class="row">
                                 <button class="w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
-                            </div>    
-                        </div>  
-                        <div class="row">
-                            <div class="col-12 p-0">
-                                <button class="w-100" onclick="zoom_tree(2)">Zoom 2x</button>
-                            </div>    
-                        </div>  
-                        <div class="row">
-                            <div class="col-12 p-0">
-                                <button class="w-100" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
-                            </div>    
-                        </div>      
-                        <div class="row">
-                            <div class="col-12 p-0">
-                                <button class="w-100" name="SearchMetadata" id="reset-table-button">Reset Table</button>
-                            </div>    
-                        </div> 
-                    </div>
-                    <div class="row">
-                                <div class="col-12 p-0 w-100 border-primary  Tree inline-block-child scrollbar-window" id="SelectedNodes" style=""></div>
-                               
-                    </div> 
                                 
-                         
-                    
-                        
-                    
+                                <!--Zoom slider-->
+                                <div class="d-flex flex-wrap align-items-center p-1 text-center">
+                                    <span class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</span>
+                                
+                                    <div class="flex-grow-1 w-50">
+                                        <input type="range" class="form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="1" max="5" step="0.5">
+                                    </div>
+                                    <div class="flex-grow-1 fw-bold">
+                                        <span id="zoom_slider_value">1</span>x
+                                        
+                                    </div>    
+                                </div>  
+                                
+                                <button class="w-100 text-break" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
+                                <button class="w-100 text-break" name="ResetTable" id="reset-table-button">Reset Table</button>
+                                    
+                    </div> 
+                    <div class="row">
+                            <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" id="SelectedNodes"></div>
+                    </div> 
+ 
                 </div>
                 
              </div>
@@ -684,12 +754,8 @@
                     <table id="metadata" class="display overflow-scroll" style="width:100%; height:50vh"></table>
                 </div>    
             </div>
-            <!--div id="colour-legend" class="row border  Tree inline-block-child scrollbar-window">
-                    <ul id="Legend"></ul>
-                
-                <div class="border border-primary  Tree scrollbar-window" id="TreeData" style="height:70vh">
-                </div>
-             </div-->   
+
+             
               
                 
                     
