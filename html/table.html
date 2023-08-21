@@ -48,7 +48,7 @@
         const clicked_color = "blue";
         const ID_FIELD = 0;
         // Refactoring selected nodes to make it easier to update the legend and selected nodes on dom changes
-        const SELECTED_NODES = new Set();
+        //const SELECTED_NODES = new Set();
         const right_mouse = 3;
         const center_mouse = 2;
         const left_mouse = 1;
@@ -60,15 +60,31 @@
             static #name_pos = 2;
             static #default_color = "#999";
             static #clicked_color = "blue";
+            static #svg_parent = "g";
             static selection_id = "#SelectedNodes";
 
+            static clearNodes(){
+                SelectedNodes.nodes.clear();
+            }
+
+            static setSelectedColours(text, circle){
+                text.style.fontWeight = "bold";
+                text.style.fill = "black";
+                circle.style.fill = SelectedNodes.#clicked_color;
+            }
+
+            static deSelectedColours(text, circle){
+                text.style.fontWeight = "normal";
+                text.style.fill = "black";
+                circle.style.fill = SelectedNodes.#default_color
+
+            }
+
             static getNodeData(element){
-                let parent = element.target.closest("g");
-                let child_nodes = parent.childNodes;
+                let child_nodes = element.childNodes;
                 let circle = child_nodes[SelectedNodes.#circle_pos];
                 let text = child_nodes[SelectedNodes.#name_pos];
-                return [parent, circle, text];
-
+                return [element, circle, text];
             }
 
             static addNodes(element) {    
@@ -78,16 +94,11 @@
 
             param element: a html "g" element to update the colour of
             */
-                //let parent = element.target.closest("g");
-                //let child_nodes = parent.childNodes;
-                //let circle = child_nodes[this.#circle_pos];
-                //let text = child_nodes[this.#name_pos];
-                let parent, circle, text = getNodeData(element);
-                if(!nodes.has(text.innerHTML)){
-                    nodes[text.innerHTML] = parent;
-                    text.style.fontWeight = "bold";
-                    text.style.fill = "black";
-                    circle.style.fill = SelectedNodes.#clicked_color;
+                //let elm = element.closest("g");
+                let [parent, circle, text] = SelectedNodes.getNodeData(element.closest(SelectedNodes.#svg_parent));
+                if(!SelectedNodes.nodes.has(text.innerHTML)){
+                    SelectedNodes.nodes.set(text.innerHTML, parent);
+                    SelectedNodes.setSelectedColours(text, circle);
                 }else{
                     alert(`${text} already exists in map.`)
                 }
@@ -95,24 +106,32 @@
 
             static unselectNode(element){
                 // Function tied to an on click event removing it from the map, legend and de-colouring it
-                let parent, circle, text = getNodeData(element);
-                text.style.fontWeight = "normal";
-                text.style.fill = "black";
-                circle.fill = SelectedNodes.#default_color
-                nodes.delete(text.innerHTML);
+                
+                let elm = element.closest(SelectedNodes.#svg_parent)
+                let [parent, circle, text] = SelectedNodes.getNodeData(elm);
+                SelectedNodes.deSelectedColours(text, circle);
+                //text.style.fontWeight = "normal";
+                //text.style.fill = "black";
+                //circle.style.fill = SelectedNodes.#default_color
+                let dropped = SelectedNodes.nodes.delete(text.innerHTML)
+                console.log("Dropping values:", text.innerHTML, dropped);
+            }
 
+            static emptyNodeSelections(){
+                $(SelectedNodes.selection_id).empty();
             }
 
             static drawSelectedNodes(){
                 // Redraw the menu of selected nodes
                 // and re-colour selected ones
-                
-                $(SelectedNodes.legend_id).html(() => {
+                $(SelectedNodes.selection_id).empty().append(() => {
                     let attributes = new Array;
+                    //console.log(SelectedNodes.nodes);
                     for(const item of SelectedNodes.nodes.keys()){
+                        console.log(item);
                         attributes.push(`<li class="selected-node">${item}</li>`);
                     }
-                    return `<ul class="selected-nodes">\n${attributes.join("\n")}\n</ul>`; 
+                    return `<ul class="selected-nodes">${attributes.join("")}\n</ul>`;
                 });
             }
         }
@@ -280,18 +299,26 @@
             }else{
                 LeafNode(event, data);
                 // TODO refactor function name
-                updated_nodes();
+                //updated_nodes();
+                SelectedNodes.drawSelectedNodes();
             }
         };
 
         // Tree specific code for this project implementation
         let CustomSubTree = (event, data) => {
-            SELECTED_NODES.clear();
-            updated_nodes();
+            SelectedNodes.drawSelectedNodes();
             $("#TreeData").empty();
             if(data !== null){
+                console.log(data);
                 let svg_chart = chart(data.data);
                 $("#TreeData").append(svg_chart);
+                $(".leaf-node").each((i, elm) => {
+                    let [parent, circle, text] = SelectedNodes.getNodeData(elm);
+                    if(SelectedNodes.nodes.has(text.innerHTML)){
+                        SelectedNodes.nodes.set(text.innerHTML, parent); // update to new parent
+                        SelectedNodes.setSelectedColours(text, circle);
+                    }
+                });
             }
         };
 
@@ -311,6 +338,7 @@
             return ids;
         };
 
+
         // Select all children of an inner-node
         let SelectChildren = (event, data) => {
             const circle_pos = 1;
@@ -318,13 +346,9 @@
             let selected_children = RecurseTree(data);
             let selceted_children_jq = `#TreeSVG #${selected_children.join(", #TreeSVG #")}`;
             $(`${selceted_children_jq}`).each((i, d) => {
-                SELECTED_NODES.add(d.id);
-                let child_nodes = d.childNodes;
-                child_nodes[circle_pos].fill = clicked_color;
-                child_nodes[trg_name_pos].style.fontWeight = "bold";
-                child_nodes[trg_name_pos].style.fill = "black";
+                SelectedNodes.addNodes(d);
             })
-            updated_nodes();
+            SelectedNodes.drawSelectedNodes();
 
         };
 
@@ -338,17 +362,19 @@
             let node_name = parent[trg_name_pos].innerHTML;
             if(!d._children){
                 if(trg.style.fill === clicked_color){
-                    trg.style.fill = default_color;
-                    parent[trg_name_pos].style.fontWeight = "normal";
-                    parent[trg_name_pos].style.fill = "black";
+                    SelectedNodes.unselectNode(event.target);
+                    //trg.style.fill = default_color;
+                    //parent[trg_name_pos].style.fontWeight = "normal";
+                    //parent[trg_name_pos].style.fill = "black";
                     // TODO perhaps move this to its own function (class would be preferable)
                     // So that when nodes are appended the legend updates and colours nodes
-                    SELECTED_NODES.delete(node_name);
+                    //SELECTED_NODES.delete(node_name);
                 }else{
-                    trg.style.fill = clicked_color;
-                    parent[trg_name_pos].style.fontWeight = "bold";
-                    parent[trg_name_pos].style.fill = "black";
-                    SELECTED_NODES.add(node_name);
+                    SelectedNodes.addNodes(event.target);
+                    //trg.style.fill = clicked_color;
+                    //parent[trg_name_pos].style.fontWeight = "bold";
+                    //parent[trg_name_pos].style.fill = "black";
+                    //SELECTED_NODES.add(node_name);
                 }
             }
         };
@@ -449,7 +475,15 @@
                                 // TODO add functionality for if subtree is collapsed and contains selected nodes
                                 // that those nodes are dropped from the selection and the legend is updated
                                 NodeDropDownMenu(event, d, () => {
-                                    update(event, d);
+                                    if(update(event, d)){
+                                        // TODO event does not need to be called on collapse only un-collapse
+                                        let ids = RecurseTree(d);
+                                        for(const item of ids){
+                                            if(SelectedNodes.nodes.has(item)){
+                                                // Need to determine if this is collapsing or not
+                                            }
+                                        }
+                                    }
                                 });
                             }
                         });
@@ -508,6 +542,7 @@
                         d.x0 = d.x;
                         d.y0 = d.y;
                     });
+                    return true;
                 }
 
                 // Do the first update to the initial configuration of the tree — where a number of nodes
@@ -528,17 +563,17 @@
         // ~~~~~~ End of D3.js copy pasted code
 
 
-        let updated_nodes = () => {
-            $("#SelectedNodes").html(function(){
-                let attribute = "";
-                // TODO need to add event listener so that when list values are clicked they are removed
-                for(const item of SELECTED_NODES.keys()){
-                    attribute = attribute + `<li class="selected-node">${item}</li>\n`;
-                }
-                attribute = '<ul class="selected-nodes">' + attribute + "</ul>";
-                return attribute;
-            });
-        };
+        //let updated_nodes = () => {
+        //    $("#SelectedNodes").html(function(){
+        //        let attribute = "";
+        //        // TODO need to add event listener so that when list values are clicked they are removed
+        //        for(const item of SELECTED_NODES.keys()){
+        //            attribute = attribute + `<li class="selected-node">${item}</li>\n`;
+        //        }
+        //        attribute = '<ul class="selected-nodes">' + attribute + "</ul>";
+        //        return attribute;
+        //    });
+        //};
 
         let drawTree = (newick_) => {
             console.log('render a tree from Newick')
@@ -588,6 +623,7 @@
         };
 
         // TODO this is dead code and should be removed
+/*
         let CreateQueryTable = () => {
 
             if(SELECTED_NODES.size === 0){
@@ -629,6 +665,7 @@
                 data: selected_data
             });
         };
+*/
 
         let CreateColoringGroups = (array_vals) => {
             let new_obj = new Object();
@@ -663,8 +700,11 @@
         };
 
         let SubsetTable = () => {
+            //let filtered = data_table.data().filter((value, idx) => {
+            //    return SELECTED_NODES.has(value[ID_FIELD]);
+            //});
             let filtered = data_table.data().filter((value, idx) => {
-                return SELECTED_NODES.has(value[ID_FIELD]);
+                return SelectedNodes.has(value[ID_FIELD]);
             });
             data_table.clear();
             data_table.rows.add(filtered).draw();
@@ -680,6 +720,13 @@
                 $("#TreeData").empty();
                 if(tree_root !== null){
                     $("#TreeData").append(chart(tree_root));
+                    $(".leaf-node").each((i, elm) => {
+                        let [parent, circle, text] = SelectedNodes.getNodeData(elm);
+                        if(SelectedNodes.nodes.has(text.innerHTML)){
+                            SelectedNodes.nodes.set(text.innerHTML, parent); // reset dom postion
+                            SelectedNodes.setSelectedColours(text, circle);
+                    };
+                });
                     return true;
                 }
                 console.log("No tree to redraw");
@@ -778,7 +825,8 @@
                 console.log(`Node: ${evt.target.textContent}`)
                 let identified_point = document.querySelector(`#${evt.target.textContent}`)
                 let identified_point_id = identified_point.childNodes[0].innerHTML; // gets nodes name
-                let is_selected = SELECTED_NODES.has(identified_point_id);
+                //let is_selected = SELECTED_NODES.has(identified_point_id);
+                let is_selected = SelectedNodes.nodes.has(identified_point_id);
                 if(focused_element !== null && !is_selected){
                     // Return elements state unluss it is already adjusted due to being selected 
                     focused_element.setAttribute('fill', "black");
@@ -817,13 +865,9 @@
 
 
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
-                let node_name = evt.target.textContent;
-                SELECTED_NODES.delete(node_name);
-                let unselected_data = $(`g #${node_name}`).children();
-                unselected_data[1].style.fill = default_color;
-                unselected_data[2].style.fontWeight = "normal";
-                unselected_data[2].style.fill = "black";
-                updated_nodes();
+                let trg_node = SelectedNodes.nodes.get(evt.target.innerHTML);
+                SelectedNodes.unselectNode(trg_node);
+                SelectedNodes.drawSelectedNodes();
             });
 
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
@@ -926,13 +970,7 @@
                     </div>
                     <div class="row">
                                 <div class="col-12 p-0 w-100 border-primary  Tree inline-block-child scrollbar-window" id="SelectedNodes" style=""></div>
-
                     </div> 
-                                
-
-                    
-                        
-                    
                 </div>
                 
             </div>
