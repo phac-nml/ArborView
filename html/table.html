@@ -98,6 +98,7 @@
             }
 
             static addNodes(element) {    
+                console.log(element)
             /* Function to update the set of nodes, going forward each node should probably contain the element by ID and the html element
             
             This class is also being refactored as it should never get a none leaf-node
@@ -139,9 +140,16 @@
                     //console.log(SelectedNodes.nodes);
                     for(const item of SelectedNodes.nodes.keys()){
                         console.log(item);
-                        attributes.push(`<li class="selected-node">${item}</li>`);
+                        attributes.push(`<div class="d-flex border-bottom align-items-center selected-node">
+                        <div onclick="scroll_into_view_treenode('${item}')" class="flex-grow-1">${item}</div>
+                        <div>
+                            <button onclick="delete_sel_node(this)" data-node-id="${item}" 
+                            class="btn btn-danger m-1 btn-sm">x</button>
+                        </div>
+                        </div>\n`);
                     }
-                    return `<ul class="selected-nodes">${attributes.join("")}\n</ul>`;
+                    
+                    return `${attributes.join("")}`;
                 });
             }
         }
