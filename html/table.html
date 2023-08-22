@@ -419,7 +419,7 @@
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
-                    .attr("width", width)
+                    .attr("width", width+12) //makes sure all tree nodes are within view
                     .attr("height", dx)
                     //.call(d3.zoom().on("zoom", function () {
                     //    svg.attr("transform", d3.zoomTransform(this))
@@ -717,13 +717,15 @@
 
         //fill legend with items
         let CreateNodeLegend = (array_tuples) => {
-            let node_leg = $("#colour-legend").empty()
+            let node_leg = $("#colour-legend")
+            node_leg.empty()
+            
             
             //let node_leg = $("#Legend");
-            console.log(node_leg)
+            //console.log(node_leg)
 
             for(const item of array_tuples){
-                //console.log(item);
+                console.log(item);
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center"></div>`)
                 row_legend_node.append(`
                 <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
@@ -766,7 +768,10 @@
         $(() => {
 
             $("#redraw-tree-button").on("click", () => {
-                $("#TreeData").empty();
+                //$("#TreeData").empty();
+                $('#colour-legend').empty()
+                $('#colour-legend').addClass('d-none')
+                $('#TreeSVG').remove();
                 if(tree_root !== null){
                     $("#TreeData").append(chart(tree_root));
                     $(".leaf-node").each((i, elm) => {
@@ -776,9 +781,11 @@
                             SelectedNodes.setSelectedColours(text, circle);
                     };
                 });
+                    reset_zoom_slider()
                     return true;
                 }
                 console.log("No tree to redraw");
+                
                 
             });
 
@@ -825,6 +832,7 @@
                 svg.style.width = `${og_box.width}`
                 //scroll to middle of the div
                 document.querySelector('#TreeData').scrollLeft = document.querySelector('#TreeData').clientWidth/2
+                reset_zoom_slider()
             });
 
             // TODO look up alternative to blur, as only when content is changed does a look up need to be done
@@ -990,7 +998,8 @@
             const prev_x_scroll_pos = tree_data_elm.scrollLeft
             const prev_y_scroll_pos = tree_data_elm.scrollTop
             document.querySelector('#TreeSVG').style.width = new_width ; //modify width of SVG tree
-            
+            //document.querySelector('#TreeSVG').setAttribute("width", new_width)
+
             //store new translated x and y coordinates after zooming 
             let zoom_x_translated = 0 
             let zoom_y_translated = 0
@@ -1039,10 +1048,18 @@
         }
 
         scroll_legend_into_view = function(node,node_TreeData){
-            node.style.left=`${node_TreeData.scrollLeft}px`
-            node.style.top=`${node_TreeData.scrollTop}px`
+            if(node !== null){
+                node.style.left=`${node_TreeData.scrollLeft}px`
+                node.style.top=`${node_TreeData.scrollTop}px`
+            }else{
+                console.log('No legend rendered skipping scroll_legend_into_view()')
+            }    
         }
 
+        reset_zoom_slider = function(){
+            document.querySelector('#zoom_slider_value').textContent = 1
+            document.querySelector('#zoom_slider').value = 1
+        }    
 
 
     </script>
