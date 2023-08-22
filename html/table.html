@@ -117,7 +117,7 @@
 
             static unselectNode(element){
                 // Function tied to an on click event removing it from the map, legend and de-colouring it
-                
+                console.log(element)
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
@@ -143,7 +143,7 @@
                         attributes.push(`<div class="d-flex border-bottom align-items-center selected-node">
                         <div onclick="scroll_into_view_treenode('${item}')" class="flex-grow-1">${item}</div>
                         <div>
-                            <button onclick="delete_sel_node(this)" data-node-id="${item}" 
+                            <button onclick="remove_selected_node(this.dataset.nodeId)" data-node-id="${item}" 
                             class="btn btn-danger m-1 btn-sm">x</button>
                         </div>
                         </div>\n`);
@@ -729,7 +729,7 @@
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center"></div>`)
                 row_legend_node.append(`
                 <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
-                <small style="padding-left:5px">${item[0]}</small>`)
+                <small onclick="select_nodes_by_field_value(this)" style="padding-left:5px">${item[0]}</small>`)
                 node_leg.append(row_legend_node)
             }
             document.querySelector('#colour-legend').classList.remove("d-none");
@@ -933,7 +933,8 @@
 
 
             $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
-                let trg_node = SelectedNodes.nodes.get(evt.target.innerHTML);
+                let node_id = evt.target.innerHTML
+                let trg_node = SelectedNodes.nodes.get(node_id);
                 SelectedNodes.unselectNode(trg_node);
                 SelectedNodes.drawSelectedNodes();
             });
@@ -1060,6 +1061,17 @@
             document.querySelector('#zoom_slider_value').textContent = 1
             document.querySelector('#zoom_slider').value = 1
         }    
+
+        select_nodes_by_field_value = function(legend_node){
+            console.log(legend_node.textContent)
+            SelectedNodes.addNodes(document.querySelector('#SRR20438614 text'))
+        }
+
+        remove_selected_node = function(node_id){
+            let trg_node = SelectedNodes.nodes.get(node_id);
+            SelectedNodes.unselectNode(trg_node);
+            SelectedNodes.drawSelectedNodes();
+        }
 
 
     </script>
