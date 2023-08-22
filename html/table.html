@@ -803,6 +803,15 @@
                 };
             });
 
+            $("#dist-matrix-selector").change((event) => {
+                let reader = new FileReader();
+                let dist_mat = event.target.files[0];
+                reader.onload = (evt) => {
+                    let matrix = evt.target.result;
+                    console.log(matrix);
+                }
+            });
+
             $("#ResetTree").on("click", (evt) => {
                 //let svg = $("#TreeSVG");
                 if(focused_element !== null){
@@ -1044,6 +1053,14 @@
                 </div>
                 <div class="col-9">   
                     <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
+                </div>
+                <div class="row border">
+                    <div class="col-3">
+                        <label for="dist-matrix-selector">Select a distance matrix </label>
+                    </div>
+                    <div class="col-9">
+                        <input type="file" id="dist-matrix-selector" name="dist-matrix-selector" accept=".txt, .tsv, .tab"> 
+                    </div>
                 </div>    
             </div>
           
