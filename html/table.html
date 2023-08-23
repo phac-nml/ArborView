@@ -419,8 +419,6 @@
                     //.attr("viewBox", [0, -dx, width, dx])
                     //.attr("viewBox", [0, -marginTop, width, dx])
                     .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: none;`)
-                     
-                  
 
                 const gLink = svg.append("g")
                     .attr("fill", "none")
@@ -459,19 +457,6 @@
                         //.attr("viewBox", [0, left.x - marginTop, width, height])
                         //.attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
-                    
-                    
-                        
-                    //svg.call(d3.zoom()
-                    //    .extent([[0, 0], [width, height]])
-                    //    .scaleExtent([1, 8])
-                    //    .on("zoom", zoomed));
-                    
-                    //svg.call(d3.zoom().on("zoom", () => {
-                    //    svg.attr("transform", d3.event.transform)
-                    //}));
-                    
-
 
                     // Update the nodes…
                     const node = gNode.selectAll("g")
@@ -593,6 +578,8 @@
                 return svg.node();
             }
         // ~~~~~~ End of D3.js copy pasted code
+
+
 
 
         //let updated_nodes = () => {
@@ -838,6 +825,7 @@
                 let metadata_file = event.target.files[0];
                 reader.readAsText(metadata_file, "UTF-8");
                 reader.onload = (evt) => {
+                    // TODO scrub empty rows on reading, e.g. force a sample id to be filled
                     let metadata = evt.target.result;
                     METADATA = d3.tsvParse(metadata);
                     TABLE_HEADERS = METADATA.columns;
