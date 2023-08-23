@@ -415,7 +415,7 @@
                 const root = d3.hierarchy(data);
                 console.log(root);
                 const leaves_in_tree = root.leaves();
-                const pixels_per_label = 10;
+                const pixels_per_label = 15;
                 console.log(leaves_in_tree.length);
 
                 
@@ -426,13 +426,18 @@
                 // Define the tree layout and the shape for links.
                 // TODO make this optional to switch between
                 //const tree = d3.tree().nodeSize([dx, dy]);
-                const tree = d3.cluster(0, 0).nodeSize([dx, dy]);
+                const tree = d3.cluster()
+                                .size([pixels_per_label * leaves_in_tree.length, (width - marginRight - marginLeft - 100)])
+                                .separation( (a, b) => { return 1;})
+                                //.nodeSize([dx, dy]);
 
                 // TODO diagonal for tidy tree and for dendrogram
                 //const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
-                // Below give elbow
+                
+                // Below give elbow for cluster (dendrogram)
                 const diagonal = (d) => {
                     // TODO have this reflect the branch length
+                    // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanins
                     return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
                 };
 
