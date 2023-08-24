@@ -46,7 +46,8 @@
         var ORIGINAL_WIDTH_SVG = 0;  
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
-        var TREE_SWITCH = false; // True to start out with tidy tree
+        //var TREE_SWITCH = new Map([["1","dendrogram"],["2","tinytree"]]); // key value pairs map to switch between tree views
+        var TREE_SWITCH = false;
         var collapse_subtree = false; // can think of another way to signal state without our larger refactor 
         var focused_element = null; // Focused element to have its colour reset
         const colour_legend = new Array;
@@ -397,28 +398,29 @@
 
         let switchTreeType = () => {
             TREE_SWITCH = !TREE_SWITCH;
-                //$("#TreeData").empty();
-                $('#colour-legend').empty()
-                $('#colour-legend').addClass('d-none')
-                $('#TreeSVG').remove();
-                let chart_ = null;
-                if(tree_root !== null){
-                    if(TREE_SWITCH){
-                        chart_ = tidytree_chart(tree_root);
-                    }else{
-                        chart_ = dendrogram_chart(tree_root);
-                    }
-                    $("#TreeData").append(chart_);
-                    $(".leaf-node").each((i, elm) => {
-                        let [parent, circle, text] = SelectedNodes.getNodeData(elm);
-                        if(SelectedNodes.nodes.has(text.innerHTML)){
-                            SelectedNodes.nodes.set(text.innerHTML, parent); // reset dom postion
-                            SelectedNodes.setSelectedColours(text, circle);
+            console.log(TREE_SWITCH)
+            //$("#TreeData").empty();
+            $('#colour-legend').empty()
+            $('#colour-legend').addClass('d-none')
+            $('#TreeSVG').remove();
+            let chart_ = null;
+            if(tree_root !== null){
+                if(TREE_SWITCH){
+                    chart_ = tidytree_chart(tree_root);
+                }else{
+                    chart_ = dendrogram_chart(tree_root);
+                }
+                $("#TreeData").append(chart_);
+                $(".leaf-node").each((i, elm) => {
+                let [parent, circle, text] = SelectedNodes.getNodeData(elm);
+                if(SelectedNodes.nodes.has(text.innerHTML)){
+                        SelectedNodes.nodes.set(text.innerHTML, parent); // reset dom postion
+                        SelectedNodes.setSelectedColours(text, circle);
                     };
                 });
-                    reset_zoom_slider()
-                    return true;
-                }
+                reset_zoom_slider()
+                return true;
+            }
         };
 
         const dendrogram_chart = (data) => {
@@ -1684,6 +1686,7 @@
                         svg.setAttributeNS(xmlns, "xmlns:xlink", xlinkns);
                         const serializer = new window.XMLSerializer;
                         const string = serializer.serializeToString(svg);
+                        console.log(string)
                         return new Blob([string], {type: "image/svg+xml"});
             }
 
@@ -1747,12 +1750,12 @@
                                 <button class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
                                 
                                 <!--Zoom slider-->
-                                <div class="d-flex flex-wrap align-items-center p-1 text-center">
-                                    <span class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</span>
+                                <div class="d-flex flex-wrap align-items-center p-1">
+                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</small>
                                     <div class="flex-grow-1 w-50">
                                         <input type="range" class="form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
                                     </div>
-                                    <div class="flex-grow-1 fw-bold">
+                                    <div class="flex-grow-1 fw-bold text-center">
                                         <span id="zoom_slider_value">1</span>x
                                     </div>    
                                 </div>  
@@ -1760,12 +1763,26 @@
 
                                 <button class="btn-sm  btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
-                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
-                                <button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button>
+                                <button class="btn-sm btn-primary w-100 text-break mb-0" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
+                                
+                                <!--Tree layout slider-->
+                                <div class="d-flex flex-wrap flex-row align-items-center p-1 text-left">
+                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Layout</small>
+                                    <div class="flex-grow-1">
+                                        <input type="range" class="form-range align-middle"  id="tree_layout_slider" 
+                                            onchange="switchTreeType()" value="1" min="1" max="2" step="1">
+                                            
+                                    </div>
+                                    
+                                    
+                                        
+                                </div>
+                                <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->
+                                
                                 <button class="btn-sm btn-primary w-100 text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">Export SVG</button>
 
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left">
-                                    <label class="flex-grow-1" for="legend_toggle">Legend</label>
+                                    <small class="flex-grow-1" for="legend_toggle">Legend</small>
                                     <input onchange="legend_on_off(this)" id="legend_toggle" 
                                     checked type="checkbox" data-toggle="toggle" 
                                     data-toggle="toggle" data-onstyle="primary" data-size="sm">
