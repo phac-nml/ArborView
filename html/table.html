@@ -467,7 +467,7 @@
                             .separation( (a, b) => { return 1;})
                 
                 diagonal = (d) => {
-                    console.log(d.source);
+                    //console.log(d.source);
                     // TODO have this reflect the branch length
                     // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanins
                     //return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
@@ -1658,7 +1658,43 @@
         }
 
         export_tree_to_svg = function(){
-            alert("download tree to svg file to be implemented in next release")
+            const xmlns = "http://www.w3.org/2000/xmlns/";
+            const xlinkns = "http://www.w3.org/1999/xlink";
+            const svgns = "http://www.w3.org/2000/svg";
+
+            
+            const date = new Date();
+            let downloadLink = document.createElement("a");
+            downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
+                (date.getMonth()+1)+'-'+date.getFullYear()+'_'+date.getHours()+'h.svg';
+
+            //adapted from https://observablehq.com/@mbostock/saving-svg by Mike Bostock    
+            serialize = function(svg) {
+                        svg = svg.cloneNode(true);
+                        const fragment = window.location.href + "#";
+                        const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
+                        while (walker.nextNode()) {
+                        for (const attr of walker.currentNode.attributes) {
+                            if (attr.value.includes(fragment)) {
+                            attr.value = attr.value.replace(fragment, "#");
+                            }
+                        }
+                        }
+                        svg.setAttributeNS(xmlns, "xmlns", svgns);
+                        svg.setAttributeNS(xmlns, "xmlns:xlink", xlinkns);
+                        const serializer = new window.XMLSerializer;
+                        const string = serializer.serializeToString(svg);
+                        return new Blob([string], {type: "image/svg+xml"});
+            }
+
+
+            const textToBLOB = serialize(document.querySelector('svg'))
+            downloadLink.href = window.URL.createObjectURL(textToBLOB);
+            downloadLink.click(); //Trigger a click on the element
+            downloadLink.remove();
+            
+
+            
         }
 
 
@@ -1721,17 +1757,13 @@
                                     </div>    
                                 </div>  
                                 
-<<<<<<< HEAD
-                                <button class="btn btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
-                                <button class="btn btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
-                                <button class="btn btn-primary w-100 text-break" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
-                                <button class="btn btn-primary w-100 text-break" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button>
-=======
+
                                 <button class="btn-sm  btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
+                                <button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button>
                                 <button class="btn-sm btn-primary w-100 text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">Export SVG</button>
->>>>>>> cfdca50a5c636d98e42f87fa49a26dd6c1a178cb
+
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left">
                                     <label class="flex-grow-1" for="legend_toggle">Legend</label>
                                     <input onchange="legend_on_off(this)" id="legend_toggle" 
