@@ -329,8 +329,14 @@
             SelectedNodes.drawSelectedNodes();
             $("#TreeData").empty();
             if(data !== null){
-                console.log(data);
-                let svg_chart = chart(data.data);
+                let svg_chart = null;
+                console.log(data)
+                if(TREE_SWITCH){
+                    svg_chart = tidytree_chart(data.data)
+                }else{
+                    svg_chart = dendrogram_chart(data.data);
+                }
+                //let svg_chart = chart(data.data);
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
                     let [parent, circle, text] = SelectedNodes.getNodeData(elm);
@@ -418,22 +424,21 @@
         };
 
         const dendrogram_chart = (data) => {
-            
 
-
-
-
-                // Specify the charts’ dimensions. The height is variable, depending on the layout.
-                //console.log(window.innerWidth);
-                //console.log(window.innerHeight);
-                //const width = 2000;
-
-                
-                const width = window.innerWidth;
+                var ele = document.getElementById("TreeData");
+                var ele_style = window.getComputedStyle(ele);
+                const width = parseInt(ele_style.width);
+    
+                //var width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 10;
                 const marginLeft = 40;
+
+                
+                //const innner_radius = (width / 2) - marginLeft - marginRight - marginBottom - marginTop
+                let label_safety_factor = 200; 
+                const innner_radius = width - 200
 
                 function setDistance(d, y0, k) {
                     // TODO re-factor to get cumulative branch length
@@ -450,35 +455,41 @@
                 // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
                 // “bottom”, in the data domain. The width of a column is based on the tree’s height.
                 const root = d3.hierarchy(data);
-                //setDistance(root, root.data.d = 0, (width/2) / maxLength(root))
-                setDistance(root, root.data.d = 0, 1)
-
-                const dx = 20;
-                const dy = (width - marginRight - marginLeft) / (1 + root.height);
+                //const max_length = maxLength(root)
+                //console.log("Max length", max_length)
+                //const scaling_factor = innner_radius / max_length;
+                setDistance(root, root.data.d = 0, (innner_radius / maxLength(root))) // Third value is a scaling factor
 
                 const leaves_in_tree = root.leaves();
                 const pixels_per_label = 15;
-                tree = d3.cluster()
-                            .size([pixels_per_label * leaves_in_tree.length, (width - marginRight - marginLeft - 100)])
-                            .separation( (a, b) => { return 1;})
                 
+                const dx = 20;
+                const dy = (width - marginRight - marginLeft) / (1 + root.height);
+                tree = d3.cluster()
+                            .nodeSize([dx, dy])
+                            //.size([pixels_per_label * leaves_in_tree.length, width])
+                            .separation( (a, b) => { return 1;})
+
+
+
                 diagonal = (d) => {
-                    console.log(d.source);
+                    //console.log(d.source);
                     // TODO have this reflect the branch length
                     // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanins
                     //return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
-                    return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
+                    return `M${d.source.distance},${d.source.x} L${d.source.distance},${d.target.x} L${d.target.distance},${d.target.x}`
                 };
-                
-
                 
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width+12) //makes sure all tree nodes are within view
-                    .attr("height", dx)
+                    //.attr("viewbox", [0, 0, width, width*2]) //makes sure all tree nodes are within view
+                    //.attr("font-family", "sans-serif")
+                    //.attr("font-size", "10")
+                    //.attr("height", dx)
                     .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: none;`)
-
+                
                 const gLink = svg.append("g")
                     .attr("fill", "none")
                     .attr("stroke", "#555")
@@ -488,6 +499,19 @@
                 const gNode = svg.append("g")
                     .attr("cursor", "pointer")
                     .attr("pointer-events", "all");
+                
+                function showLinkExtension(d, show=true) {
+                    console.log(innner_radius, d.target.distance, show)
+                        const dest = show ? innner_radius  : d.target.distance;
+                        console.log(dest)
+                        const path = d3.path();
+                        path.moveTo(d.target.distance, d.target.x);
+                        path.lineTo(dest, d.target.x);
+                        return path.toString();
+                    }
+
+
+                
                 
 
                 function update(event, source) {
@@ -499,6 +523,17 @@
                     // Compute the new tree layout.
                     // Converting tree to cluster may solve our conundrum...
                     tree(root);
+                                        
+                    const linkExtension = svg.append("g")
+                            .attr("fill", "none")
+                            .attr("stroke", "#000")
+                            .attr("stroke-opacity", 0.25)
+                            .attr("stroke-dasharray", "4")
+                            .selectAll("path")
+                            .data(root.links().filter(d => !d.target.children))
+                            .join("path")
+                            .each(function(d) { d.target.linkExtensionNode = this; })
+                            .attr("d", (d) => showLinkExtension(d, true));
 
                     let left = root;
                     let right = root;
@@ -508,14 +543,15 @@
                     });
 
 
+
+                            
+
                     ORIGINAL_WIDTH_SVG=width
                     const height = right.x - left.x + marginTop + marginBottom;
                     const transition = svg.transition()
                         .duration(duration)
                         .attr("height", height)
                         .attr("viewBox", [0, left.x - marginTop, width, height])
-                        //.attr("viewBox", [0, left.x - marginTop, width, height])
-                        //.attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
                     // Update the nodes…
@@ -524,6 +560,7 @@
 
                     // Enter any new nodes at the parent's previous position.
                     const nodeEnter = node.enter().append("g")
+                        //.attr("transform", d => `translate(${source.y0},${source.x0})`)
                         .attr("transform", d => `translate(${source.y0},${source.x0})`)
                         .attr("fill-opacity", 0)
                         .attr("stroke-opacity", 0)
@@ -569,8 +606,12 @@
                         .attr("fill", d => d._children ? "#555" : "#999")
                         .attr("stroke-width", 10);
 
+
                     nodeEnter.append("text")
                         .attr("dy", "0.31em")
+                        // dx the 12 corresponds to a safety metric to add some space between nodes
+                        .attr("dx", d => innner_radius - d.distance + 12) // TODO turn this off to align labels to leaves!
+                        //.attr("transform", d => `translate(${innner_radius - d.distance},${d.y})`)
                         .attr("x", d => d._children ? -6 : 6)
                         .attr("text-anchor", d => d._children ? "end" : "start")
                         .text(d => d.data.name)
@@ -581,13 +622,15 @@
 
                     // Transition nodes to their new position.
                     const nodeUpdate = node.merge(nodeEnter).transition(transition)
-                        .attr("transform", d => `translate(${d.y},${d.x})`)
+                        //.attr("transform", d => `translate(${d.y},${d.x})`)
+                        .attr("transform", d => `translate(${d.distance},${d.x})`) // aligns the text to the nodes
                         .attr("fill-opacity", 1)
                         .attr("stroke-opacity", 1);
 
                     // Transition exiting nodes to the parent's new position.
                     const nodeExit = node.exit().transition(transition).remove()
                         .attr("transform", d => `translate(${source.y},${source.x})`)
+                        //.attr("transform", d => `translate(${d.distance},${source.x})`) // aligns the text to the nodes
                         .attr("fill-opacity", 0)
                         .attr("stroke-opacity", 0);
 
@@ -599,11 +642,6 @@
                     // Enter any new links at the parent's previous position.
                     const linkEnter = link.enter().append("path")
                                         .attr("d", diagonal);
-                        //.attr("d", d => {
-                        //    console.log(d);
-                        //    const o = {x: source.x0, y: source.y0};
-                        //    return diagonal({source: o, target: o});
-                        //});
 
                     link.merge(linkEnter).transition(transition)
                             .attr("d", diagonal);
@@ -611,10 +649,6 @@
                     // Transition exiting nodes to the parent's new position.
                     link.exit().transition(transition).remove()
                         .attr("d", diagonal);
-                        //.attr("d", d => {
-                        //    const o = {x: source.x, y: source.y};
-                        //    return diagonal({source: o, target: o});
-                        //});
 
                     // Stash the old positions for transition.
                     root.eachBefore(d => {
@@ -631,9 +665,6 @@
                 root.descendants().forEach((d, i) => {
                 d.id = i;
                 d._children = d.children;
-                // ! Removed below block to open the whole tree at once
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
                 });
                 
                 update(null, root);
@@ -645,12 +676,14 @@
         const tidytree_chart = (data) => {
 
                 // Specify the charts’ dimensions. The height is variable, depending on the layout.
-                //console.log(window.innerWidth);
-                //console.log(window.innerHeight);
-                //const width = 2000;
+
+                var ele = document.getElementById("TreeData");
+                var ele_style = window.getComputedStyle(ele);
+                const width = parseInt(ele_style.width);
+    
 
                 
-                const width = window.innerWidth;
+                //const width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 10;
@@ -823,9 +856,6 @@
                 root.descendants().forEach((d, i) => {
                 d.id = i;
                 d._children = d.children;
-                // ! Removed below block to open the whole tree at once
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
                 });
                 
                 update(null, root);
@@ -833,272 +863,6 @@
                 return svg.node();
 
         }
-        // D3.js Tidy Tree code
-        // Modified but taken from: https://observablehq.com/@d3/collapsible-tree
-        // Specify the charts’ dimensions. The height is variable, depending on the layout.
-        const chart = (data) => {
-                // TODO need to add in line extensions
-
-                function setRadius(d, y0, k) {
-                    // TODO re-factor to get cumulative branch length
-                    // From the tree of life code
-                    d.radius = (y0 += d.data.d) * k;
-                    if (d.children) d.children.forEach(d => setRadius(d, y0, k));
-                }
-
-
-
-                // Specify the charts’ dimensions. The height is variable, depending on the layout.
-                //console.log(window.innerWidth);
-                //console.log(window.innerHeight);
-                //const width = 2000;
-
-                
-                const width = window.innerWidth;
-                const marginTop = 40;
-                const marginRight = 10;
-                const marginBottom = 10;
-                const marginLeft = 40;
-
-                // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
-                // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
-                // “bottom”, in the data domain. The width of a column is based on the tree’s height.
-                const root = d3.hierarchy(data);
-
-
-                
-                
-                const dx = 20;
-                const dy = (width - marginRight - marginLeft) / (1 + root.height);
-
-                // Define the tree layout and the shape for links.
-                // TODO make this optional to switch between
-                var tree = null;
-                var diagonal = null;
-                if(TREE_SWITCH){
-                    tree = d3.tree().nodeSize([dx, dy]);
-                    diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
-                }else{
-                    const leaves_in_tree = root.leaves();
-                    const pixels_per_label = 15;
-                    tree = d3.cluster()
-                                .size([pixels_per_label * leaves_in_tree.length, (width - marginRight - marginLeft - 100)])
-                                .separation( (a, b) => { return 1;})
-                    diagonal = (d) => {
-                        // TODO have this reflect the branch length
-                        // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanins
-                        return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
-                    };
-                }
-                
-                let linkSwitch = (d) => {
-                    if(TREE_SWITCH){
-                            
-                            if(d.source.x0 === undefined){
-                                
-                                return diagonal(d)
-                            }
-                            console.log(d.source.x0);
-                            const o = {x: d.source.x0, y: d.source.y0};
-                            return diagonal({source: o, target: o});
-                        }else{
-                            return diagonal(d);
-                        }
-                };
-
-                //.nodeSize([dx, dy]);
-
-                // TODO diagonal for tidy tree and for dendrogram
-
-                //const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
-                
-                // Below give elbow for cluster (dendrogram)
-                //const diagonal = (d) => {
-                //    // TODO have this reflect the branch length
-                //    // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanins
-                //    return `M${d.source.y},${d.source.x} V${d.target.x} H${d.target.y}`
-                //};
-
-
-                
-                // Create the SVG container, a layer for the links and a layer for the nodes.
-                const svg = d3.create("svg")
-                    .attr("id", "TreeSVG")
-                    .attr("width", width+12) //makes sure all tree nodes are within view
-                    .attr("height", dx)
-                    //.call(d3.zoom().on("zoom", function () {
-                    //    svg.attr("transform", d3.zoomTransform(this))
-                    //}))
-                    //.attr("viewBox", [0, -dx, width, dx])
-                    //.attr("viewBox", [0, -marginTop, width, dx])
-                    .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: none;`)
-
-                const gLink = svg.append("g")
-                    .attr("fill", "none")
-                    .attr("stroke", "#555")
-                    .attr("stroke-opacity", 0.8)
-                    .attr("stroke-width", 2.0);
-
-                const gNode = svg.append("g")
-                    .attr("cursor", "pointer")
-                    .attr("pointer-events", "all");
-                
-
-                function update(event, source) {
-                    //$("#TestSubTree").append(chart(source));
-                    const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
-                    const nodes = root.descendants().reverse();
-                    const links = root.links();
-
-                    // Compute the new tree layout.
-                    // Converting tree to cluster may solve our conundrum...
-                    tree(root);
-
-                    let left = root;
-                    let right = root;
-                    root.eachBefore(node => {
-                        if (node.x < left.x) left = node;
-                        if (node.x > right.x) right = node;
-                    });
-
-
-                    ORIGINAL_WIDTH_SVG=width
-                    const height = right.x - left.x + marginTop + marginBottom;
-                    const transition = svg.transition()
-                        .duration(duration)
-                        .attr("height", height)
-                        .attr("viewBox", [0, left.x - marginTop, width, height])
-                        //.attr("viewBox", [0, left.x - marginTop, width, height])
-                        //.attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
-                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
-
-                    // Update the nodes…
-                    const node = gNode.selectAll("g")
-                        .data(nodes, d => d.id);
-
-                    // Enter any new nodes at the parent's previous position.
-                    const nodeEnter = node.enter().append("g")
-                        .attr("transform", d => `translate(${source.y0},${source.x0})`)
-                        .attr("fill-opacity", 0)
-                        .attr("stroke-opacity", 0)
-                        .attr("id", (d) => {
-                            if(d.data.name){
-                                return d.data.name;
-                            }
-                        })
-                        .attr("class", (d) => {
-                            if(!d.children){
-                                return "tree-node leaf-node";
-                            }
-                            return "tree-node inner-node";
-                        })
-                        .on("mousedown", (event, d) => {
-                            console.log(event.which)
-                            d.children = d.children ? null : d._children;
-                            if(event.which == left_mouse){
-                                NodeDropDownMenu(event, d, () => {
-                                    if(update(event, d)){
-                                        // TODO event does not need to be called on collapse only un-collapse
-                                        let descendants = d.descendants(); // TODO the d3 leaves may be too slow, recurseTree better
-                                        let uncollapsed_descendants_length = 1;
-                                        // The length of the uncollapsed descendants is greater than one on uncollapse
-                                        if(descendants.length > uncollapsed_descendants_length){
-                                            for(const item of descendants){
-                                                let name = item.data.name;
-                                                if(name !== "" && SelectedNodes.nodes.has(name)){
-                                                    SelectedNodes.nodes.set(name, $(`#TreeSVG #${name}`)[0]); // TODO query all nodes at once
-                                                    let [parent, circle, text] = SelectedNodes.getNodeData(SelectedNodes.nodes.get(name));
-                                                    SelectedNodes.setSelectedColours(text, circle);
-
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
-
-                    nodeEnter.append("circle")
-                        .attr("r", 2.5)
-                        .attr("fill", d => d._children ? "#555" : "#999")
-                        .attr("stroke-width", 10);
-
-                    nodeEnter.append("text")
-                        .attr("dy", "0.31em")
-                        .attr("x", d => d._children ? -6 : 6)
-                        .attr("text-anchor", d => d._children ? "end" : "start")
-                        .text(d => d.data.name)
-                        .clone(true).lower()
-                        .attr("stroke-linejoin", "round")
-                        .attr("stroke-width", 3)
-                        .attr("stroke", "white");
-
-                    // Transition nodes to their new position.
-                    const nodeUpdate = node.merge(nodeEnter).transition(transition)
-                        .attr("transform", d => `translate(${d.y},${d.x})`)
-                        .attr("fill-opacity", 1)
-                        .attr("stroke-opacity", 1);
-
-                    // Transition exiting nodes to the parent's new position.
-                    const nodeExit = node.exit().transition(transition).remove()
-                        .attr("transform", d => `translate(${source.y},${source.x})`)
-                        .attr("fill-opacity", 0)
-                        .attr("stroke-opacity", 0);
-
-                    // Update the links…
-                    const link = gLink.selectAll("path")
-                        .data(links, d => d.target.id)
-                        .attr("d", (d) => {console.log("glink", d); return linkSwitch(d)});
-
-                    // Enter any new links at the parent's previous position.
-                    const linkEnter = link.enter().append("path")
-                                        .attr("d", linkSwitch);
-                        //.attr("d", d => {
-                        //    console.log(d);
-                        //    const o = {x: source.x0, y: source.y0};
-                        //    return diagonal({source: o, target: o});
-                        //});
-
-                    link.merge(linkEnter).transition(transition)
-                            .attr("d", (d) => {
-                                return linkSwitch(d);
-                            });
-
-                    // Transition exiting nodes to the parent's new position.
-                    link.exit().transition(transition).remove()
-                        .attr("d", (d) => {
-                            return linkSwitch(d);
-                        });
-                        //.attr("d", d => {
-                        //    const o = {x: source.x, y: source.y};
-                        //    return diagonal({source: o, target: o});
-                        //});
-
-                    // Stash the old positions for transition.
-                    root.eachBefore(d => {
-                        d.x0 = d.x;
-                        d.y0 = d.y;
-                    });
-                    return true;
-                }
-
-                // Do the first update to the initial configuration of the tree — where a number of nodes
-                // are open (arbitrarily selected as the root, plus nodes with 7 letters).
-                root.x0 = dy / 2;
-                root.y0 = 0;
-                root.descendants().forEach((d, i) => {
-                d.id = i;
-                d._children = d.children;
-                // ! Removed below block to open the whole tree at once
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
-                //if (d.depth && d.data.name.length !== 7) d.children = null;
-                });
-                
-                update(null, root);
-                
-                return svg.node();
-            }
-        // ~~~~~~ End of D3.js copy pasted code
 
         let drawTree = (newick_) => {
             console.log('render a tree from Newick file')
@@ -1155,51 +919,6 @@
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             CreateDataTable();
         };
-
-        // TODO this is dead code and should be removed
-/*
-        let CreateQueryTable = () => {
-
-            if(SELECTED_NODES.size === 0){
-                console.log("No nodes selected!");
-                if($.fn.DataTable.isDataTable('#query-data')){
-                    // If selections are empty remove the table
-                    // Thank you SO for this: https://stackoverflow.com/questions/32713612/jquery-datatables-destroy-re-create
-                    $('#query-data').DataTable().destroy();
-                    $("#query-data tbody").empty()
-                    $("#query-data thead").empty()
-                };
-                return null;
-            }
-
-            let indices = [];
-            let data_columns = []
-            for(const item of TABLE_HEADERS){
-                data_columns.push({title: item});
-            }
-
-            data_table.column(ID_FIELD).data().map((value, idx) => {
-                if(SELECTED_NODES.has(value)){
-                    indices.push(idx);
-                }
-            });
-
-            // TODO this could be made more performant by check what is new in the set and only getting that data and appending it to the table
-            // TODO clearing and adding could be added and would then only require initializing the datatable once
-            let selected_data = data_table.rows( indices ).data().toArray();
-            if($.fn.DataTable.isDataTable('#query-data')){
-                // TODO probably faster to clear the table then add rows
-                $('#query-data').DataTable().destroy();
-                $("#query-data tbody").empty()
-                $("#query-data thead").empty()
-            };
-
-            query_table = new DataTable("#query-data", {
-                columns: data_columns,
-                data: selected_data
-            });
-        };
-*/
 
         let CreateColoringGroups = (array_vals) => {
             let new_obj = new Object();
@@ -1303,7 +1022,7 @@
             };
 
             // TODO save me some clicking
-            //drawTree(test_newick);
+            drawTree(test_newick);
 
             $("#tree-selector").change((event) => {
                 let reader = new FileReader();
