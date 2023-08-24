@@ -1082,7 +1082,14 @@
                 reader.onload = (evt) => {
                     // TODO scrub empty rows on reading, e.g. force a sample id to be filled
                     let metadata = evt.target.result;
-                    METADATA = d3.tsvParse(metadata);
+                    // Blank quitter function from: https://stackoverflow.com/questions/67793952/is-there-an-easy-way-to-stop-d3-csvparse-when-it-hits-a-blank-line
+                    let processing = true;
+                    const blankQuitter = (d, i) => {
+                        const blankRow = Object.keys(d).every(k => !d[k]);
+                        if (blankRow) processing = false;
+                        if (processing) return d;
+                    }
+                    METADATA = d3.tsvParse(metadata, blankQuitter);
                     TABLE_HEADERS = METADATA.columns;
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
@@ -1431,7 +1438,7 @@
                     <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
                 </div>
             </div>
-            <div class="row border">
+            <div class="row border d-none">
                     <div class="col-3">
                         <label for="dist-matrix-selector">Select a distance matrix </label>
                     </div>
