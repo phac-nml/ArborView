@@ -505,7 +505,6 @@
                 
                 function showLinkExtension(d, show=true) {
                         const dest = show ? innner_radius  : d.target.distance;
-                        console.log(dest)
                         const path = d3.path();
                         path.moveTo(d.target.distance, d.target.x);
                         path.lineTo(dest, d.target.x);
@@ -881,12 +880,24 @@
 
         let CreateDataTable = () => {
             data_table = $('#metadata').DataTable({
-                stateSave: true,
+                //stateSave: true,
                 className: ".editable",
+                columnDefs: [{
+                        targets: '_all',
+                        createdCell : (td, cellData, rowData, row, col) =>
+                        {
+                            if(col != 0){
+                                //console.log(td)
+                                td.setAttribute('contenteditable', true);
+                            }
+                        }
+                    }
+                ],
+
             });
             // TODO initializing table from json object would minimize copies
-            $("td").addClass("editable");
-            $("td:not(:first-child)").attr("contenteditable", true);
+            //$("td").addClass("editable");
+            //$("td:not(:first-child)").attr("contenteditable", true);
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
             data_table.rows().data().each((value, index) => {
@@ -1121,6 +1132,8 @@
                 SelectedNodes.drawSelectedNodes();
                 
             } );
+
+
             // TODO need to change from sorting_1, to  :first
             // Zoom in on a NODE on single click event
             $("#metadata").on('click', 'tr td:first-child', (evt) => { 
