@@ -1122,7 +1122,7 @@
             });
             */
 
-            $("#metadata").on( "dblclick", "tr:not(:first)", function(evt) {
+            $("#metadata").on( "dblclick", "tr:not(:first) td:first-child", function(evt) {
                 console.log(`trying to add ${evt.target.textContent}`)
                 let tree_node = document.querySelector( `#${evt.target.textContent}`)
                 let text = tree_node.lastChild
