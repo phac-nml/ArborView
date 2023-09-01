@@ -25,6 +25,7 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 
     <!--toggle buttons by https://palcarazm.github.io/bootstrap5-toggle/ -->
@@ -1314,10 +1315,13 @@
             }    
         }
 
-        scroll_legend_into_view = function(node,node_TreeData){
+        scroll_legend_into_view = function(node,full_screen_btn, node_TreeData){
             if(node !== null){
                 node.style.left=`${node_TreeData.scrollLeft}px`
                 node.style.top=`${node_TreeData.scrollTop}px`
+                full_screen_btn.style.right = `-${node_TreeData.scrollLeft}px`
+                full_screen_btn.style.top = `${node_TreeData.scrollTop}px`
+
             }else{
                 console.log('No legend rendered skipping scroll_legend_into_view()')
             }    
@@ -1428,52 +1432,97 @@
             
         }
 
+       
+
+        tree_full_screen_mode = function(){
+            document.querySelector('#TreeData').requestFullscreen()
+            
+        }
+
+        document.addEventListener("DOMContentLoaded",()=>{
+            let button = document.querySelector('#tree_fullscreen_btn')
+
+            document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
+                
+                if(button.classList.contains("d-none")){
+                    button.classList.remove('d-none')
+                }else{
+                    button.classList.add('d-none')
+                }
+
+            })
+
+    
+        });    
+
+
+        copy_ids_to_clipboard = function(){
+            let text2copyArray=[]
+            document.querySelectorAll('#SelectedNodes div>div:first-child').forEach(node => {
+                console.log(node.textContent)
+                text2copyArray.push(node.textContent)
+            })
+            let text2copy = text2copyArray.join('\n');
+            console.log(text2copy)
+            // copy text to clipboard
+            navigator.clipboard.writeText( text2copy ).then(alert(`copied ${text2copyArray.length} sample IDs to the clipboard`))
+            
+        }
+
 
     </script>
 </head>
     <body>
         
         <div class="container-fluid m-0 ">
-            
-            <div class="row border">
-                <div class="col-3">
-                    <label for="tree-selector">Select a Newick File </label>
-                </div>
-                <div class="col-9">
-                    <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-                </div>
-            </div>
-            <div class="row border ">
-                <div class="col-3">
-                    <label for="metadata-selector">Select a tab delimited metadata file</label>
-                </div>
-                <div class="col-9">   
-                    <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
-                </div>
-            </div>
-            <div class="row border d-none">
+            <div id="input_files_panel">
+                <div class="row border">
                     <div class="col-3">
-                        <label for="dist-matrix-selector">Select a distance matrix </label>
+                        <label for="tree-selector">Select a Newick File </label>
                     </div>
                     <div class="col-9">
-                        <input type="file" id="dist-matrix-selector" name="dist-matrix-selector" accept=".txt, .tsv, .tab"> 
+                        <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
                     </div>
-                
+                </div>
+                <div class="row border ">
+                    <div class="col-3">
+                        <label for="metadata-selector">Select a tab delimited metadata file</label>
+                    </div>
+                    <div class="col-9">   
+                        <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
+                    </div>
+                </div>
+                <div class="d-none row border">
+                        <div class="col-3">
+                            <label for="dist-matrix-selector">Select a distance matrix </label>
+                        </div>
+                        <div class="col-9">
+                            <input type="file" id="dist-matrix-selector" name="dist-matrix-selector" accept=".txt, .tsv, .tab"> 
+                        </div> 
+                </div>
             </div>
           
 
         
             <div class="row"> <!-- id="TreeSelections" style=""-->
 
-                <div class="position-relative col-10 Tree inline-block-child scrollbar-window" 
-                  onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), this)"
+                <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
+                  onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
                   id="TreeData" style="height:500px;">
                         <div id="colour-legend" 
                         class="d-none p-1 position-absolute border border-secondary text-break Tree inline-block-child scrollbar-window" 
                         style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
-                        </div>  
+                        </div>
+                        
+                        <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
+                        onclick="tree_full_screen_mode()" class="d-flex fs-5 bi-arrow-up-right-square"></i>
+                       
+                        
+                       
+               
+                        
                 </div>
-                <div class="col-2 border border-primary">
+                <div id="control_panel" class="col-2 border border-primary">
                     <div id="tree_menu_buttons" class="row">
                                 <button class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
                                 
@@ -1489,10 +1538,18 @@
                                 </div>  
                                 
 
-                                <button class="btn-sm  btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">Search Metadata</button>
+                                <button class="btn-sm  btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">
+                                    <i class="bi bi-search me-1"></i> Search Metadata</button>
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
-                                <button class="btn-sm btn-primary w-100 text-break mb-0" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
+                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
                                 
+                                <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
+                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
+                                        <i class="bi bi-clipboard me-1"></i>IDs
+                                    </button>
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">
+                                        <i class="bi bi-download"></i> SVG</button>
+                                </div>
                                 <!--Tree layout slider-->
                                 <div class="d-flex flex-wrap flex-row align-items-center p-1 text-left">
                                     <small class="flex-grow-1" for="zoom_slider" class="form-label">Layout</small>
@@ -1507,7 +1564,7 @@
                                 </div>
                                 <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->
                                 
-                                <button class="btn-sm btn-primary w-100 text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">Export SVG</button>
+                                
 
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left">
                                     <small class="flex-grow-1" for="legend_toggle">Legend</small>
