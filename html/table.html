@@ -1468,12 +1468,14 @@
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
                 console.log(`hide meta div collapse event  ${heightTreeDataDiv} + ${heightMetaDiv} `)
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+'vh'
+                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             })
             document.querySelector('#ClusterInfo').addEventListener('show.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
                 console.log(`show meta div collapse event  ${heightTreeDataDiv} - ${heightMetaDiv}`)
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+'vh'
+                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             })
 
     
@@ -1482,14 +1484,18 @@
 
         copy_ids_to_clipboard = function(){
             let text2copyArray=[]
+            
             document.querySelectorAll('#SelectedNodes div>div:first-child').forEach(node => {
                 console.log(node.textContent)
                 text2copyArray.push(node.textContent)
             })
             let text2copy = text2copyArray.join('\n');
+            let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
             console.log(text2copy)
             // copy text to clipboard
-            navigator.clipboard.writeText( text2copy ).then(alert(`copied ${text2copyArray.length} sample IDs to the clipboard`))
+            navigator.clipboard.writeText( text2copy ).then(
+                console.log(success_msg))
+             
             
         }
        
