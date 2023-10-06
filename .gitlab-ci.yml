@@ -7,7 +7,8 @@ stages:
 pages:
   stage: deploy
   script:
-    - cp ./html/table.html  public/
+    - mkdir public
+    - cp ./html/table.html  ./public
   artifacts:
     paths:
       - public
