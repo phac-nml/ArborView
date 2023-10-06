@@ -1,5 +1,5 @@
 # The Docker image that will be used to build your app
-image: python:*
+image: python:3.10-alpine
 
 stages:
   - deploy
