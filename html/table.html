@@ -110,7 +110,6 @@
             }
 
             static addNodes(element) {    
-               
             /* Function to update the set of nodes, going forward each node should probably contain the element by ID and the html element
             
             This class is also being refactored as it should never get a none leaf-node
@@ -171,8 +170,6 @@
         /** Code for parsing a newick tree to be used by D3
          * The code is taken from Knhx.js written by Heng Li
         */
-
-        
 
         function kn_new_node() { // private method
             // Heng li code to add node
@@ -897,8 +894,7 @@
                         targets: '_all',
                         createdCell : (td, cellData, rowData, row, col) =>
                         {
-                            if(col != 0){
-                                //console.log(td)
+                            if(col != 0){ // Skip ID column as it should not be editable
                                 td.setAttribute('contenteditable', true);
                             }
                         }
@@ -906,14 +902,20 @@
                 ],
 
             });
+            $('#metadata_filter input').attr("id", "search-bar"); // Give search bar ID to squash warnings
+
             // TODO initializing table from json object would minimize copies
-            //$("td").addClass("editable");
-            //$("td:not(:first-child)").attr("contenteditable", true);
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
             data_table.rows().data().each((value, index) => {
                 ORIGINAL_DATA.set(value[ID_FIELD], value)
             });
+
+            
+            // TODO determine if this can be initialized anywhere else saving load time
+            for(const [key, value] of ORIGINAL_DATA.entries()){
+                value.push(false); // Append a key to flag whether the value has been modified    
+            }
         };
 
 
@@ -934,6 +936,7 @@
             //delete parsed_data;
             parsed_data = null;
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
+            // ? A bit odd we are making the table with HTML then converting to jquery datatable...
             CreateDataTable();
         };
 
@@ -1024,20 +1027,12 @@
                     return true;
                 }
                 console.log("No tree to redraw");
-                
-                
             });
 
             // ! Below disables the right click menu for the page
             document.oncontextmenu = (event) => {
                 // Disables context menu for TreeData div, e.g. default web menu does not appear
                 let item_id = event.target.closest("div").id;
-                //if(item_id === "TreeData"){
-                //    return false;
-                //}
-                //if(item_id === "TreeData"){
-                //    return false;
-                //}
                 return true;
             };
 
@@ -1086,14 +1081,26 @@
             // TODO look up alternative to blur, as only when content is changed does a look up need to be done
             $("#metadata").on("blur", ".editable", (evt)=>{
                 // This gives me elemet to look for, just need to update original element with it
-                // TODO alter original elements here
-                let row_values = evt.target.closest("tr").childNodes;
-                console.log(row_values);
+        
+                let row_values = evt.target.closest("tr").childNodes;        
                 let edited_value = row_values[0].textContent;
                 let retrieved_value = ORIGINAL_DATA.get(edited_value);
-                for(let i = 0; i < retrieved_value.length; i++){
-                    retrieved_value[i] = row_values[i].textContent;
+                let retrieved_val_length = retrieved_value.length;
+                let updated_bool_pos = retrieved_val_length -1; // last value in list is a boolean for wether the data has been modified
 
+                let updated = false;
+                for(let i = 0; i < updated_bool_pos; i++){ 
+                    if(row_values[i].textContent !== retrieved_value[i]){
+                        // can alternatively use str1.localeCompare(str2)
+                        retrieved_value[i] = row_values[i].textContent;
+                        updated = true
+                    }
+                    
+                }
+
+                // only update the row if the values are new
+                if(updated){
+                    retrieved_value[updated_bool_pos] = true;
                 }
             });
 
@@ -1195,7 +1202,7 @@
                 //let zoom_zero_viewbox = document.querySelector('#TreeSVG').getAttribute('viewBox')
                 //document.querySelector('#TreeSVG').setAttribute('viewBox', '0 0 2000 4775.19921875')
                 //let og_box = svg.getBBox()
-             
+            
                 //let new_view = "" + ((rect.x + rect_x) - (og_box.width * 0.15)) + " " + ((rect.y + rect_y ) - (og_box.height * 0.02)) + " " + og_box.width * 0.5 + " " + og_box.height * 0.5;
                 //let new_view = `${rect_x-(svg.clientWidth/2)+100} ${rect_y-200} ${og_box.width/2} ${og_box.height}`
                 //console.log(`new_view = ${new_view}`)
@@ -1260,7 +1267,7 @@
         });
 
         zoom_tree = function(){
-  
+
             const zoom_times = parseFloat(document.querySelector('#zoom_slider').value)
             const tree_data_elm = document.querySelector('#TreeData')
             const tree_svg = document.querySelector('#TreeSVG')
@@ -1268,7 +1275,7 @@
             //const original_width = document.querySelector('#TreeSVG').getBBox().width //get original width of the SVG at 1x zoom
             //document.querySelector('#TreeSVG').style.width = width *  zoom_times 
             
-         
+        
             const new_width = ORIGINAL_WIDTH_SVG  * zoom_times //use global value as getBBox() at high zooms gives wrong values
             const prev_width = parseFloat(document.querySelector('#TreeSVG').style.width)
 
@@ -1281,7 +1288,6 @@
             //store new translated x and y coordinates after zooming 
             let zoom_x_translated = 0 
             let zoom_y_translated = 0
-     
             const scaleChange = new_width/prev_width //sometimes the specified zoom factor is not exact, use this value instead
             
             //keeping zoom centered on an element
@@ -1292,7 +1298,6 @@
                 //add 1/4 view field length scaled to a new zoomed state coordinate
                 zoom_x_translated =  prev_x_scroll_pos*scaleChange + (tree_data_elm.clientWidth/4)*(scaleChange)
                 zoom_y_translated =  prev_y_scroll_pos*scaleChange + (tree_data_elm.clientHeight/4)*(scaleChange)
-      
             
             }else{
                 //Zooming out 
@@ -1309,7 +1314,7 @@
         scroll_into_view_treenode = function(id){
             let selectedNode = document.querySelector(`#${id}`)
             if(selectedNode !== null){
-             selectedNode.scrollIntoView({block: "center", inline:"center", behavior: "smooth"})
+                selectedNode.scrollIntoView({block: "center", inline:"center", behavior: "smooth"})
             }else{
                 console.log(`scroll_into_view_treenode(): Node ${id} is not available in this tree. Uncollapse all nodes`)
             } 
@@ -1370,7 +1375,7 @@
                 SelectedNodes.drawSelectedNodes()
             }
             */
-           
+
             for(var i = 0; i < selected_node_ids.length; i++) {
                 let tree_node = document.querySelector( `#${selected_node_ids[i]}`)
                 let text = tree_node.lastChild
@@ -1399,6 +1404,42 @@
             let trg_node = SelectedNodes.nodes.get(node_id);
             SelectedNodes.unselectNode(trg_node);
             SelectedNodes.drawSelectedNodes();
+        }
+
+        export_metadata = function(){
+            /*
+            Export updated metadata
+            */
+            if(!ORIGINAL_DATA){
+                console.error("No contextual data imported yet");
+                return false;
+            }
+            let headers = Array.from(TABLE_HEADERS);
+            headers.push("modified");
+            let output_text = new Array();
+            output_text.push(headers.join("\t"))
+            
+            for(const [key, value] of ORIGINAL_DATA.entries()){
+                output_text.push(value.join("\t"))
+            }
+            const updated_metadata = "ClusterInfo.tsv";
+            const blob = new Blob([output_text.join("\n")], {type: "text/tsv"} );
+
+
+            if(window.navigator.msSaveOrOpenBlob){
+                // thank stackoverflow for this: https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
+                window.navigator.msSaveBlob(blob, updated_metadata);
+            }else{
+                const elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(blob);
+                elem.download = updated_metadata;
+                document.body.appendChild(elem);
+                elem.click();
+                document.body.removeChild(elem);
+                window.URL.revokeObjectURL(elem.href); // revoke object url as it wont be cleared till after the browser is closed otherwise
+            }
+            return true;
+
         }
 
         export_tree_to_svg = function(){
@@ -1442,8 +1483,6 @@
             
         }
 
-       
-
         tree_full_screen_mode = function(){
             document.querySelector('#TreeData').requestFullscreen()
             
@@ -1451,7 +1490,6 @@
 
         document.addEventListener("DOMContentLoaded",()=>{
             let button = document.querySelector('#tree_fullscreen_btn')
-             
 
             document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
                 
@@ -1495,10 +1533,8 @@
             // copy text to clipboard
             navigator.clipboard.writeText( text2copy ).then(
                 console.log(success_msg))
-             
             
         }
-       
 
     </script>
 </head>
@@ -1529,10 +1565,7 @@
                             <input type="file" id="dist-matrix-selector" name="dist-matrix-selector" accept=".txt, .tsv, .tab"> 
                         </div> 
                 </div>
-                   
             </div>
-               
-          
             <div class="row">
                 <button class="flex-grow-1 btn-sm btn-primary p-0" type="button" data-bs-toggle="collapse" 
                 data-bs-target="#input_files_panel">
@@ -1542,8 +1575,8 @@
             <div class="row"> <!-- id="TreeSelections" style=""-->
 
                 <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
-                  onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
-                  id="TreeData" style="height:70vh;">
+                onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
+                id="TreeData" style="height:70vh;">
                         <div id="colour-legend" 
                         class="d-none p-1 position-absolute border border-secondary text-break Tree inline-block-child scrollbar-window" 
                         style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
@@ -1551,10 +1584,6 @@
                         
                         <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
                         onclick="tree_full_screen_mode()" class="d-flex fs-5 bi-arrow-up-right-square"></i>
-                       
-                        
-                       
-               
                         
                 </div>
                 <div id="control_panel" class="col-2 border border-primary">
@@ -1584,6 +1613,9 @@
                                     </button>
                                     <button class="flex-grow-1 btn-sm btn-primary text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download"></i> SVG
+                                    </button>
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" onclick="export_metadata()" id="export-metadata">
+                                        <i class="bi bi-download"></i> Export Table
                                     </button>
                                 </div>
                                 <!--Tree layout slider-->
@@ -1628,8 +1660,6 @@
                     <table id="metadata" class="w-100 display overflow-scroll" ></table>
                 </div>    
             </div>
-                
-                    
                 
                 <!-- Need to have the legend be scrollable and situated under the selected nodes-->
                 
