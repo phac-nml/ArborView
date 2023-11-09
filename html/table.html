@@ -77,7 +77,7 @@
         class SelectedNodes {
             static nodes = new Map();
             static #circle_pos = 1;
-            static #name_pos = 2;
+            static #name_pos = 3;
             static #circle_size_selected = 4;
             static #circle_size_default = 2.5;
             static #default_color = "#999";
@@ -106,6 +106,7 @@
 
             static getNodeData(element){
                 let child_nodes = element.childNodes;
+                console.log(child_nodes)
                 let circle = child_nodes[SelectedNodes.#circle_pos];
                 let text = child_nodes[SelectedNodes.#name_pos];
                 return [element, circle, text]; // element is g tag
