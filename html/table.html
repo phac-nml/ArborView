@@ -921,6 +921,7 @@
         let CreateDataTable = () => {
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
+                "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
                 columnDefs: [{
                         targets: '_all',
