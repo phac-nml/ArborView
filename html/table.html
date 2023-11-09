@@ -613,7 +613,7 @@
                         });
 
                     nodeEnter.append("circle")
-                        .attr("r", 2.5)
+                        .attr("r", 4)
                         .attr("fill", d => d._children ? "#555" : "#999")
                         .attr("stroke-width", 10);
                     
@@ -637,7 +637,7 @@
                         .attr("dx", (d) => { 
                             // TODO probably unessecary to tie this to length
                             let val = Number((d.data.d).toFixed(decimal_places)).toString(); 
-                            return `${-(val.length) * 5}pt`;
+                            return `${-(val.length) * 5.2}pt`;
                         })
                         .attr("dy", "-0.31em")
                         .attr("font-size", "12");
