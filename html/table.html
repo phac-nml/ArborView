@@ -310,7 +310,7 @@
         };
 
         let CreateDropDownDiv = (event) => {
-            const div_height_adj = 5;
+            let div_height_adj = document.getElementById("input_files_panel").offsetHeight;
 
             // Temporarily increase node size on collection
             let circle = event.target.parentNode.getElementsByTagName("circle")[0];
@@ -322,19 +322,22 @@
             }
             
             let drop_down_menu = document.createElement("div");
+
             drop_down_menu.classList.add("dropdown")
 
             
             drop_down_menu.style.position = "absolute";
-            drop_down_menu.style.left = event.x+'px';
-            drop_down_menu.style.top = (event.y - div_height_adj)+'px';
+            drop_down_menu.style.left = event.pageX+'px';
+            console.log(event);
+            //drop_down_menu.style.top = (event.y - div_height_adj)+'px';
+            drop_down_menu.style.top = (event.pageY - div_height_adj)+'px';
             drop_down_menu.style.borderStyle = "solid";
             drop_down_menu.style.borderWidth = "2px";
             drop_down_menu.style.borderRadius = "10pt"
             drop_down_menu.style.backgroundColor = "#FAFCF9";
             drop_down_menu.setAttribute("id", "PopDownMenu");
 
-
+            // Add event listeners to undo changes when leaving
             drop_down_menu.addEventListener("click", (event) => {
                 drop_down_menu.remove();
                 circle.setAttribute("r", rad_size);
@@ -362,7 +365,7 @@
         let NodeDropDownMenu = (event, data, func) => {
             // Rendering dropdown menu on click, it may be better to render a hidden menu for each node in a div
             // This would clutter the dom however
-
+            
             if(event.target.parentNode.classList.contains("inner-node")){
                 if(!MENU_CREATED){
                     MENU_CREATED = true;
@@ -381,7 +384,9 @@
                     });
 
                     AppendToParent(drop_down_menu, title, collapse_tree, create_subtree, select_child_nodes);            
-                    document.body.appendChild(drop_down_menu);
+                    let tree_element = document.getElementById("TreeData");
+                    tree_element.append(drop_down_menu)
+                    //document.body.appendChild(drop_down_menu);
                 }
             }else{
                 LeafNode(event, data);
@@ -1590,7 +1595,6 @@
                 }else{
                     button.classList.add('d-none')
                 }
-
             })
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
