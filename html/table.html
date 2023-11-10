@@ -12,6 +12,7 @@
             /*height: 200px;*/
         }
     </style>
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Random colour library for creating some nice highlighted trees    -->
@@ -37,7 +38,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     
-
     <!--toggle buttons by https://palcarazm.github.io/bootstrap5-toggle/ -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap5-toggle@5.0.4/css/bootstrap5-toggle.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap5-toggle@5.0.4/js/bootstrap5-toggle.jquery.min.js"></script>
@@ -63,6 +63,8 @@
         var TREE_SWITCH = false;
         var collapse_subtree = false; // can think of another way to signal state without our larger refactor 
         var focused_element = null; // Focused element to have its colour reset
+        var RADIUS_INCREASED = false;
+        var MENU_CREATED = false;
         const colour_legend = new Array;
         const default_color = "#999";
         const clicked_color = "blue";
@@ -257,9 +259,9 @@
 
 
         let CreateMenuItem = (node_type, text, evt_list_func, on_click) => {
-            // TODO in refactor pass object
+            
             let node = document.createElement(node_type);
-            // TODO pass object of default values
+            
             if(node_type !== "h4"){ // Not liking the way this is formatted
                 node.style.cursor = "default";
             }
@@ -275,13 +277,15 @@
         }
 
         let ColourMouseOver = (node) => {
-            // TODO can probably make an object to do all this
-            node.addEventListener("mouseenter", (event) => {
-                event.target.style.backgroundColor = "LightSalmon";
-            });
-            node.addEventListener("mouseleave", (event) => {
-                    event.target.style.backgroundColor = "";
-            });
+            // Set attributes for colouring of values
+
+            node.classList.add("dropdown-item");
+            //node.addEventListener("mouseenter", (event) => {
+            //    event.target.style.backgroundColor = "#0d6efd";
+            //});
+            //node.addEventListener("mouseleave", (event) => {
+            //        event.target.style.backgroundColor = "";
+            //});
         };
 
         let AppendToParent = (parent, ...nodes) => {
@@ -290,21 +294,52 @@
 
         let CreateDropDownDiv = (event) => {
             const div_height_adj = 5;
+
+            // Temporarily increase node size on collection
+            let circle = event.target.parentNode.getElementsByTagName("circle")[0];
+            let rad_size = circle.getAttribute("r");
+            let increased_size = rad_size * 3;
+            if(!RADIUS_INCREASED && MENU_CREATED){
+                circle.setAttribute("r", increased_size);
+                RADIUS_INCREASED = true;
+            }
+            console.log(event.target.parentNode);
+            
             let drop_down_menu = document.createElement("div");
-            drop_down_menu.style.background = "white";
+            drop_down_menu.classList.add("dropdown")
+
+            
             drop_down_menu.style.position = "absolute";
             drop_down_menu.style.left = event.x+'px';
             drop_down_menu.style.top = (event.y - div_height_adj)+'px';
             drop_down_menu.style.borderStyle = "solid";
             drop_down_menu.style.borderWidth = "2px";
-            drop_down_menu.style.backgroundColor = "linen";
+            drop_down_menu.style.borderRadius = "10pt"
+            drop_down_menu.style.backgroundColor = "#FAFCF9";
             drop_down_menu.setAttribute("id", "PopDownMenu");
+
+
             drop_down_menu.addEventListener("click", (event) => {
                 drop_down_menu.remove();
+                circle.setAttribute("r", rad_size);
+                RADIUS_INCREASED = false;
+                MENU_CREATED = false;
             });
+
             drop_down_menu.addEventListener("mouseleave", (event) => {
                 event.target.remove();
+                circle.setAttribute("r", rad_size);
+                RADIUS_INCREASED = false;
+                MENU_CREATED = false;
             });
+
+            document.getElementById("TreeSVG").addEventListener("mouseover", (event) => {
+                drop_down_menu.remove();
+                circle.setAttribute("r", rad_size);
+                RADIUS_INCREASED = false;
+                MENU_CREATED = false;
+            })
+
             return drop_down_menu;
         }
 
@@ -313,26 +348,27 @@
             // This would clutter the dom however
 
             if(event.target.parentNode.classList.contains("inner-node")){
-                let drop_down_menu = CreateDropDownDiv(event);
-                let title = CreateMenuItem("h4", "Node Options");
+                if(!MENU_CREATED){
+                    MENU_CREATED = true;
+                    let drop_down_menu = CreateDropDownDiv(event);
+                    let title = CreateMenuItem("h4", "Node Options");
 
-                let collapse_tree = CreateMenuItem("p", "Collapse/Un-collapse branch", ColourMouseOver, func);
+                    let collapse_tree = CreateMenuItem("p", "Collapse/Un-collapse branch", ColourMouseOver, func);
 
-                // TODO need to remove selected nodes when drawing subtree
-                let create_subtree = CreateMenuItem("p", "Display Sub-tree", ColourMouseOver, () => {
-                    CustomSubTree(event, data);
-                });
+                    // TODO need to remove selected nodes when drawing subtree
+                    let create_subtree = CreateMenuItem("p", "Display Sub-tree", ColourMouseOver, () => {
+                        CustomSubTree(event, data);
+                    });
 
-                let select_child_nodes = CreateMenuItem("p", "Select all Children", ColourMouseOver, () => {
-                    SelectChildren(event, data);
-                });
+                    let select_child_nodes = CreateMenuItem("p", "Select all Children", ColourMouseOver, () => {
+                        SelectChildren(event, data);
+                    });
 
-                AppendToParent(drop_down_menu, title, collapse_tree, create_subtree, select_child_nodes);            
-                document.body.appendChild(drop_down_menu);
+                    AppendToParent(drop_down_menu, title, collapse_tree, create_subtree, select_child_nodes);            
+                    document.body.appendChild(drop_down_menu);
+                }
             }else{
                 LeafNode(event, data);
-                // TODO refactor function name
-                //updated_nodes();
                 SelectedNodes.drawSelectedNodes();
             }
         };
@@ -385,7 +421,7 @@
         // Select all children of an inner-node
         let SelectChildren = (event, data) => {
             const circle_pos = 1;
-            const trg_name_pos = 2; 
+            const trg_name_pos = 3; 
             // TODO replace RecurseTree with a call to the d3 function leaves
             // D3 functions to collect the sub-tree do not appear to be working here
             let selected_children = RecurseTree(data);
@@ -936,7 +972,7 @@
                 ],
 
             });
-            $('#metadata_filter input').attr("id", "search-bar"); // Give search bar ID to squash warnings
+            $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
 
             // TODO initializing table from json object would minimize copies
             // Saving data as a map, to allow for updating of metadata
@@ -1579,31 +1615,23 @@
     </script>
 </head>
     <body>
-        <div class="container-fluid m-0 ">
+        <div class="container-fluid m-0">
             <div class="collapse show" id="input_files_panel">
-                <div class="row border">
-                    <div class="col-3">
+                <div class="row border ">
+                    <div class="col-3 col-form-label">
                         <label for="tree-selector">Select a Newick File </label>
                     </div>
-                    <div class="col-9">
+                    <div class="col-9 col-form-label">
                         <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
                     </div>
                 </div>
-                <div class="row border ">
-                    <div class="col-3">
+                <div class="row border">
+                    <div class="col-3 col-form-label">
                         <label for="metadata-selector">Select a tab delimited metadata file</label>
                     </div>
-                    <div class="col-9">   
+                    <div class="col-9 col-form-label">   
                         <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
                     </div>
-                </div>
-                <div class="d-none row border">
-                        <div class="col-3">
-                            <label for="dist-matrix-selector">Select a distance matrix </label>
-                        </div>
-                        <div class="col-9">
-                            <input type="file" id="dist-matrix-selector" name="dist-matrix-selector" accept=".txt, .tsv, .tab"> 
-                        </div> 
                 </div>
             </div>
             <div class="row">
