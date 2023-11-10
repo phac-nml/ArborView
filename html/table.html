@@ -311,7 +311,7 @@
 
         let CreateDropDownDiv = (event) => {
             let div_height_adj = document.getElementById("input_files_panel").offsetHeight;
-
+            let offset_menu = 60;
             // Temporarily increase node size on collection
             let circle = event.target.parentNode.getElementsByTagName("circle")[0];
             let rad_size = circle.getAttribute("r");
@@ -327,8 +327,8 @@
 
             
             drop_down_menu.style.position = "absolute";
-            drop_down_menu.style.left = event.pageX+'px';
-            drop_down_menu.style.top = (event.pageY - div_height_adj)+'px';
+            drop_down_menu.style.left = event.offsetX+'px';
+            drop_down_menu.style.top = (event.offsetY - div_height_adj + offset_menu)+'px';
             drop_down_menu.style.borderStyle = "solid";
             drop_down_menu.style.borderWidth = "2px";
             drop_down_menu.style.borderRadius = "10pt"
@@ -384,7 +384,9 @@
                     AppendToParent(drop_down_menu, title, collapse_tree, create_subtree, select_child_nodes);            
                     let tree_element = document.getElementById("TreeData");
                     tree_element.append(drop_down_menu)
-                    //document.body.appendChild(drop_down_menu);
+                    //console.log(document)
+                    //document.body.append(drop_down_menu);
+                    console.log(document)
                 }
             }else{
                 LeafNode(event, data);
