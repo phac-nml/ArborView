@@ -73,14 +73,17 @@
         const right_mouse = 3;
         const center_mouse = 2;
         const left_mouse = 1;
+        const CIRCLE_SIZE_SELECTED = 6;
+        const INNER_NODE_SIZE = 4;
+        const LEAF_NODE_SIZE = 6;
 
         // Class for selected nodes
         class SelectedNodes {
             static nodes = new Map();
             static #circle_pos = 1;
             static #name_pos = 3;
-            static #circle_size_selected = 4;
-            static #circle_size_default = 2.5;
+            static #circle_size_selected = LEAF_NODE_SIZE * 1.5;
+            static #circle_size_default = LEAF_NODE_SIZE;
             static #default_color = "#999";
             static #clicked_color = "blue";
             static #svg_parent = "g";
@@ -141,7 +144,6 @@
 
             static unselectNode(element){
                 // Function tied to an on click event removing it from the map, legend and de-colouring it
-                console.log(element)
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
@@ -150,6 +152,14 @@
                 //circle.style.fill = SelectedNodes.#default_color
                 let dropped = SelectedNodes.nodes.delete(text.innerHTML)
                 console.log("Dropping values:", text.innerHTML, dropped);
+            }
+
+            static deselectNodes(){
+                for(const n of SelectedNodes.nodes){
+                    SelectedNodes.unselectNode(n[1]);
+                }
+                //SelectedNodes.clearNodes()
+                SelectedNodes.emptyNodeSelections();
             }
 
             static emptyNodeSelections(){
@@ -656,7 +666,7 @@
                         });
 
                     nodeEnter.append("circle")
-                        .attr("r", d => d._children ? 4 : 6) // size 6 for leaf nodes and 4 for inner nodes
+                        .attr("r", d => d._children ? INNER_NODE_SIZE : LEAF_NODE_SIZE) // size 6 for leaf nodes and 4 for inner nodes
                         .attr("fill", d => d._children ? "#555" : "#999")
                         .attr("stroke-width", 10);
                     
@@ -1715,13 +1725,14 @@
                                     data-toggle="toggle" data-onstyle="primary" data-size="sm">
                                 </div> 
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left">
-                                    <small class="flex-grow-1" for="legend_toggle">Show branch lengths</small>
+                                    <small class="flex-grow-1" for="legend_toggle">Branch lengths</small>
                                     <input onchange="branch_lengths_on_off(this)" id="branch_lengths_toggle" 
                                     checked type="checkbox" data-toggle="toggle" 
                                     data-toggle="toggle" data-onstyle="primary" data-size="sm">
                                 </div>   
                     </div> 
                     <div class="row">
+                            <button class="btn-sm btn-primary w-100 text-break mb-1" name="ClearSelectedNodes" onclick="SelectedNodes.deselectNodes()" id="clear-selected-nodes">Clear Selected Nodes</button>
                             <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
                             id="SelectedNodes"></div>
                     </div> 
