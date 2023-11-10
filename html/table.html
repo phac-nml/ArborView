@@ -106,7 +106,7 @@
 
             static getNodeData(element){
                 let child_nodes = element.childNodes;
-                console.log(child_nodes)
+                
                 let circle = child_nodes[SelectedNodes.#circle_pos];
                 let text = child_nodes[SelectedNodes.#name_pos];
                 return [element, circle, text]; // element is g tag
@@ -119,7 +119,7 @@
 
             param element: a html "g" element to update the colour of
             */
-                //let elm = element.closest("g");
+                //let elm = element.closest("g");          
                 let [parent, circle, text] = SelectedNodes.getNodeData(element.closest(SelectedNodes.#svg_parent));
                 
                 if(!SelectedNodes.nodes.has(text.innerHTML)){
@@ -614,7 +614,7 @@
                         });
 
                     nodeEnter.append("circle")
-                        .attr("r", 4)
+                        .attr("r", d => d._children ? 4 : 6) // size 6 for leaf nodes and 4 for inner nodes
                         .attr("fill", d => d._children ? "#555" : "#999")
                         .attr("stroke-width", 10);
                     
