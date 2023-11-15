@@ -89,6 +89,10 @@
             static #svg_parent = "g";
             static selection_id = "#SelectedNodes";
 
+            static getDefaultColour(){
+                return SelectedNodes.#default_color;
+            }
+
             static getCirclePos(){
                 return SelectedNodes.#circle_pos;
             }
@@ -413,6 +417,7 @@
                 //let svg_chart = chart(data.data);
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
+                    // Maintain colour of already selected nodes
                     let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                     if(SelectedNodes.nodes.has(text.innerHTML)){
                         SelectedNodes.nodes.set(text.innerHTML, parent); // update to new parent
@@ -1406,13 +1411,22 @@
         }
 
         legend_on_off = function(node){
-            console.log(node.checked)
+            if(DEBUG){
+                console.log(node.checked)
+            }
+            
             if(node.checked === false){
                 document.querySelector('#colour-legend').classList.add("d-none")
+                // TODO discuss if when legend is turned off if it should dissapear
+                //document.querySelectorAll(".tree-node.leaf-node > circle").forEach( (circle) => {
+                //    if(circle.dataset.oldfill){
+                //        delete circle.dataset.oldfill; // remove added attribute
+                //    }
+                //    circle.style.fill = SelectedNodes.getDefaultColour(); // reset tree
+                //});
             }else{
                 document.querySelector('#colour-legend').classList.remove("d-none");
-
-            }    
+            }
         }
 
         branch_lengths_on_off = function(node){
@@ -1485,15 +1499,22 @@
 
                 if(status === 'select'){
                     //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
-                    SelectedNodes.setSelectedColours(text, circle)
+                    //SelectedNodes.setSelectedColours(text, circle
+                    if(!circle.dataset.oldfill){
+                        circle.dataset.oldfill = circle.style.fill;
+                    }
+                    SelectedNodes.addNodes(tree_node);
                     legend_node.classList.add('fw-bold')
                 }else{
-                    SelectedNodes.deSelectedColours(text, circle) 
+                    //SelectedNodes.deSelectedColours(text, circle) 
+                    SelectedNodes.unselectNode(tree_node);
+                    circle.style.fill =  circle.dataset.oldfill;
+                    delete circle.dataset.oldfill;
                     legend_node.classList.remove('fw-bold')
                     //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
                 }    
-
             }
+            SelectedNodes.drawSelectedNodes();
             
         }
 
