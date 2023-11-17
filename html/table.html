@@ -11,6 +11,17 @@
             /*overflow-x: scroll;*/
             /*height: 200px;*/
         }
+
+        input[type="file"] {
+            /* Hide the button in boot strap*/
+            display: none;
+        }
+
+        .input-group-text:hover {
+            filter: brightness(80%);
+        }
+
+
     </style>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1672,22 +1683,19 @@
     <body>
         <div class="container-fluid m-0">
             <div class="collapse show" id="input_files_panel">
-                <div class="row border ">
-                    <div class="col-3 col-form-label">
-                        <label for="tree-selector">Select a Newick File </label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <label for="tree-selector" class="input-group-text">Browse files</label>
                     </div>
-                    <div class="col-9 col-form-label">
-                        <input type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-                    </div>
+                    <input class="form-control" type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
+                    <label for="tree-selector" class="form-control">Select a newick file</label>
                 </div>
-                <div class="row border">
-                    <div class="col-3 col-form-label">
-                        <label for="metadata-selector">Select a tab delimited metadata file</label>
-                    </div>
-                    <div class="col-9 col-form-label">   
-                        <input type="file" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
-                    </div>
-                </div>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <label for="metadata-selector" class="input-group-text">Browse files</label>
+                    </div> 
+                    <input type="file" class="custom-file-input" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
+                    <label class="form-control" for="metadata-selector">Select a tab delimited metadata file</label>
             </div>
             <div class="row">
                 <button class="flex-grow-1 btn-sm btn-primary p-0" type="button" data-bs-toggle="collapse" 
@@ -1725,19 +1733,18 @@
                                 </div>  
                                 
 
-                                <button class="btn-sm  btn-primary w-100 text-break mb-1" name="SearchMetadata" id="metadata-search-button">
-                                    <i class="bi bi-search me-1"></i> Search Metadata</button>
+                                
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
                                 <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
                                 
                                 <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
+                                    <button class="flex-grow-1 me-1 btn-s btn-primary text-break mb-0" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break" onclick="export_tree_to_svg()" id="export-tree-to-svg">
+                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download"></i> SVG
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break" onclick="export_metadata()" id="export-metadata">
+                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="export_metadata()" id="export-metadata">
                                         <i class="bi bi-download"></i> Export Table
                                     </button>
                                 </div>
@@ -1771,10 +1778,17 @@
                                 </div>   
                     </div> 
                     <div class="row">
-                            <button class="btn-sm btn-primary w-100 text-break mb-1" name="ClearSelectedNodes" onclick="SelectedNodes.deselectNodes()" id="clear-selected-nodes">Clear Selected Nodes</button>
-                            <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
-                            id="SelectedNodes"></div>
-                    </div> 
+                        <div class="row"></div>
+                        <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
+                                <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="SearchMetadata" id="metadata-search-button">
+                                <i class="bi bi-search me-1"></i> Filter data</button>
+                                <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="ClearSelectedNodes" 
+                                onclick="SelectedNodes.deselectNodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
+                        </div>
+                        <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
+                                id="SelectedNodes"></div>
+                        </div> 
+                    </div>  
 
                 </div>
                 
