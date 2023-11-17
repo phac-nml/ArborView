@@ -93,6 +93,10 @@
                 return SelectedNodes.#default_color;
             }
 
+            static getSelectedColour(){
+                return SelectedNodes.#clicked_color
+            }
+
             static getCirclePos(){
                 return SelectedNodes.#circle_pos;
             }
@@ -108,7 +112,7 @@
             static setSelectedColours(text, circle){
                 text.style.fontWeight = "bold";
                 text.style.fill = "black";
-                if(!circle.dataset.oldfill){
+                if(!circle.dataset.oldfill && circle.style.fill != SelectedNodes.#default_color){
                     circle.dataset.oldfill = circle.style.fill
                 }
                 circle.style.fill = SelectedNodes.#clicked_color;
@@ -1348,7 +1352,12 @@
                     break_down_values[item].forEach((x, i) => {
                         try{
                             let current_item = document.querySelector(`#${x} > circle`);
-                            current_item.style.fill = colours[colour_idx];
+                            if(current_item.style.fill == SelectedNodes.getSelectedColour()){
+                                current_item.dataset.oldfill = colours[colour_idx];
+                            }else{
+                                current_item.style.fill = colours[colour_idx];
+                            }
+                            
                         }catch(error){
                             console.log("Could not find ", x, " In DOM");
                             console.log(error);
