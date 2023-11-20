@@ -1755,7 +1755,7 @@
                         <label for="tree-selector" class="input-group-text">Browse files</label>
                     </div>
                     <input class="custom-file-input" type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-                    <label for="tree-selector" class="form-control"><div class="bi bi-tree-fill icon-spin" style="display:inline-block"></div> Select a newick file</label>
+                    <label for="tree-selector" class="form-control"><div class="bi bi-tree icon-spin" style="display:inline-block"></div> Select a newick file</label>
                 </div>
                 <div class="input-group">
                     <div class="input-group-prepend">
@@ -1772,25 +1772,27 @@
         
             <div class="row"> <!-- id="TreeSelections" style=""-->
 
-                <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
-                onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
-                id="TreeData" style="height:70vh;">
 
-                        <div id="tree-splash" class="fs-2 d-flex align-items-center" style="margin-left:35vw;margin-top:15vw;"><i class="bi bi-tree"></i> Your tree will show up here when loaded</div>
-                        
-                        <div id="colour-legend" 
-                        class="d-none p-1 position-absolute border border-secondary text-break Tree inline-block-child scrollbar-window" 
-                        style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
-                        </div>
-                        
-                        <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
-                        onclick="tree_full_screen_mode()" class="d-flex fs-5 bi-arrow-up-right-square"></i>
-                        
-                </div>
                 <div id="control_panel" class="col-2 border border-primary">
                     <div id="tree_menu_buttons" class="row">
-                                <button class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
+
+                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>                                
                                 
+                                <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left mb-1">
+                                    <button class="flex-grow-1 me-1 btn-s btn-primary text-break mb-0" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
+                                        <i class="bi bi-clipboard me-1"></i>IDs
+                                    </button>
+                                    <button class="flex-grow-1 me-1 btn-s btn-primary text-break mb-0" onclick="export_tree_to_svg()" id="export-tree-to-svg">
+                                        <i class="bi bi-download me-1"></i> SVG
+                                    </button>
+                                    <button class="flex-grow-1 me-1 btn-s btn-primary text-break mb-0" onclick="export_metadata()" id="export-metadata">
+                                        <i class="bi bi-download me-1"></i> Export Table
+                                    </button>
+                                </div>
+                                <!--Tree layout slider-->
+                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
+                                <button class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree">Reset Tree View</button>
+
                                 <!--Zoom slider-->
                                 <div class="d-flex flex-wrap align-items-center p-1">
                                     <small class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</small>
@@ -1801,24 +1803,7 @@
                                         <span id="zoom_slider_value">1</span>x
                                     </div>    
                                 </div>  
-                                
 
-                                
-                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="ResetTable" id="reset-table-button">Reset Table</button>
-                                <button class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button">Redraw Tree</button>
-                                
-                                <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
-                                    <button class="flex-grow-1 me-1 btn-s btn-primary text-break mb-0" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
-                                        <i class="bi bi-clipboard me-1"></i>IDs
-                                    </button>
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="export_tree_to_svg()" id="export-tree-to-svg">
-                                        <i class="bi bi-download"></i> SVG
-                                    </button>
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="export_metadata()" id="export-metadata">
-                                        <i class="bi bi-download"></i> Export Table
-                                    </button>
-                                </div>
-                                <!--Tree layout slider-->
                                 <div class="d-flex flex-wrap flex-row align-items-center p-1 text-left">
                                     <small class="flex-grow-1" for="zoom_slider" class="form-label">Layout</small>
                                     <div class="flex-grow-1">
@@ -1855,12 +1840,32 @@
                                 <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="ClearSelectedNodes" 
                                 onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
                         </div>
+                        
+                        <h5 class="d-flex justify-content-center" style="text-decoration: underline;">Selected Nodes</h5>
                         <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
                                 id="SelectedNodes"></div>
                         </div> 
-                    </div>  
+                    </div> 
+
+
+                <div class="position-relative p- bg-white col-10 Tree inline-block-child scrollbar-window" 
+                onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
+                id="TreeData" style="height:70vh;">
+
+                        <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
+                        
+                        <div id="colour-legend" 
+                        class="d-none p-1 position-absolute border border-secondary text-break Tree inline-block-child scrollbar-window" 
+                        style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
+                        </div>
+                        
+                        <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
+                        onclick="tree_full_screen_mode()" class="d-flex fs-5 bi-arrow-up-right-square"></i>
+                        
+                </div> 
 
                 </div>
+                
                 
             </div>
             <div class="row">
@@ -1871,7 +1876,7 @@
             <div id="ClusterInfo" class="row collapse show border border-primary">
                 
                 <div class="col-12 overflow-auto" style="height:28.9vh">
-                    <div id="table-splash" class="fs-2" style="margin-left:35vw;"><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
+                    <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display overflow-scroll" >
                     </table>
                 </div>    
