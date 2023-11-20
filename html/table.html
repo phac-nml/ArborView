@@ -21,6 +21,10 @@
             filter: brightness(80%);
         }
 
+        .legend-element:hover {
+            filter: opacity(0.5);
+            cursor: pointer;
+        }
 
     </style>
     
@@ -1079,7 +1083,7 @@
 
             for(const item of array_tuples){
                 //console.log(item);
-                let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center"></div>`)
+                let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
                 // TODO need onclick to reflect select and deselect
                 row_legend_node.append(`
                 <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
@@ -1662,6 +1666,16 @@
         });    
 
 
+        clear_selected_nodes = function(){
+            // Clear selected nodes and un-bold legend text
+            SelectedNodes.deselectNodes(); // deselect nodes
+            // a way to de colour all of these nodes probably exists
+            $(".legend-element > .fw-bold").each((it, ele) => {
+                ele.classList.remove("fw-bold");
+            })
+
+        }
+
         copy_ids_to_clipboard = function(){
             let text2copyArray=[]
             
@@ -1783,7 +1797,7 @@
                                 <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="SearchMetadata" id="metadata-search-button">
                                 <i class="bi bi-search me-1"></i> Filter data</button>
                                 <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="ClearSelectedNodes" 
-                                onclick="SelectedNodes.deselectNodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
+                                onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
                         </div>
                         <div class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
                                 id="SelectedNodes"></div>
