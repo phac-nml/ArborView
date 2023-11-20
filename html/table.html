@@ -1358,10 +1358,12 @@
 
                 // Need to create groupings of the each set of ID's belonging to each value grouping
                 let break_down_values = unq_data.toArray();
+                break_down_values.sort()
                 
                 // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
                 let group_vals = CreateColoringGroups(break_down_values);
                 break_down_values = PopulateGroups(group_vals, column_index);
+ 
 
                 // TODO set threshold for x discrete colours, but then switch over to this
                 let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "rgb"});
