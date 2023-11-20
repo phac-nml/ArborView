@@ -1124,7 +1124,13 @@
 
         };
 
+        let update_input_text = (ele) => {
+            // Update input forms element name
+            ele.parentNode.querySelector('.form-control').innerHTML = ele.files[0].name;
+        };
+
         $(() => {
+
 
             $("#redraw-tree-button").on("click", () => {
                 //$("#TreeData").empty();
@@ -1701,14 +1707,14 @@
                     <div class="input-group-prepend">
                         <label for="tree-selector" class="input-group-text">Browse files</label>
                     </div>
-                    <input class="form-control" type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
+                    <input class="custom-file-input" type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
                     <label for="tree-selector" class="form-control">Select a newick file</label>
                 </div>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <label for="metadata-selector" class="input-group-text">Browse files</label>
                     </div> 
-                    <input type="file" class="custom-file-input" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
+                    <input type="file" class="custom-file-input" onchange="update_input_text(this)" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
                     <label class="form-control" for="metadata-selector">Select a tab delimited metadata file</label>
             </div>
             <div class="row">
