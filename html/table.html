@@ -181,8 +181,12 @@
                 text.style.fontWeight = "normal";
                 text.style.fill = "black";
                 if(circle.dataset.oldfill){
+                    let temp_fill = circle.dataset.fill;
                     circle.style.fill = circle.dataset.oldfill;
-                    delete circle.dataset.oldfill
+                    if(circle.dataset.oldfill === SelectedNodes.#default_color){
+                        delete circle.dataset.oldfill
+                    }
+                    
                 }else{
                     circle.style.fill = SelectedNodes.#default_color
                 }
@@ -221,9 +225,7 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                //text.style.fontWeight = "normal";
-                //text.style.fill = "black";
-                //circle.style.fill = SelectedNodes.#default_color
+
                 let dropped = SelectedNodes.nodes.delete(text.innerHTML)
                 console.log("Dropping values:", text.innerHTML, dropped);
             }
@@ -1130,8 +1132,7 @@
                 // TODO need onclick to reflect select and deselect
                 row_legend_node.append(`
                 <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
-                <small onclick="select_deselect_nodes_by_field_value(this, ${column_index},'select')" 
-                ondblclick="select_deselect_nodes_by_field_value(this, ${column_index},'deselect')"
+                <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
                 style="padding-left:5px">${item[0]}</small>`)
                 node_leg.append(row_legend_node)
             }
@@ -1222,12 +1223,12 @@
             
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
-            
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
                     try{
                         let current_item = document.querySelector(`#${x} > circle`);
                         if(current_item.style.fill == SelectedNodes.getSelectedColour()){
+                            delete current_item.dataset.oldfill;
                             current_item.dataset.oldfill = colours[colour_idx];
                         }else{
                             current_item.style.fill = colours[colour_idx];
@@ -1461,14 +1462,6 @@
                 
             });
 
-
-            $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
-                let node_id = evt.target.innerHTML
-                let trg_node = SelectedNodes.nodes.get(node_id);
-                SelectedNodes.unselectNode(trg_node);
-                SelectedNodes.drawSelectedNodes();
-            });
-
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
                 console.log("scrolling");
             });
@@ -1577,12 +1570,18 @@
             document.querySelector('#zoom_slider').value = 1
         }    
 
-        select_deselect_nodes_by_field_value = function(legend_node, column_index, status='select'){
+        select_deselect_nodes_by_field_value = function(legend_node, column_index){
             //console.log(legend_node.textContent)
             //console.log(legend_node)
             //SelectedNodes.addNodes(document.querySelector('#SRR20438614 text'))
             // TODO on deselect event not everything deselects alwasys
-            
+            let selected = false;
+            if(legend_node.dataset.selected){
+                delete legend_node.dataset.selected
+            }else{
+                selected = true;
+                legend_node.dataset.selected = true
+            }
             //find indices of filtered data in a metadata table
             let indexes = data_table.rows( (idx, data, node) => {
                 if(data[column_index] === `${legend_node.textContent}` ){
@@ -1592,20 +1591,7 @@
                 }
             } ).indexes()
 
-            let selected_node_ids = data_table.cells(indexes,0).data()
-            //console.log(selected_node_ids)
-            
-            //add selected nodes from legend to the SelectedNodes map
-            /*
-            SelectedNodes.nodes.clear() //clear all previous nodes
-            SelectedNodes.drawSelectedNodes()
-            for(var i = 0; i < selected_node_ids.length; i++) {
-                //console.log(`#${selected_node_ids[i]} text`)
-
-                SelectedNodes.addNodes(document.querySelector( `#${selected_node_ids[i]} text`))
-                SelectedNodes.drawSelectedNodes()
-            }
-            */
+            let selected_node_ids = data_table.cells(indexes,0).data();
 
             for(var i = 0; i < selected_node_ids.length; i++) {
                 let tree_node = document.querySelector( `#${selected_node_ids[i]}`)
@@ -1617,14 +1603,13 @@
                     tree_node.scrollIntoView({block: "center", inline:"center"})
                 }
 
-                if(status === 'select'){
-                    //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
+                if(selected){
+                    // TODO discuss if previously selected nodes should be excluded from this
                     SelectedNodes.addNodes(tree_node);
                     legend_node.classList.add('fw-bold')
                 }else{
                     SelectedNodes.unselectNode(tree_node);
                     legend_node.classList.remove('fw-bold')
-                    //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
                 }    
             }
             SelectedNodes.drawSelectedNodes();
