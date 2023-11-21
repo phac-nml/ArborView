@@ -1172,6 +1172,79 @@
             ele.parentNode.querySelector('.form-control').innerHTML = ele.files[0].name;
         };
 
+
+        let initialize_legend_menu = () => {
+            // update the legend text to reflect loading
+
+            let button = document.querySelector("#legend_dropdown_button");
+            button.innerHTML = "Colour tree by column";
+            button.dataset.bsToggle = "dropdown";
+            button.classList.remove("btn-danger");
+            button.classList.add("btn-primary");
+
+        }
+
+        let create_legend_elements = (headers) => {
+                // Create html elements for the dropdown menu of itmes to creat the legend by
+                let text = new Array;
+                text.push('<div class=\"dropdown-menu\" id=\"legend-items\" style=\"overflow:visible\">')
+                let header_offset = headers.slice(1);
+                header_offset.forEach((ele, idx) => {
+                    text.push(`\t<a onclick="colour_by_element(this)" class="dropdown-item" href="#" id="${idx+1}">${ele}</a>`)
+                });
+                text.push("</div>\n")
+                return text.join("\n")
+            }
+        
+        let colour_by_element = (ele) => {
+            // Create a legend for the column selected
+            if(tree_root === null){
+                // todo add pop up
+                console.error("No newick loaded")
+                return null
+            }
+
+            let col_index = ele.id;
+            $("#legend_toggle").bootstrapToggle('on')
+            // TODO add a list of headers somewhere to select colouring from
+            let unq_data = data_table.column(col_index).data().unique();
+
+            // Need to create groupings of the each set of ID's belonging to each value grouping
+            let break_down_values = unq_data.toArray();
+            break_down_values.sort()
+            
+            // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
+            let group_vals = CreateColoringGroups(break_down_values);
+            break_down_values = PopulateGroups(group_vals, col_index);
+
+            // TODO set threshold for x discrete colours, but then switch over to this
+            let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "rgb"});
+            
+            let colour_idx = 0;
+            colour_legend.length = 0; // clear out old data, so new legend created each time
+            
+            for(const item in break_down_values){
+                break_down_values[item].forEach((x, i) => {
+                    try{
+                        let current_item = document.querySelector(`#${x} > circle`);
+                        if(current_item.style.fill == SelectedNodes.getSelectedColour()){
+                            current_item.dataset.oldfill = colours[colour_idx];
+                        }else{
+                            current_item.style.fill = colours[colour_idx];
+                        }
+                        
+                    }catch(error){
+                        console.log("Could not find ", x, " In DOM");
+                        console.log(error);
+                    }
+                });
+                colour_legend.push([item, colours[colour_idx]])
+                colour_idx++;
+            }
+            CreateNodeLegend(colour_legend, col_index);    
+
+        };
+
         $(() => {
 
 
@@ -1290,10 +1363,13 @@
                     TABLE_HEADERS = METADATA.columns;
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
+                    initialize_legend_menu();
+                    $("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
                 };
                 reader.onerror = (evt) => {
                     alert(`Could not read file ${metadata_file}`);
                 };
+                
             });
 
             $("#metadata-search-button").on('click', SubsetTable);
@@ -1313,11 +1389,17 @@
                 let tree_node = document.querySelector( `#${evt.target.textContent}`)
                 let text = tree_node.lastChild
                 let circle = tree_node.querySelector('circle')
-                SelectedNodes.addNodes(text, circle)
+                console.log(text.innerHTML)
+                if(SelectedNodes.nodes.has(text.innerHTML)){
+                    SelectedNodes.unselectNode(text);
+                }else{
+                    SelectedNodes.addNodes(text);
+                }
                 //SelectedNodes.setSelectedColours(text, circle)
                 SelectedNodes.drawSelectedNodes();
                 
             } );
+
 
 
             // TODO need to change from sorting_1, to  :first
@@ -1389,57 +1471,6 @@
 
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
                 console.log("scrolling");
-            });
-
-            //Generate legend from a row double click on metadata table column name/header 
-            $("#metadata").on("dblclick", "th:not(:first)", (evt) => {
-                console.log(`double click on metadata row column '${evt.target.textContent}'`)
-                $("#legend_toggle").bootstrapToggle('on')
-                // TODO add a list of headers somewhere to select colouring from
-                let unq_data = data_table.column(evt.target).data().unique();
-                let column_index = data_table.column(evt.target)[0];
-
-
-
-                // Need to create groupings of the each set of ID's belonging to each value grouping
-                let break_down_values = unq_data.toArray();
-                break_down_values.sort()
-                
-                // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
-                let group_vals = CreateColoringGroups(break_down_values);
-                break_down_values = PopulateGroups(group_vals, column_index);
-
-
-                // TODO set threshold for x discrete colours, but then switch over to this
-                let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "rgb"});
-                
-                let colour_idx = 0;
-                colour_legend.length = 0; // clear out old data, so new legend created each time
-                
-                for(const item in break_down_values){
-                    break_down_values[item].forEach((x, i) => {
-                        try{
-                            let current_item = document.querySelector(`#${x} > circle`);
-                            if(current_item.style.fill == SelectedNodes.getSelectedColour()){
-                                current_item.dataset.oldfill = colours[colour_idx];
-                            }else{
-                                current_item.style.fill = colours[colour_idx];
-                            }
-                            
-                        }catch(error){
-                            console.log("Could not find ", x, " In DOM");
-                            console.log(error);
-                        }
-                    });
-                    // TODO jquery method works but there was try block that needed to be handled
-                    //let query_string = `#${break_down_values[item].join(", #")}`;
-                    //let values_update = $(query_string).children("circle").map((idx, elm) => {
-                    //    elm.style.fill = colours[colour_idx];
-                    //});
-                    colour_legend.push([item, colours[colour_idx]])
-                    colour_idx++;
-                }
-                CreateNodeLegend(colour_legend, column_index[0]);    
             });
 
         });
@@ -1828,14 +1859,18 @@
                                     <input onchange="legend_on_off(this)" id="legend_toggle" 
                                     checked type="checkbox" data-toggle="toggle" data-onstyle="primary" data-size="sm">
                                 </div> 
-                                <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip data-placement="top" title="Turn branch lengths on or off" >
+                                <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn branch lengths on or off" >
                                     <small data-toggle="tooltip" data-placement="top" title="Turn branch lengths on or off" class="flex-grow-1" for="legend_toggle">Branch lengths</small>
                                     <input onchange="branch_lengths_on_off(this)" id="branch_lengths_toggle" 
                                     checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn branch lengths on or off" data-onstyle="primary" data-size="sm">
                                 </div>   
                     </div> 
                     <div class="row">
-                        <div class="row"></div>
+                        <div id="dropdown_legend" class="d-flex flex-wrap p-1 dropdown">
+                            <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
                                 <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="SearchMetadata" id="metadata-search-button">
                                 <i class="bi bi-search me-1 icon-image"></i> Filter data</button>
