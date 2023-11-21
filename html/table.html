@@ -181,8 +181,12 @@
                 text.style.fontWeight = "normal";
                 text.style.fill = "black";
                 if(circle.dataset.oldfill){
+                    let temp_fill = circle.dataset.fill;
                     circle.style.fill = circle.dataset.oldfill;
-                    delete circle.dataset.oldfill
+                    if(circle.dataset.oldfill === SelectedNodes.#default_color){
+                        delete circle.dataset.oldfill
+                    }
+                    
                 }else{
                     circle.style.fill = SelectedNodes.#default_color
                 }
@@ -221,9 +225,7 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                //text.style.fontWeight = "normal";
-                //text.style.fill = "black";
-                //circle.style.fill = SelectedNodes.#default_color
+
                 let dropped = SelectedNodes.nodes.delete(text.innerHTML)
                 console.log("Dropping values:", text.innerHTML, dropped);
             }
@@ -1221,12 +1223,12 @@
             
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
-            
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
                     try{
                         let current_item = document.querySelector(`#${x} > circle`);
                         if(current_item.style.fill == SelectedNodes.getSelectedColour()){
+                            delete current_item.dataset.oldfill;
                             current_item.dataset.oldfill = colours[colour_idx];
                         }else{
                             current_item.style.fill = colours[colour_idx];
