@@ -1461,14 +1461,6 @@
                 
             });
 
-
-            $("#SelectedNodes").on('dblclick', '.selected-node', (evt) => {
-                let node_id = evt.target.innerHTML
-                let trg_node = SelectedNodes.nodes.get(node_id);
-                SelectedNodes.unselectNode(trg_node);
-                SelectedNodes.drawSelectedNodes();
-            });
-
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
                 console.log("scrolling");
             });
