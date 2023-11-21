@@ -1130,8 +1130,7 @@
                 // TODO need onclick to reflect select and deselect
                 row_legend_node.append(`
                 <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
-                <small onclick="select_deselect_nodes_by_field_value(this, ${column_index},'select')" 
-                ondblclick="select_deselect_nodes_by_field_value(this, ${column_index},'deselect')"
+                <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
                 style="padding-left:5px">${item[0]}</small>`)
                 node_leg.append(row_legend_node)
             }
@@ -1569,12 +1568,18 @@
             document.querySelector('#zoom_slider').value = 1
         }    
 
-        select_deselect_nodes_by_field_value = function(legend_node, column_index, status='select'){
+        select_deselect_nodes_by_field_value = function(legend_node, column_index){
             //console.log(legend_node.textContent)
             //console.log(legend_node)
             //SelectedNodes.addNodes(document.querySelector('#SRR20438614 text'))
             // TODO on deselect event not everything deselects alwasys
-            
+            let selected = false;
+            if(legend_node.dataset.selected){
+                delete legend_node.dataset.selected
+            }else{
+                selected = true;
+                legend_node.dataset.selected = true
+            }
             //find indices of filtered data in a metadata table
             let indexes = data_table.rows( (idx, data, node) => {
                 if(data[column_index] === `${legend_node.textContent}` ){
@@ -1584,20 +1589,7 @@
                 }
             } ).indexes()
 
-            let selected_node_ids = data_table.cells(indexes,0).data()
-            //console.log(selected_node_ids)
-            
-            //add selected nodes from legend to the SelectedNodes map
-            /*
-            SelectedNodes.nodes.clear() //clear all previous nodes
-            SelectedNodes.drawSelectedNodes()
-            for(var i = 0; i < selected_node_ids.length; i++) {
-                //console.log(`#${selected_node_ids[i]} text`)
-
-                SelectedNodes.addNodes(document.querySelector( `#${selected_node_ids[i]} text`))
-                SelectedNodes.drawSelectedNodes()
-            }
-            */
+            let selected_node_ids = data_table.cells(indexes,0).data();
 
             for(var i = 0; i < selected_node_ids.length; i++) {
                 let tree_node = document.querySelector( `#${selected_node_ids[i]}`)
@@ -1609,14 +1601,13 @@
                     tree_node.scrollIntoView({block: "center", inline:"center"})
                 }
 
-                if(status === 'select'){
-                    //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
+                if(selected){
+                    // TODO discuss if previously selected nodes should be excluded from this
                     SelectedNodes.addNodes(tree_node);
                     legend_node.classList.add('fw-bold')
                 }else{
                     SelectedNodes.unselectNode(tree_node);
                     legend_node.classList.remove('fw-bold')
-                    //document.querySelectorAll('#colour-legend small').forEach(node => {node.classList.remove('fw-bold')})
                 }    
             }
             SelectedNodes.drawSelectedNodes();
