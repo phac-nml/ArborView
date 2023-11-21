@@ -1408,7 +1408,7 @@
                 // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
                 let group_vals = CreateColoringGroups(break_down_values);
                 break_down_values = PopulateGroups(group_vals, column_index);
- 
+
 
                 // TODO set threshold for x discrete colours, but then switch over to this
                 let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "rgb"});
@@ -1755,14 +1755,14 @@
                         <label for="tree-selector" class="input-group-text">Browse files</label>
                     </div>
                         <input class="custom-file-input" type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-                        <label for="tree-selector" class="form-control"><div class="bi bi-tree icon-spin" style="display:inline-block"></div> Select a newick file</label>
+                        <label for="tree-selector" class="form-control"><div class="bi bi-tree" style="display:inline-block"></div> Select a newick file</label>
                     </div>
                     <div class="input-group" data-toggle="tooltip" data-placement="top" title="Open up your file browser to look for a tab delimited file containing information relevant to your tree.">
                         <div class="input-group-prepend">
                             <label for="metadata-selector" class="input-group-text">Browse files</label>
                         </div> 
                         <input type="file" class="custom-file-input" onchange="update_input_text(this)" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
-                        <label class="form-control" for="metadata-selector"><div class="bi bi-file-spreadsheet icon-jump" style="display:inline-block"></div> Select a tab delimited metadata file</label>
+                        <label class="form-control" for="metadata-selector"><div class="bi bi-file-spreadsheet" style="display:inline-block"></div> Select a tab delimited metadata file</label>
                     </div>
                 <div class="row">
                     <button class="flex-grow-1 btn-sm btn-primary p-0" type="button" data-bs-toggle="collapse" 
