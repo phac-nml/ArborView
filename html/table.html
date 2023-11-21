@@ -1790,22 +1790,22 @@
             <div class="row"> <!-- id="TreeSelections" style=""-->
 
 
-                <div id="control_panel" class="col-2 border border-primary">
-                    <div id="tree_menu_buttons" class="row">
+                <div id="control_panel" class="col-2 border border-primary px-1">
+                    <div id="tree_menu_buttons" class="row m-0">
 
-                                <button type="button" class="btn-sm btn-primary w-100 text-break mb-1" data-toggle="tooltip" data-placement="top" 
+                                <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button>                                
                                 
                                 <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left mb-1">
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" data-toggle="tooltip" data-placement="top"  
+                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top"  
                                         title="Copy selected node ID's to your clipboard to paste into another application." onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
                                     </button>
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download me-1"></i> SVG
                                     </button>
-                                    <button data-toggle="tooltip" data-placement="top" title="Export the metadatatable below." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-0" onclick="export_metadata()" id="export-metadata">
+                                    <button data-toggle="tooltip" data-placement="top" title="Export the metadatatable below." class="flex-grow-1 btn-sm btn-primary text-break mb-0" onclick="export_metadata()" id="export-metadata">
                                         <i class="bi bi-download me-1"></i> Export Table
                                     </button>
                                 </div>
@@ -1824,9 +1824,9 @@
                                     </div>    
                                 </div>  
 
-                                <div class="d-flex flex-wrap flex-row align-items-center p-1 text-left" data-toggle="tooltip" data-placement="top" title="Change the layout of the tree.">
-                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Layout</small>
-                                    <div class="flex-grow-1">
+                                <div class="d-flex flex-nowrap flex-column align-items-center p-1 text-left" data-toggle="tooltip" data-placement="top" title="Change the layout of the tree.">
+                                    <small class="flex-grow-1 m-0" for="zoom_slider" class="form-label">Layout</small>
+                                    <div class="flex-grow-1 w-100">
                                         <input type="range" class="form-range align-middle"  id="tree_layout_slider" 
                                             onchange="switchTreeType()" value="1" min="1" max="2" step="1">
                                             
@@ -1838,7 +1838,6 @@
                                 <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->
                                 
                                 
-
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn the legend on or off">
                                     <small  class="flex-grow-1" for="legend_toggle">Legend</small>
                                     <input onchange="legend_on_off(this)" id="legend_toggle" 
@@ -1850,24 +1849,25 @@
                                     checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn branch lengths on or off" data-onstyle="primary" data-size="sm">
                                 </div>   
                     </div> 
-                    <div class="row">
-                        <div id="dropdown_legend" class="d-flex flex-wrap p-1 dropdown">
-                            <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
+                    <div class="row m-0">
+                        <div id="dropdown_legend" class="d-flex flex-wrap p-0 dropdown mb-1">
+                            <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row m-0">
                         <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
-                                <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="SearchMetadata" id="metadata-search-button">
-                                <i class="bi bi-search me-1 icon-image"></i> Filter data</button>
-                                <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" name="ClearSelectedNodes" 
+                                <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" class="flex-grow-1 btn-sm btn-primary text-break w-100 mb-1" name="SearchMetadata" id="metadata-search-button">
+                                <i class="bi bi-search icon-image"></i> Filter data</button>
+                                <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." class="flex-grow-1  btn-sm btn-primary text-break w-100 mb-1" name="ClearSelectedNodes" 
                                 onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
                         </div>
                         
-                        <h5 data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." class="d-flex justify-content-center" style="text-decoration: underline;">Selected Nodes</h5>
+                        <!--h5 data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." class="d-flex justify-content-center">Selected Nodes</h5-->
                         <div data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
-                                id="SelectedNodes"></div>
-                        </div> 
+                                id="SelectedNodes">
+                        </div>
                     </div> 
+                </div> 
 
 
                 <div class="position-relative p- bg-white col-10 Tree inline-block-child scrollbar-window" 
