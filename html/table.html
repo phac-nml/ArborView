@@ -1720,15 +1720,19 @@
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
+                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
                 console.log(`hide meta div collapse event  ${heightTreeDataDiv} + ${heightMetaDiv} `)
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+'vh'
+                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
+                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             })
             document.querySelector('#ClusterInfo').addEventListener('show.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
+                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
                 console.log(`show meta div collapse event  ${heightTreeDataDiv} - ${heightMetaDiv}`)
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+'vh'
+                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
+                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             })
 
@@ -1764,7 +1768,6 @@
 
         vertical_div_resize = function(event){
             event.preventDefault()
-            console.log(`Mouse is down for div dragging. Current position mouse ${event.y}`)
             let cursor_pos_init = event.y
             metadata_panel = document.querySelector('#ClusterInfo>div')
             treeData_panel = document.querySelector('#TreeData')
@@ -1772,7 +1775,6 @@
             let metadata_panel_height_init = metadata_panel.getBoundingClientRect().height
             let treeData_panel_height_init = treeData_panel.getBoundingClientRect().height
             let control_panel_height_init = control_panel.getBoundingClientRect().height
-            console.log(metadata_panel)
             document.addEventListener('mousemove', resize, false)
             document.addEventListener('mouseup', stop_resize, false)
             function resize(event){
@@ -1781,15 +1783,10 @@
                 metadata_panel.style.height = metadata_panel_height_init - dy+'px'
                 treeData_panel.style.height  = treeData_panel_height_init + dy+'px'
                 control_panel.style.height = control_panel_height_init + dy+'px'
-                console.log(`dy:${dy}:init_h:${metadata_panel_height_init}:new_h:${metadata_panel.style.height}`)
-               
             }
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
-            }
-            
-            console.log('Done')
-            
+            }    
         }
         document.addEventListener('mouseup',(event)=>{
                 document.removeEventListener('mousemove', vertical_div_resize,false)
@@ -1898,7 +1895,7 @@
                 </div> 
 
 
-                <div class="position-relative p- bg-white col-10 Tree inline-block-child scrollbar-window" 
+                <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
                 onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
                 id="TreeData" style="height:70vh;">
 
@@ -1928,7 +1925,6 @@
                 </div>
             </div>
             <div id="ClusterInfo" class="row collapse show border border-primary">
-                
                 <div class="col-12 overflow-auto" style="height:28.9vh">
                     <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display overflow-scroll" >
