@@ -1551,6 +1551,7 @@
                             }
                         });
         }
+        
 
 
         scroll_legend_into_view = function(node,full_screen_btn, node_TreeData){
@@ -1761,6 +1762,39 @@
             
         }
 
+        vertical_div_resize = function(event){
+            event.preventDefault()
+            console.log(`Mouse is down for div dragging. Current position mouse ${event.y}`)
+            let cursor_pos_init = event.y
+            metadata_panel = document.querySelector('#ClusterInfo>div')
+            treeData_panel = document.querySelector('#TreeData')
+            control_panel = document.querySelector('#control_panel')
+            let metadata_panel_height_init = metadata_panel.getBoundingClientRect().height
+            let treeData_panel_height_init = treeData_panel.getBoundingClientRect().height
+            let control_panel_height_init = control_panel.getBoundingClientRect().height
+            console.log(metadata_panel)
+            document.addEventListener('mousemove', resize, false)
+            document.addEventListener('mouseup', stop_resize, false)
+            function resize(event){
+                event.stopPropagation();
+                const dy = event.y - cursor_pos_init  
+                metadata_panel.style.height = metadata_panel_height_init - dy+'px'
+                treeData_panel.style.height  = treeData_panel_height_init + dy+'px'
+                control_panel.style.height = control_panel_height_init + dy+'px'
+                console.log(`dy:${dy}:init_h:${metadata_panel_height_init}:new_h:${metadata_panel.style.height}`)
+               
+            }
+            function stop_resize(event){
+                document.removeEventListener('mousemove', resize)
+            }
+            
+            console.log('Done')
+            
+        }
+        document.addEventListener('mouseup',(event)=>{
+                document.removeEventListener('mousemove', vertical_div_resize,false)
+        })
+
     </script>
 </head>
     <body>
@@ -1788,9 +1822,7 @@
             </div> 
         
             <div class="row"> <!-- id="TreeSelections" style=""-->
-
-
-                <div id="control_panel" class="col-2 border border-primary px-1">
+                <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
                     <div id="tree_menu_buttons" class="row m-0">
 
                                 <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
@@ -1831,13 +1863,9 @@
                                             onchange="switchTreeType()" value="1" min="1" max="2" step="1">
                                             
                                     </div>
-                                    
-                                    
-                                        
+     
                                 </div>
-                                <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->
-                                
-                                
+                                <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->   
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn the legend on or off">
                                     <small  class="flex-grow-1" for="legend_toggle">Legend</small>
                                     <input onchange="legend_on_off(this)" id="legend_toggle" 
@@ -1890,10 +1918,14 @@
                 
                 
             </div>
-            <div class="row">
-                <button class="flex-grow-1 btn-sm btn-primary p-0" type="button" data-bs-toggle="collapse" 
+            <div class="row" style="height:10px;background-color: #0d6efd;"">
+                <a  href="#" data-bs-toggle="collapse" 
                 data-bs-target="#ClusterInfo">
-                </button>
+                </a>
+                <div class="p-0" onmousedown="vertical_div_resize(event)" 
+                style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
+                background-color: #dc3545; width:50px; height:10px; z-index: 2;">
+                </div>
             </div>
             <div id="ClusterInfo" class="row collapse show border border-primary">
                 
