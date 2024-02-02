@@ -116,7 +116,6 @@
         var METADATA = null;
         var TABLE_HEADERS = null;
         var data_table = null;
-        var original_data = null;
         var query_table = null;
         var ORIGINAL_DATA = null;
         var ORIGINAL_VIEW_BOX = null;
@@ -145,7 +144,9 @@
         const LEAF_NODE_SIZE = 6;
 
 
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TREE DEFS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TREE FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // These are messy due to the way in which they were created, and there has not been time
+        // to refactor them yet sadly.
         const dendrogram_chart = (data) => {
             // Made with lost of help from: https://observablehq.com/d/6c52fee38fb28b2f
 
@@ -1453,7 +1454,7 @@
             });
 
             
-            // TODO determine if this can be initialized anywhere else saving load time
+            // TODO This can likely be initialized in the above loop pushing to value 
             for(const [key, value] of ORIGINAL_DATA.entries()){
                 value.push(false); // Append a key to flag whether the value has been modified    
             }
@@ -2027,7 +2028,27 @@
             SelectedNodes.drawSelectedNodes();
         }
 
-        export_metadata = function(){
+        let original_data_blob = (headers) => {
+            // Create a text string of the original data
+            let output_text = new Array();
+            output_text.push(headers.join("\t"))
+            
+            for(const [key, value] of ORIGINAL_DATA.entries()){
+                output_text.push(value.join("\t"))
+            }
+            return output_text;
+        };
+
+        let filtered_data_blob = (headers) => {
+            let output_text = new Array();
+            output_text.push(headers.join("\t"))
+            data_table.rows().data().each((value, index) => {
+                output_text.push(value.join("\t"))
+            });
+            return output_text;
+        }
+
+        export_metadata_table = function(e){
             /*
             Export updated metadata
             */
@@ -2036,14 +2057,20 @@
                 return false;
             }
             let headers = Array.from(TABLE_HEADERS);
-            headers.push("modified");
-            let output_text = new Array();
-            output_text.push(headers.join("\t"))
-            
-            for(const [key, value] of ORIGINAL_DATA.entries()){
-                output_text.push(value.join("\t"))
+            headers.push("modified"); // Values track what have been modified however it is not in the original headers
+            let output_text = null;
+            let updated_metadata = null;
+            if(e.id === "export-metadata-table"){
+                output_text = original_data_blob(headers);
+                updated_metadata = "FullClusterInfo.tsv";
+            }else if(e.id === "export-metadata-view"){
+                output_text = filtered_data_blob(headers);
+                updated_metadata = "FilteredClusterInfo.tsv"
+            }else{
+                console.error("Unknown element specified for export of data.")
+                return false;
             }
-            const updated_metadata = "ClusterInfo.tsv";
+
             const blob = new Blob([output_text.join("\n")], {type: "text/tsv"} );
 
 
@@ -2238,8 +2265,11 @@
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download me-1"></i> SVG
                                     </button>
-                                    <button data-toggle="tooltip" data-placement="top" title="Export the metadatatable below." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata()" id="export-metadata">
-                                        <i class="bi bi-download me-1"></i> Export Table
+                                    <button data-toggle="tooltip" data-placement="top" title="Export the entire metadata table below." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-table">
+                                        <i class="bi bi-download me-1"></i> Export Full Table
+                                    </button>
+                                    <button data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
+                                        <i class="bi bi-download me-1"></i> Export Filtered Table
                                     </button>
                                 </div>
                                 <!--Tree layout slider-->
