@@ -87,7 +87,6 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
 
-    
 
     <!--Bootstrap 5 library elements-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
@@ -1766,7 +1765,6 @@
                     }
                     METADATA = d3.tsvParse(metadata, blankQuitter);
                     TABLE_HEADERS = METADATA.columns;
-                    console.log("Inspecting element.", METADATA);
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
                     initialize_legend_menu();
@@ -2101,34 +2099,50 @@
             downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
                 (date.getMonth()+1)+'-'+date.getFullYear()+'_'+date.getHours()+'h.svg';
 
-            //adapted from https://observablehq.com/@mbostock/saving-svg by Mike Bostock    
+            //adapted from https://observablehq.com/@mbostock/saving-svg by Mike Bostock
+            // Code above also contains method to convert svg to a png 
             serialize = function(svg) {
                         svg = svg.cloneNode(true);
+                        
+                        const lgd = document.getElementById("colour-legend");
+                        const legend_width = lgd.clientWidth;
+
                         const fragment = window.location.href + "#";
                         const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
                         while (walker.nextNode()) {
-                        for (const attr of walker.currentNode.attributes) {
-                            if (attr.value.includes(fragment)) {
-                            attr.value = attr.value.replace(fragment, "#");
+                            for (const attr of walker.currentNode.attributes) {
+                                if (attr.value.includes(fragment)) {
+                                attr.value = attr.value.replace(fragment, "#");
+                                }
                             }
                         }
-                        }
+
+
                         svg.setAttributeNS(xmlns, "xmlns", svgns);
                         svg.setAttributeNS(xmlns, "xmlns:xlink", xlinkns);
+
+                        // Clone style elements to add incorporate into the SVG file
+                        const css_export = document.createElement("defs")
+                        const link_style_sheet = document.createElement("link");
+                        link_style_sheet.setAttribute("href", "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css");
+                        link_style_sheet.setAttribute("rel", "stylesheet");
+                        link_style_sheet.setAttribute("crossorigin", "anonymous");
+                        css_export.appendChild(link_style_sheet);
+                        svg.insertBefore(css_export, svg.firstChild);
+
+                        const tree_svg = svg.querySelector("#TreeSVG");
+                        const offset_safety_factor = 20;
+                        tree_svg.style.marginLeft = legend_width + offset_safety_factor;
+
                         const serializer = new window.XMLSerializer;
-                        const string = serializer.serializeToString(svg);
-                        console.log(string)
-                        return new Blob([string], {type: "image/svg+xml"});
+                        const xml_string = serializer.serializeToString(svg);
+                        return new Blob([xml_string], {type: "image/svg+xml"});
             }
 
-
-            const textToBLOB = serialize(document.querySelector('svg'))
-            downloadLink.href = window.URL.createObjectURL(textToBLOB);
+            const legend_blob = serialize(document.getElementById("TreeData"));
+            downloadLink.href = window.URL.createObjectURL(legend_blob);
             downloadLink.click(); //Trigger a click on the element
-            downloadLink.remove();
-            
-
-            
+            downloadLink.remove();               
         }
 
         tree_full_screen_mode = function(){
@@ -2294,9 +2308,7 @@
                                     <div class="flex-grow-1 w-100">
                                         <input type="range" class="form-range align-middle"  id="tree_layout_slider" 
                                             onchange="switchTreeType(this)" value="1" min="1" max="3" step="1">
-                                            
                                     </div>
-     
                                 </div>
                                 <!--button class="btn-sm btn-primary w-100 text-break mb-1" onclick="switchTreeType()" name="SwitchTree" id="switch-tree">Switch Tree</button-->   
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn the legend on or off">
@@ -2351,7 +2363,7 @@
                 
                 
             </div>
-            <div class="row" style="height:10px;background-color: #0d6efd;"">
+            <div class="row" style="height:10px;background-color: #0d6efd;">
                 <a  href="#" data-bs-toggle="collapse" 
                 data-bs-target="#ClusterInfo">
                 </a>
