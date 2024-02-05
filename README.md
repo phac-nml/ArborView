@@ -18,5 +18,5 @@ PNC feedback:
         - Feature may be provided from Cluster summary. Out of scope currently
     - [ ] New samples highlighted 
         - will be implemented when implementation is further along
-    - [ ] Export legend with SVG
-    - [ ] Move the tree to the right slightly more, so that the left most node is visible
+    - [x] Export legend with SVG
+    - [x] Move the tree to the right slightly more, so that the left most node is visible

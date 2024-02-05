@@ -1395,6 +1395,9 @@
             let tree = kn_parse(newick_);
             tree_root = tree.root; // Save the trees root to redraw the tree when needed
             let node_out = TREE_SWITCH.get(TREE_VAL)(tree_root)
+            let offset_tree = 20;
+            console.log(node_out.style);
+            node_out.style.paddingLeft = node_out.style.paddingLeft + offset_tree;
             
             $("#TreeData").append(node_out);
             document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
