@@ -11,6 +11,8 @@ The popup menu was previously not working in fullscreen mode due to the #top-lay
 
 
 PNC feedback:
+
+
     - [x] Export metadata only in current selection
     - [ ] Display node min, max and average distance (requires clarification, e.g. to next nodes)
     - [ ] New samples highlighted, will be implemented when implementation is further along
