@@ -20,3 +20,4 @@ PNC feedback:
         - will be implemented when implementation is further along
     - [x] Export legend with SVG
     - [x] Move the tree to the right slightly more, so that the left most node is visible
+    - [ ] On static page add loading icon so the user knows the tree and table are rendering
