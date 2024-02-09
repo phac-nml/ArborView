@@ -73,13 +73,13 @@ def output_static_file(lines: List[str], path: str):
 def read_tsv(file):
     data = None
     with open(file, 'rb') as context_data:
-        data = context_data.read().replace(b"\r\n", b"\\n").replace(b"\t", b"\\t").decode("utf-8").replace('"', "'")
+        data = context_data.read().replace(b"\r\n", b"\\n").replace(b"\n", b"\\n").replace(b"\t", b"\\t").decode("utf-8").replace('"', "'")
     return data
 
 def read_nwk(file):
     data = None
     with open(file, 'rb') as context_data:
-        data = context_data.read().replace(b"\r\n", b"\\n").decode("utf-8").replace('"', "'")
+        data = context_data.read().replace(b"\r\n", b"\\n").replace(b"\n", b"\\n").decode("utf-8").replace('"', "'")
     
     return strip_trailing_lf(data)
     
