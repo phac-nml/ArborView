@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 Add data to existing points, generating a page with the data embedded in the HTML page.
 
@@ -89,16 +90,19 @@ if __name__ == "__main__":
         prog="ArborView Fillin",
         description="Embeds the newick file and tabular data directly in ArborView. Eliminating the need for user data upload.",
     )
+    source_home = os.path.dirname(os.path.dirname(__file__))
+    HTML_file = os.path.join(source_home , "html", "table.html")
 
     parser.add_argument("-d", "--metadata", help="Path to a tsv file containing contextual data relevant to your newick formatted file.")
     parser.add_argument("-n", "--newick", help="Path to your newick formatted file.")
     parser.add_argument("-o", "--output", help="An optional argument of what to name your outputted file. Make sure your output directory exists", 
                         default=f"{OUTPUT_DIRECTORY}/{output_file_name}", required=False)
+    parser.add_argument("-t", "--template", help=f"Path to the ArborView HTML", default=HTML_file)
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG)
-    source_home = os.path.dirname(os.path.dirname(__file__))
-    HTML_file = os.path.join(source_home , "html", "table.html")
+    if args.template != HTML_file:
+        HTML_file = args.template
 
     logging.info(f"Reading template file {HTML_file}")    
     lines = read_html(HTML_file)
