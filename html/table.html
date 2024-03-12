@@ -2104,32 +2104,23 @@
 </head>
     <body>
         <div class="container-fluid m-0">
-            <div class="collapse show" id="input_files_panel">
-                <div class="input-group" data-toggle="tooltip" data-placement="top" title="Open up your file browser to search for a newick file to import.">
-                    <div class="input-group-prepend">
-                        <label for="tree-selector" class="input-group-text">Browse files</label>
-                    </div>
-                        <input class="custom-file-input" type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile"> 
-                        <label for="tree-selector" class="form-control"><div class="bi bi-tree" style="display:inline-block"></div> Select a newick file</label>
-                    </div>
-                    <div class="input-group" data-toggle="tooltip" data-placement="top" title="Open up your file browser to look for a tab delimited file containing information relevant to your tree.">
-                        <div class="input-group-prepend">
-                            <label for="metadata-selector" class="input-group-text">Browse files</label>
-                        </div> 
-                        <input type="file" class="custom-file-input" onchange="update_input_text(this)" id="metadata-selector" name="metadata-selector" accept=".tsv, .tab">
-                        <label class="form-control" for="metadata-selector"><div class="bi bi-file-spreadsheet" style="display:inline-block"></div> Select a tab delimited metadata file</label>
-                    </div>
-                <div class="row">
-                    <button class="flex-grow-1 btn-sm btn-primary p-0" type="button" data-bs-toggle="collapse" 
-                    data-bs-target="#input_files_panel">
-                    </button>
-                </div>
-            </div> 
-        
             <div class="row"> <!-- id="TreeSelections" style=""-->
                 <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
                     <div id="tree_menu_buttons" class="row m-0">
-
+                                <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
+                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
+                                        title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="copy-ids-button">
+                                        <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
+                                    </button>
+                                    <input  type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile" hidden> 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
+                                        title="Select a tab delimited metadata file" onclick="document.getElementById('metadata-selector').click();" 
+                                        id="export-tree-to-svg" id="metadata-selector" name="metadata-selector">
+                                        <i class="bi bi-upload me-1"></i>Meta <i class="bi bi-file-spreadsheet ml-1"></i>
+                                    </button>
+                                    <input type="file" onchange="update_input_text(this)" id="metadata-selector" 
+                                    name="metadata-selector" accept=".tsv, .tab" hidden>
+                                </div>
                                 <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button>                                
                                 
@@ -2140,7 +2131,7 @@
                                     </button>
                                     <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
-                                        <i class="bi bi-download me-1"></i> SVG
+                                        <i class="bi bi-download m-1"></i> SVG
                                     </button>
                                 </div>
                                 
@@ -2196,9 +2187,10 @@
                     <div class="row m-0">
                         <div class="d-flex flex-row align-items-center p-0 text-left">
                                 <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
-                                class="flex-grow-1 btn-sm btn-primary text-break w-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
+                                class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
                                 <i class="bi bi-search icon-image"></i> Filter data</button>
-                                <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." class="flex-grow-1  btn-sm btn-primary text-break w-100 mb-1" name="ClearSelectedNodes" 
+                                <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
+                                class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
                                 onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
                         </div>
                         
@@ -2230,7 +2222,7 @@
                 
                 
             </div>
-            <div class="row" style="height:10px;background-color: #0d6efd;">
+            <div class="row" style="height:5px;background-color: #0d6efd;">
                 <a  href="#" data-bs-toggle="collapse" 
                 data-bs-target="#ClusterInfo">
                 </a>
