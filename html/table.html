@@ -2133,7 +2133,7 @@
                                 <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button>                                
                                 
-                                <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left mb-1">
+                                <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top"  
                                         title="Copy selected node ID's to your clipboard to paste into another application." onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
@@ -2143,18 +2143,21 @@
                                         <i class="bi bi-download me-1"></i> SVG
                                     </button>
                                 </div>
-                                <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left mb-1">
-                                    <button data-toggle="tooltip" data-placement="top" title="Export the entire metadata table below." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-table">
-                                        <i class="bi bi-download me-1"></i> Export Full Table
-                                    </button>
-                                    <button data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
-                                        <i class="bi bi-download me-1"></i> Export Filtered Table
-                                    </button>
-                                </div>
+                                
+                                <button data-toggle="tooltip" data-placement="top" title="Export the entire metadata table below." 
+                                class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-table">
+                                    <i class="bi bi-download me-1"></i> Export Full Table
+                                </button>
+                                <button data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
+                                    <i class="bi bi-download me-1"></i> Export Filtered Table
+                                </button>
+                                
                                 <!--Tree layout slider-->
-                                <button data-toggle="tooltip" data-placement="top" title="Redraw the entire tree undoing any changes." class="btn-sm btn-primary w-100 text-break mb-1" name="RedrawTree" id="redraw-tree-button"><i class="bi bi-pencil-square"></i> Redraw Tree</button>
-                                <button data-toggle="tooltip" data-placement="top" title="Bring the tree back into focus" class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree"><i class="bi bi-eyeglasses"></i> Refocus tree</button>
-
+                                <div class="d-flex flex-row align-items-center p-0 text-left">
+                                    <button data-toggle="tooltip" data-placement="top" title="Redraw the entire tree undoing any changes." 
+                                    class="btn-sm btn-primary w-100 text-break me-1" name="RedrawTree" id="redraw-tree-button"><i class="bi bi-pencil-square"></i> Redraw Tree</button>
+                                    <button data-toggle="tooltip" data-placement="top" title="Bring the tree back into focus" class="btn-sm btn-primary w-100" name="ResetTree" id="ResetTree"><i class="bi bi-eyeglasses"></i> Refocus tree</button>
+                                </div>
                                 <!--Zoom slider-->
                                 <div data-toggle="tooltip" data-placement="top" title="Zoom in or out on the tree" class="d-flex flex-wrap align-items-center p-1">
                                     <small class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</small>
@@ -2191,8 +2194,9 @@
                         </div>
                     </div>
                     <div class="row m-0">
-                        <div class="d-flex flex-wrap flex-row align-items-center p-0 text-left">
-                                <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" class="flex-grow-1 btn-sm btn-primary text-break w-100 mb-1" name="SearchMetadata" id="metadata-search-button">
+                        <div class="d-flex flex-row align-items-center p-0 text-left">
+                                <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
+                                class="flex-grow-1 btn-sm btn-primary text-break w-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
                                 <i class="bi bi-search icon-image"></i> Filter data</button>
                                 <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." class="flex-grow-1  btn-sm btn-primary text-break w-100 mb-1" name="ClearSelectedNodes" 
                                 onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
