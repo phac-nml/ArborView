@@ -2094,6 +2094,7 @@
             }
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
+                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             }    
         }
         document.addEventListener('mouseup',(event)=>{
@@ -2177,28 +2178,24 @@
                                     <small data-toggle="tooltip" data-placement="top" title="Turn branch lengths on or off" class="flex-grow-1" for="legend_toggle">Branch lengths</small>
                                     <input onchange="branch_lengths_on_off(this)" id="branch_lengths_toggle" 
                                     checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn branch lengths on or off" data-onstyle="primary" data-size="sm">
-                                </div>   
+                                </div>  
+                                <div id="dropdown_legend" class="d-flex flex-wrap p-0 dropdown mb-1">
+                                    <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
+                                </div> 
+                                <div class="d-flex flex-row align-items-center p-0 text-left">
+                                    <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
+                                    class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
+                                    <i class="bi bi-search icon-image"></i> Filter data</button>
+                                    <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
+                                    class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
+                                    onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
+                                </div>       
                     </div> 
-                    <div class="row m-0">
-                        <div id="dropdown_legend" class="d-flex flex-wrap p-0 dropdown mb-1">
-                            <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
-                        </div>
-                    </div>
-                    <div class="row m-0">
-                        <div class="d-flex flex-row align-items-center p-0 text-left">
-                                <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
-                                class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
-                                <i class="bi bi-search icon-image"></i> Filter data</button>
-                                <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
-                                class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
-                                onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
-                        </div>
-                        
-                        <!--h5 data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." class="d-flex justify-content-center">Selected Nodes</h5-->
-                        <div data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." class="col p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
+            
+                    <div data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." 
+                      class="col border-1 p-1 w-100 border-primary Tree inline-block-child scrollbar-window" 
                                 id="SelectedNodes">
-                        </div>
-                    </div> 
+                    </div>
                 </div> 
 
 
