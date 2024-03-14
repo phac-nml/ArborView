@@ -1148,7 +1148,6 @@
         };
 
         let CreateDropDownDiv = (event) => {
-            let div_height_adj = document.getElementById("input_files_panel").offsetHeight;
             let offset_menu = 0;
             // Temporarily increase node size on collection
             let circle = event.target.parentNode.getElementsByTagName("circle")[0];
@@ -1447,10 +1446,6 @@
 
         };
 
-        let update_input_text = (ele) => {
-            // Update input forms element name
-            ele.parentNode.querySelector('.form-control').textContent = ele.files[0].name;
-        };
 
 
         let initialize_legend_menu = () => {
@@ -2113,13 +2108,13 @@
                                         title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="copy-ids-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
                                     </button>
-                                    <input  type="file" onchange="update_input_text(this)" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile" hidden> 
+                                    <input  type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile" hidden> 
                                     <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a tab delimited metadata file" onclick="document.getElementById('metadata-selector').click();" 
                                         id="export-tree-to-svg" id="metadata-selector" name="metadata-selector">
                                         <i class="bi bi-upload me-1"></i>Meta <i class="bi bi-file-spreadsheet ml-1"></i>
                                     </button>
-                                    <input type="file" onchange="update_input_text(this)" id="metadata-selector" 
+                                    <input type="file"  id="metadata-selector" 
                                     name="metadata-selector" accept=".tsv, .tab" hidden>
                                 </div>
                                 <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
