@@ -2003,6 +2003,10 @@
             downloadLink.remove();               
         }
 
+        export_tree_to_png = function(){
+            alert("Export PNG image")
+        }    
+
         tree_full_screen_mode = function(){
             document.querySelector('#TreeData').requestFullscreen()
             
@@ -2121,13 +2125,17 @@
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button>                                
                                 
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top"  
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
                                         title="Copy selected node ID's to your clipboard to paste into another application." onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download m-1"></i> SVG
+                                    </button>
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
+                                        title="Export the tree to PNG." onclick="export_tree_to_png()" id="export-tree-to-png">
+                                        <i class="bi bi-download m-1"></i> PNG
                                     </button>
                                 </div>
                                 
