@@ -1435,10 +1435,8 @@
         };
 
         let changeLengedItemColour = (div) => {
-            alert(`Change colour ${div.value}`)
             let prevColourValueHex = div.getAttribute("value");
             let newColourValueHex = `${div.value}`
-            console.log(`${prevColourValueHex}:${newColourValueHex}`);
             div.setAttribute("value",newColourValueHex);
             div.dataset.sampleid.split(',').forEach( sample_id => { 
                 document.querySelector(`[id="${sample_id}"] circle`).style.fill=newColourValueHex;
