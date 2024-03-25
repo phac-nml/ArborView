@@ -74,7 +74,7 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Random colour library for creating some nice highlighted trees    -->
+    <!-- Random colour library for creating some nice highlighted trees  https://github.com/davidmerfield/randomColor   -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.6.1/randomColor.min.js" integrity="sha512-vPeZ7JCboHcfpqSx5ZD+/jpEhS4JpXxfz9orSvAPPj0EKUVShU2tgy7XkU+oujBJKnWmu4hU7r9MMQNWPfXsYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
@@ -205,7 +205,7 @@
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width + 20) //makes sure all tree nodes are within view
-                    .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: none;`)
+                    .attr("style", `width:100%; height: auto; font: 10px sans-serif; user-select: none;`)
                     
                 const gLink = svg.append("g")
                     .attr("fill", "none")
@@ -1403,16 +1403,28 @@
             return new_obj;
         };
 
+        function rgbToHex(r, g, b) {
+            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+        }
+
+        function parseRBGstring(rbgString){
+            m = rbgString.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
+            if( m) {
+                return [m[1],m[2],m[3]];
+            }
+        }
+
         //fill legend with items
-        let CreateNodeLegend = (array_tuples, column_index) => {
+        let CreateNodeLegend = (array_tuples, column_index, value2samples) => {
 
             let node_leg = $("#colour-legend")
             node_leg.empty()
 
-            for(const item of array_tuples){
+            for(const item of array_tuples){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
                 row_legend_node.append(`
-                <div style="width: 20px; height:20px; padding: 5px; background-color: ${item[1]}; border: 1px solid black"></div>\n
+                <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLengedItemColour(this)" 
+                style="width: 20px; height:20px; padding: 1px; border: 1px solid black"></input>\n
                 <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
                 style="padding-left:5px">${item[0]}</small>`)
                 node_leg.append(row_legend_node)
@@ -1421,6 +1433,18 @@
             document.querySelector('#colour-legend').style.left = `${document.querySelector('#TreeData').scrollLeft}px`
 
         };
+
+        let changeLengedItemColour = (div) => {
+            alert(`Change colour ${div.value}`)
+            let prevColourValueHex = div.getAttribute("value");
+            let newColourValueHex = `${div.value}`
+            console.log(`${prevColourValueHex}:${newColourValueHex}`);
+            div.setAttribute("value",newColourValueHex);
+            div.dataset.sampleid.split(',').forEach( sample_id => { 
+                document.querySelector(`[id="${sample_id}"] circle`).style.fill=newColourValueHex;
+            })
+
+        }
 
         let PopulateGroups = (json_groups, query_key) => {
             ORIGINAL_DATA.forEach((value, key) => {
@@ -1495,8 +1519,7 @@
             let group_vals = CreateColoringGroups(break_down_values);
             break_down_values = PopulateGroups(group_vals, col_index);
 
-            let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "rgb"});
-            
+            let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "hex"});
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
             for(const item in break_down_values){
@@ -1507,7 +1530,8 @@
                             delete current_item.dataset.oldfill;
                             current_item.dataset.oldfill = colours[colour_idx];
                         }else{
-                            current_item.style.fill = colours[colour_idx];
+                            current_item.style.fill = colours[colour_idx]
+                            current_item.setAttribute('data-color-hex', colours[colour_idx])
                         }
                         
                     }catch(error){
@@ -1518,7 +1542,7 @@
                 colour_legend.push([item, colours[colour_idx]])
                 colour_idx++;
             }
-            CreateNodeLegend(colour_legend, col_index);    
+            CreateNodeLegend(colour_legend, col_index, break_down_values);    
 
         };
 
