@@ -17,6 +17,7 @@
             display: none;
         }
 
+        
         .input-group-text:hover {
             filter: brightness(80%);
         }
@@ -1476,27 +1477,24 @@
 
         let initialize_legend_menu = () => {
             // update the legend text to reflect loading
-
             let button = document.querySelector("#legend_dropdown_button");
-            //button.innerHTML = "Colour tree by column";
             button.textContent = "Colour tree by column";
             button.dataset.bsToggle = "dropdown";
             button.classList.remove("btn-danger");
             button.classList.add("btn-primary");
-
         }
 
         let create_legend_elements = (headers) => {
                 // Create html elements for the dropdown menu of itmes to creat the legend by
                 let text = new Array;
-                text.push('<div class=\"dropdown-menu\" id=\"legend-items\" style=\"overflow:visible\">')
+                text.push('<div class=\"dropdown-menu\" id=\"legend-items\" style=\"overflow:visible;\">')
                 let header_offset = headers.slice(1);
                 header_offset.forEach((ele, idx) => {
                     text.push(`\t<a onclick="colour_by_element(this)" class="dropdown-item" href="#" id="${idx+1}">${ele}</a>`)
                 });
                 text.push("</div>\n")
                 return text.join("\n")
-            }
+        }
         
         let colour_by_element = (ele) => {
             // Create a legend for the column selected
@@ -1536,7 +1534,7 @@
                         
                     }catch(error){
                         console.log("Could not find ", x, " In DOM");
-                        console.log(error);
+                        console.log(error); 
                     }
                 });
                 colour_legend.push([item, colours[colour_idx]])
@@ -1690,6 +1688,7 @@
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
                     initialize_legend_menu();
+                    console.log(create_legend_elements(TABLE_HEADERS));
                     $("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
                 };
                 reader.onerror = (evt) => {
@@ -2165,6 +2164,10 @@
 
     }    
 
+    dropdownmenufix = function(){
+        document.querySelector('.dropdown-menu').style['position']="fixed"
+    }
+
     </script>
 </head>
     <body>
@@ -2247,8 +2250,9 @@
                                     <input onchange="branch_lengths_on_off(this)" id="branch_lengths_toggle" 
                                     checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn branch lengths on or off" data-onstyle="primary" data-size="sm">
                                 </div>  
-                                <div id="dropdown_legend" class="d-flex flex-wrap p-0 dropdown mb-1">
-                                    <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">Awaiting metadata</button>
+                                <div id="dropdown_legend" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
+                                    <button id="legend_dropdown_button"  class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
+                                        Awaiting metadata</button>
                                 </div> 
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
@@ -2275,7 +2279,7 @@
                         <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
                         <div id="colour-legend" 
-                        class="d-none p-1 position-absolute border border-secondary text-break Tree inline-block-child scrollbar-window" 
+                        class="d-none p-1 position-absolute border border-primary text-break Tree inline-block-child scrollbar-window" 
                         style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
                         </div>
                         
