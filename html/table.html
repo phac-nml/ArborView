@@ -1688,7 +1688,6 @@
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
                     initialize_legend_menu();
-                    console.log(create_legend_elements(TABLE_HEADERS));
                     $("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
                 };
                 reader.onerror = (evt) => {
@@ -2164,8 +2163,37 @@
 
     }    
 
+    //The Bootstrap dropdown-menu position absolute css is not working and menu is obscured by other divs
+    //This fixes the issue as we do not want to modify original BS code
     dropdownmenufix = function(){
         document.querySelector('.dropdown-menu').style['position']="fixed"
+    }
+
+    dragDivByMouse = function(event){
+        let isDown = true;
+        let legend_div = document.querySelector('#colour-legend')
+        let offset = [legend_div.getBoundingClientRect().x- event.clientX,
+                        legend_div.offsetTop - event.clientY]
+        //console.log(event.clientX,event.clientY, offset)
+        document.addEventListener('mouseup', function(){isDown = false}, true)
+        document.addEventListener('mousemove', move, true)
+        function move(e){
+            event.preventDefault();
+            if(isDown === true){
+                let dy = e.clientY //+ offset[0]  
+                let dx = e.clientX-legend_div.getBoundingClientRect().x //+ offset[1]  
+                if(dx < document.querySelector('#control_panel').getBoundingClientRect().width){
+                    dx=0;
+                }
+                if(dy < 0){
+                    dt=0;
+                }
+                //console.log(e.clientX, e.clientY, dy,dx, offset)
+                legend_div.style['left']=`${dx}px`
+                legend_div.style['top']=`${dy}px`
+            }    
+        }
+
     }
 
     </script>
@@ -2278,9 +2306,9 @@
 
                         <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
-                        <div id="colour-legend" 
+                        <div id="colour-legend" onmousedown="dragDivByMouse(event)"
                         class="d-none p-1 position-absolute border border-primary text-break Tree inline-block-child scrollbar-window" 
-                        style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">    
+                        style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">   
                         </div>
                         
                         <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
