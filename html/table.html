@@ -1439,7 +1439,9 @@
             let newColourValueHex = `${div.value}`
             div.setAttribute("value",newColourValueHex);
             div.dataset.sampleid.split(',').forEach( sample_id => { 
-                document.querySelector(`[id="${sample_id}"] circle`).style.fill=newColourValueHex;
+                if (document.querySelector(`[id="${sample_id}"] circle`) !== null){
+                    document.querySelector(`[id="${sample_id}"] circle`).style.fill=newColourValueHex;
+                }
             })
 
         }
