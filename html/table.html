@@ -2172,25 +2172,17 @@
     dragDivByMouse = function(event){
         let isDown = true;
         let legend_div = document.querySelector('#colour-legend')
-        let offset = [legend_div.getBoundingClientRect().x- event.clientX,
-                        legend_div.offsetTop - event.clientY]
-        //console.log(event.clientX,event.clientY, offset)
+        let control_panel_div = document.querySelector("#control_panel")
+        let TreeData_div = document.querySelector('#TreeData')
+        let offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY+TreeData_div.scrollTop}   
         document.addEventListener('mouseup', function(){isDown = false}, true)
         document.addEventListener('mousemove', move, true)
-        function move(e){
+        function move(event){
             event.preventDefault();
             if(isDown === true){
-                let dy = e.clientY //+ offset[0]  
-                let dx = e.clientX-legend_div.getBoundingClientRect().x //+ offset[1]  
-                if(dx < document.querySelector('#control_panel').getBoundingClientRect().width){
-                    dx=0;
-                }
-                if(dy < 0){
-                    dt=0;
-                }
-                //console.log(e.clientX, e.clientY, dy,dx, offset)
-                legend_div.style['left']=`${dx}px`
-                legend_div.style['top']=`${dy}px`
+                offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY+TreeData_div.scrollTop}
+                legend_div.style['left']=offset.x+"px"
+                legend_div.style['top']=offset.y+"px"
             }    
         }
 
