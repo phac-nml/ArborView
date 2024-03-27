@@ -1420,6 +1420,7 @@
 
             let node_leg = $("#colour-legend")
             node_leg.empty()
+            node_leg.append(`<div id="drag_legend_button" onmousedown="dragDivByMouse(event)" class="w-100" style="height:5px; background-color:blue; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); cursor: all-scroll;"></div>`)
 
             for(const item of array_tuples){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
@@ -2169,23 +2170,22 @@
         document.querySelector('.dropdown-menu').style['position']="fixed"
     }
 
-    dragDivByMouse = function(event){
+    dragDivByMouse = function(event) {
         let isDown = true;
         let legend_div = document.querySelector('#colour-legend')
         let control_panel_div = document.querySelector("#control_panel")
         let TreeData_div = document.querySelector('#TreeData')
-        let offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY+TreeData_div.scrollTop}   
+        let offset = {"x": event.clientX - control_panel_div.offsetWidth, "y": event.clientY + TreeData_div.scrollTop}   
         document.addEventListener('mouseup', function(){isDown = false}, true)
         document.addEventListener('mousemove', move, true)
         function move(event){
             event.preventDefault();
             if(isDown === true){
-                offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY+TreeData_div.scrollTop}
-                legend_div.style['left']=offset.x+"px"
-                legend_div.style['top']=offset.y+"px"
+                offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY + TreeData_div.scrollTop}
+                legend_div.style['left'] = offset.x+"px"
+                legend_div.style['top'] = offset.y+"px"
             }    
         }
-
     }
 
     </script>
@@ -2298,7 +2298,7 @@
 
                         <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
-                        <div id="colour-legend" onmousedown="dragDivByMouse(event)"
+                        <div id="colour-legend"
                         class="d-none p-1 position-absolute border border-primary text-break Tree inline-block-child scrollbar-window" 
                         style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">   
                         </div>
