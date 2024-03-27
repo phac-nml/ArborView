@@ -1424,11 +1424,14 @@
 
             for(const item of array_tuples){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
+                console.log(item[0])
+                let field_value=item[0]
+                if(field_value === ''){field_value="Not defined"}
                 row_legend_node.append(`
                 <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLengedItemColour(this)" 
                 style="width: 20px; height:20px; padding: 1px; border: 1px solid black"></input>\n
                 <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
-                style="padding-left:5px">${item[0]}</small>`)
+                style="padding-left:5px">${field_value}</small>`)
                 node_leg.append(row_legend_node)
             }
             document.querySelector('#colour-legend').classList.remove("d-none");
@@ -2201,12 +2204,12 @@
                 <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
                     <div id="tree_menu_buttons" class="row m-0">
                                 <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
-                                    <button class="flex-grow-1 me-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
+                                    <button class="h-100 flex-grow-1 me-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="copy-ids-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
                                     </button>
                                     <input  type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile" hidden> 
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
+                                    <button class="h-100 flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a tab delimited metadata file" onclick="document.getElementById('metadata-selector').click();" 
                                         id="export-tree-to-svg" id="metadata-selector" name="metadata-selector">
                                         <i class="bi bi-upload me-1"></i>Meta <i class="bi bi-file-spreadsheet ml-1"></i>
