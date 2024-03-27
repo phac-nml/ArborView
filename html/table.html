@@ -2037,8 +2037,8 @@
 
             //create canvas to the size of the SVG
             let canvas = document.createElement('canvas')
-            canvas.width = svg_width+50;
-            canvas.height = svg_height+150;
+            canvas.width = svg_width+svg_width*0.05;
+            canvas.height = svg_height+svg_width*0.15;
             
             //create SVG image element
             let img = new Image();

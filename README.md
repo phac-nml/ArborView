@@ -1,4 +1,6 @@
-Test data is located: W:\Projects\DAAD\GSP_Datasets\ComparisonWindowVisualization\CC1
+Test data is located: 
+- /Drives/W/Projects/DAAD/GSP_Datasets/ComparisonWindowVisualization
+- /Drives/W/Projects/DAAD_PNC/arborview
 
 Deployed as a static page at http://daad.pages.cscscience.ca/ArborView/
 
