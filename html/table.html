@@ -955,7 +955,6 @@
                 text.style.fontWeight = "normal";
                 text.style.fill = "black";
                 if(circle.dataset.oldfill){
-                    let temp_fill = circle.dataset.fill;
                     circle.style.fill = circle.dataset.oldfill;
                     if(circle.dataset.oldfill === SelectedNodes.#default_color){
                         delete circle.dataset.oldfill
@@ -1029,6 +1028,7 @@
                             class="btn btn-danger m-1 btn-sm">x</button>
                         </div>
                         </div>\n`);
+                        
                     }
                     
                     return `${attributes.join("")}`;
@@ -1449,9 +1449,17 @@
             let prevColourValueHex = div.getAttribute("value");
             let newColourValueHex = `${div.value}`
             div.setAttribute("value",newColourValueHex);
-            div.dataset.sampleid.split(',').forEach( sample_id => { 
-                if (document.querySelector(`[id="${sample_id}"] circle`) !== null){
-                    document.querySelector(`[id="${sample_id}"] circle`).style.fill=newColourValueHex;
+            div.dataset.sampleid.split(',').forEach( sample_id => {
+                let ele = document.querySelector(`#TreeSVG [id="${sample_id}"]`);
+                if(ele !== null){
+                    let [elem, circle, text] = SelectedNodes.getNodeData(ele);
+                    if(SelectedNodes.nodes.has(text.textContent)){
+                        delete circle.dataset.oldfill
+                        circle.dataset.oldfill = newColourValueHex;
+                    }else{
+                        circle.style.fill = newColourValueHex;
+                    }
+                    
                 }
             })
 
@@ -1533,18 +1541,20 @@
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
                     try{
-                        let current_item = document.querySelector(`[id='${x}'] > circle`);
-                        if(current_item.style.fill == SelectedNodes.getSelectedColour()){
-                            delete current_item.dataset.oldfill;
-                            current_item.dataset.oldfill = colours[colour_idx];
+                        let current_item = document.querySelector(`[id='${x}']`);
+                        let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
+                        if(circle.style.fill == SelectedNodes.getSelectedColour()){
+                            delete circle.dataset.oldfill;
+                            circle.dataset.oldfill = colours[colour_idx];
                         }else{
-                            current_item.style.fill = colours[colour_idx]
-                            current_item.setAttribute('data-color-hex', colours[colour_idx])
+                            circle.style.fill = colours[colour_idx];
+                            //current_item.setAttribute('data-color-hex', colours[colour_idx])
+                        
                         }
                         
                     }catch(error){
-                        console.log("Could not find ", x, " In DOM");
-                        console.log(error); 
+                        console.error("Could not find ", x, " In DOM");
+                        console.error(error); 
                     }
                 });
                 colour_legend.push([item, colours[colour_idx]])
@@ -1590,7 +1600,6 @@
             if(DEBUG || TREE != __DEADBEEF__){
                 if(TREE != __DEADBEEF__){
                     drawTree(TREE);
-                    document.getElementById("input_files_panel").classList.remove("show")
                 }else if(DEBUG){
                     drawTree(test_newick);
                     
@@ -1889,13 +1898,12 @@
             } ).indexes()
 
             let selected_node_ids = data_table.cells(indexes,0).data();
-
             for(var i = 0; i < selected_node_ids.length; i++) {
-        
+                
                 let tree_node = document.querySelector( `[id='${selected_node_ids[i]}']`)
-                let text = tree_node.lastChild
-                let circle = tree_node.querySelector('circle')
-
+                //let text = tree_node.lastChild
+                //let circle = tree_node.querySelector('circle')
+                let [ele, circle, text] = SelectedNodes.getNodeData(tree_node);
                 //focus view on the last node in selection
                 if(i === selected_node_ids.length-1 ){
                     tree_node.scrollIntoView({block: "center", inline:"center"})
@@ -1915,6 +1923,7 @@
 
         remove_selected_node = function(node_id){
             let trg_node = SelectedNodes.nodes.get(node_id);
+            console.log(trg_node);
             SelectedNodes.unselectNode(trg_node);
             SelectedNodes.drawSelectedNodes();
         }
