@@ -1430,11 +1430,10 @@
 
             for(const item of array_tuples){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
-                console.log(item[0])
                 let field_value=item[0]
                 if(field_value === ''){field_value="Not defined"}
                 row_legend_node.append(`
-                <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLengedItemColour(this)" 
+                <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLegendItemColour(this)" 
                 style="width: 20px; height:20px; padding: 1px; border: 1px solid black"></input>\n
                 <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
                 style="padding-left:5px">${field_value}</small>`)
@@ -1445,16 +1444,18 @@
 
         };
 
-        let changeLengedItemColour = (div) => {
+
+        let changeLegendItemColour = (div) => {
             let prevColourValueHex = div.getAttribute("value");
             let newColourValueHex = `${div.value}`
             div.setAttribute("value",newColourValueHex);
+            let legend_update = div.nextElementSibling.innerText;
             div.dataset.sampleid.split(',').forEach( sample_id => {
                 let ele = document.querySelector(`#TreeSVG [id="${sample_id}"]`);
                 if(ele !== null){
                     let [elem, circle, text] = SelectedNodes.getNodeData(ele);
                     if(SelectedNodes.nodes.has(text.textContent)){
-                        delete circle.dataset.oldfill
+                        // if selected old fill value needs to be updated
                         circle.dataset.oldfill = newColourValueHex;
                     }else{
                         circle.style.fill = newColourValueHex;
@@ -1543,13 +1544,12 @@
                     try{
                         let current_item = document.querySelector(`[id='${x}']`);
                         let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
-                        if(circle.style.fill == SelectedNodes.getSelectedColour()){
-                            delete circle.dataset.oldfill;
+                        //if(circle.style.fill == SelectedNodes.getSelectedColour()){
+                        if(SelectedNodes.nodes.has(text)){
                             circle.dataset.oldfill = colours[colour_idx];
                         }else{
                             circle.style.fill = colours[colour_idx];
                             //current_item.setAttribute('data-color-hex', colours[colour_idx])
-                        
                         }
                         
                     }catch(error){
@@ -1586,7 +1586,7 @@
                     reset_zoom_slider()
                     return true;
                 }
-                console.log("No tree to redraw");
+                console.error("No tree to redraw");
             });
 
             // ! Below disables the right click menu for the page
@@ -1767,7 +1767,7 @@
                     if(DEBUG){
                         console.log("Selected element", identified_point)
                     }
-                    identified_point.childNodes[2].style.fill = "DodgerBlue";
+                    identified_point.childNodes[2].style.fill = clicked_color;
                 }
                 
                 let rect = identified_point.getBBox();
@@ -1784,7 +1784,9 @@
             });
 
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
-                console.log("scrolling");
+                if(DEBUG){
+                    console.log("scrolling");
+                }
             });
 
         });
@@ -1879,15 +1881,8 @@
             document.querySelector('#zoom_slider').value = 1
         }    
 
-        select_deselect_nodes_by_field_value = function(legend_node, column_index){
-            // TODO on deselect event not everything deselects alwasys
-            let selected = false;
-            if(legend_node.dataset.selected){
-                delete legend_node.dataset.selected
-            }else{
-                selected = true;
-                legend_node.dataset.selected = true
-            }
+        let select_deselect_nodes_by_field_value = (legend_node, column_index) => {
+
             //find indices of filtered data in a metadata table
             let indexes = data_table.rows( (idx, data, node) => {
                 if(data[column_index] === `${legend_node.textContent}` ){
@@ -1896,34 +1891,39 @@
                     return false
                 }
             } ).indexes()
+            
+            let selected = legend_node.classList.contains('fw-bold') ? true : false
+            
+            if(!selected){
+                legend_node.classList.add('fw-bold');
+            }else{
+                legend_node.classList.remove('fw-bold');
+            }
 
             let selected_node_ids = data_table.cells(indexes,0).data();
             for(var i = 0; i < selected_node_ids.length; i++) {
-                
+                // TODO need to batch select and deselct from this
                 let tree_node = document.querySelector( `[id='${selected_node_ids[i]}']`)
-                //let text = tree_node.lastChild
-                //let circle = tree_node.querySelector('circle')
                 let [ele, circle, text] = SelectedNodes.getNodeData(tree_node);
-                //focus view on the last node in selection
-                if(i === selected_node_ids.length-1 ){
-                    tree_node.scrollIntoView({block: "center", inline:"center"})
-                }
 
-                if(selected){
-                    SelectedNodes.addNodes(tree_node);
-                    legend_node.classList.add('fw-bold')
+                if(!selected){
+                    if(circle.dataset.oldfill){
+                        circle.dataset.oldfill = circle.style.fill;
+                    }
+                    SelectedNodes.addNodes(text);
                 }else{
-                    SelectedNodes.unselectNode(tree_node);
-                    legend_node.classList.remove('fw-bold')
+                    SelectedNodes.unselectNode(text);
                 }    
             }
+            // Bring the terminal node into frame
+            terminal_node = document.querySelector(`[id=${selected_node_ids[selected_node_ids.length-1]}`);
+            terminal_node.scrollIntoView({block: "center", inline: "center"})
             SelectedNodes.drawSelectedNodes();
             
         }
 
         remove_selected_node = function(node_id){
             let trg_node = SelectedNodes.nodes.get(node_id);
-            console.log(trg_node);
             SelectedNodes.unselectNode(trg_node);
             SelectedNodes.drawSelectedNodes();
         }
@@ -2127,6 +2127,7 @@
         clear_selected_nodes = function(){
             // Clear selected nodes and un-bold legend text
             SelectedNodes.deselectNodes(); // deselect nodes
+            SelectedNodes.clearNodes();
             // a way to de colour all of these nodes probably exists
             $(".legend-element > .fw-bold").each((it, ele) => {
                 ele.classList.remove("fw-bold");
@@ -2138,12 +2139,16 @@
             let text2copyArray=[]
             
             document.querySelectorAll('#SelectedNodes div>div:first-child').forEach(node => {
-                console.log(node.textContent)
+                if(DEBUG){
+                    console.log(node.textContent)
+                }
                 text2copyArray.push(node.textContent)
             })
             let text2copy = text2copyArray.join('\n');
             let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
-            console.log(text2copy)
+            if(DEBUG){
+                console.log(text2copy);
+            }
             let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
             //create a ObjectURL in order to download the created file
             url = window.URL.createObjectURL(file);
