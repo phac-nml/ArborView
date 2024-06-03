@@ -1332,6 +1332,8 @@
 
         let drawTree = (newick_) => {
             $("#tree-splash").remove()
+            $("#tree-selector").remove()
+            $("#tree-upload-button").remove()
             let tree = kn_parse(newick_);
             if(tree_root != null){
                 console.error("A tree is already drawn");
@@ -1382,6 +1384,9 @@
 
 
         let CreateTable = (parsed_data, table_id, table_headers) => {
+            $("#table-splash").remove();
+            $("#metadata-selector-input").remove();
+            $("#metadata-selector").remove();
             let headers = table_headers;
             let table_head = "";
             let table_body = [];
@@ -1683,11 +1688,12 @@
                 METADATA = null;
                 initialize_legend_menu();
                 $("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
-                $("#table-splash").remove();
+                //$("#table-splash").remove();
+                //$("#table-splash").remove();
+                //$("#table-splash").remove();
             }
 
             $("#metadata-selector").change((event) => {
-                $("#table-splash").remove();
                 let reader = new FileReader();
                 let metadata_file = event.target.files[0];
 
@@ -2225,13 +2231,13 @@
                     <div id="tree_menu_buttons" class="row m-0">
                                 <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
                                     <button class="h-100 flex-grow-1 me-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
-                                        title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="copy-ids-button">
+                                        title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="tree-upload-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
                                     </button>
                                     <input  type="file" id="tree-selector" name="tree-selector" accept=".nwk, .newick, .treefile" hidden> 
                                     <button class="h-100 flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a tab delimited metadata file" onclick="document.getElementById('metadata-selector').click();" 
-                                        id="export-tree-to-svg" id="metadata-selector" name="metadata-selector">
+                                        id="metadata-selector-input" name="metadata-selector-input">
                                         <i class="bi bi-upload me-1"></i>Meta <i class="bi bi-file-spreadsheet ml-1"></i>
                                     </button>
                                     <input type="file"  id="metadata-selector" 
