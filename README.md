@@ -78,11 +78,11 @@ The program functions are denoted by the buttons present on the left-hand portio
 | `Export Full Table` | Exports the metadata table as a tab-delimited file. |
 | `Export Filtered Table` | Exports the filtered metadata table as a tab-delimited file. |
 | `Redraw Tree` | Re-builds the phylogeny using the original Newick File. |
-| `Refocus Tree` | Adjusts view within the tree editor pane so the entire phylogeny is centered and visible on the screen. |
+| `Refocus Tree` | Adjusts the view within the tree editor pane so the entire phylogeny is centered and visible on the screen. |
 | `Zoom` | Enables the user to manually adjust the view of the phylogeny within the tree editor. |
 | `Layout` | Enables the user to select if the tree is visualized as rectangular (left on slider), hierarchical (center on slider) or circular (right on slider). |
 | `Legend` | If using colour coding, it shows ("on") or hides ("off") the legend. |
-| `Branch lengths` | Shows ("on") or hides ("off") the branch lengths. |
+| `Branch lengths` | Shows ("on") or hides ("off") the branch length values. |
 | `Colour tree by column` | Enables the user to quickly colour the nodes on the tree using a column selected from the associated metadata. If the legend is turned on, the user can click on the boxes to customize the colours that are used for the visualization (as opposed to using the pre-set colour options). |
 | `Filter data` | If a node is selected from the tree using the tree editor, the user can use this button to quickly filter the associated metadata for the sample. |
 | `Clear nodes` | Clears the selected nodes from the tree editor. Note this does not remove the nodes, but simply unselects them so other nodes may be selected for further filtering. |
