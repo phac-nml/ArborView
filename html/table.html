@@ -1475,8 +1475,12 @@
         }
 
         let PopulateGroups = (json_groups, query_key) => {
+
             ORIGINAL_DATA.forEach((value, key) => {
-                json_groups[value[query_key]].push(key);
+                if (value[query_key] in json_groups) {
+                    json_groups[value[query_key]].push(key);
+                }
+                
             });
             return json_groups;
         };
@@ -1533,11 +1537,14 @@
 
             let col_index = ele.id;
             $("#legend_toggle").bootstrapToggle('on')
-            // TODO add a list of headers somewhere to select colouring from
-            let unq_data = data_table.column(col_index).data().unique();
+
+            let unq_data = new Set();
+            ORIGINAL_DATA.forEach((value, key) => {
+                unq_data.add(value[col_index])
+            })
 
             // Need to create groupings of the each set of ID's belonging to each value grouping
-            let break_down_values = unq_data.toArray();
+            let break_down_values = Array.from(unq_data);
             break_down_values.sort()
             
             // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
@@ -1552,12 +1559,10 @@
                     try{
                         let current_item = document.querySelector(`[id='${x}']`);
                         let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
-                        //if(circle.style.fill == SelectedNodes.getSelectedColour()){
-                        if(SelectedNodes.nodes.has(text)){
+                        if(SelectedNodes.nodes.has(x)){
                             circle.dataset.oldfill = colours[colour_idx];
                         }else{
                             circle.style.fill = colours[colour_idx];
-                            //current_item.setAttribute('data-color-hex', colours[colour_idx])
                         }
                         
                     }catch(error){
@@ -2091,7 +2096,7 @@
                 let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'octet/stream');
                 //create download link
                 let downloadLink = document.createElement("a");
-                downloadLink.download = 'tree_snapshot_png';
+                downloadLink.download = 'tree_snapshot.png';
                 downloadLink.href = pngUrl;
                 downloadLink.click();
                 downloadLink.remove();
