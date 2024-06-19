@@ -24,7 +24,7 @@ ArborView was designed to visualize phylogenetic trees with associated sample me
 
 ## Citation
 
-Wells, Matthew, Bessonov, Kyrylo, Reimer, Aleisha. ArborView.
+Wells, Matthew, Bessonov, Kyrylo, Reimer, Aleisha, Cook, Matthew, Deecker-Simon, Shayna, Robertson, James, Peterson, Christy-Lynn. ArborView.
 
 ## Contact
 
