@@ -18,9 +18,9 @@
 
 # Introduction
 
-Phylogenetic trees are powerful tools in a biologist's arsenal, as they enable researchers to determine the evolutionary relationships between organisms, genes or proteins of interest. From a public health perspective, phylogenies are frequently used in conjuction with sample metadata and genetic distance thresholds to inform further action in potential outbreak scenarios. Although there are numerous programs available for visualizing phylogenies, such as [ggtree](https://bioconductor.org/packages/release/bioc/html/ggtree.html), [the Interactive Tree of Life (iTOL)](https://itol.embl.de/) and [TreeViewer](https://treeviewer.org/), they were not designed or optimized for use in a public health context. These programs provide numerous ways to customize the visualization of phylogenetic data, but they lack the ability to efficiently integrate additional contextual data that is key for timely decision making during potential outbreak events.
+Phylogenetic trees are powerful tools in a biologist's arsenal, as they enable researchers to determine the evolutionary relationships between organisms, genes or proteins of interest in an intuitive and visual manner. From a public health perspective, phylogenies are frequently used in conjunction with sample metadata and genetic distance thresholds to inform and guide further action in potential outbreak and routine surveillance scenarios. Although there are numerous programs available for visualizing phylogenies, such as [ggtree](https://bioconductor.org/packages/release/bioc/html/ggtree.html), [the Interactive Tree of Life (iTOL)](https://itol.embl.de/) and [TreeViewer](https://treeviewer.org/), they were not designed or optimized for use in a public health context and have important limitations. These include limited portability, limited interactivity and in some cases no local deployment option, limiting their use on private, highly confidential data. In addition, these programs provide numerous ways to customize the visualization of phylogenetic data, but they lack the ability to efficiently integrate additional contextual metadata that is key for timely decision making during potential outbreak events and making most of the data integration and intersection.
 
-ArborView was designed to visualize phylogenetic trees with associated sample metadata to facilitate rapid data interpretation. It is executable with no installation or dependencies, and has a intuitive, clean graphical user interface (GUI), increasing its accessibility to users with a minimal background in bioinformatics.
+ArborView was designed to visualize phylogenetic trees with associated sample metadata to facilitate rapid data interpretation and a high level of interactivity essential for visual hypothesis testing and highly multidimensional data exploration. It requires no installation or dependencies, and has an intuitive, clean and responsive graphical user interface (GUI), increasing its accessibility to users with a minimal background in bioinformatics. Thanks to its lightness and use of well established web technologies, it was successfully tested to render trees with >100K nodes. The development team is currently actively working to improve scalability and usability of this web application and user feedback is always welcome.
 
 ## Citation
 
@@ -32,11 +32,11 @@ For any questions, issues or comments please make a Github issue or reach out to
 
 # Install
 
-ArborView has no installation or dependancy requirements. It can be deployed as a static page by [**clicking here**](http://daad.pages.cscscience.ca/ArborView/).
+ArborView has no installation or dependancy requirements. It can be accessed as a static page and was already deployed on repository hosting. The current version of the web-application can be accessed by [**clicking here**](http://daad.pages.cscscience.ca/ArborView/).
 
 ### Compatibility
 
-ArborView is compatible with Windows and Linux operating systems.
+ArborView is compatible with Windows, MacOS and Linux operating systems as it runs on modern web browsers including Chrome, Edge, Firefox, and Safari, which fully support HTML5 standards.
 
 # Getting Started
 
@@ -48,16 +48,16 @@ The ArborView application can be divided into three panes: 1) the tree editor; 2
 
 The tree editor is where the phylogeny is visualized within the center portion of the screen.
 
-Clicking on the external light grey node(s) at the end of the branches will add them to the selection list so the user can quickly filter the associated metadata for the sample using the `Filter data` button.
+Clicking on the external light grey node(s) at the end of the branches will add them to the selection list panel so the user can quickly filter the associated metadata for the sample using the `Filter data` button.
 
-Clicking on the internal dark grey node(s) enables the user to select from one of three options:
+Clicking on the internal dark grey tree node(s) displays a menu that enables the user to select from one of three available options:
 1) Collapse/Uncollapse branch: Hides all of the branches associated with the node. They can be displayed again by re-selecting the node in question and uncollapsing the branch, or by using the `Redraw tree` button.
-2) Display sub-tree: Uses the selected node as the pseudo-"root" of the tree, enabling the user to "zoom-in" on a clade of interest. The full tree can be displayed again by using the `Redraw tree` button.
+2) Display sub-tree: Uses the selected node as the pseudo-"root" of the tree, enabling the user to "zoom-in" on a clade of interest and render only a subtree from that node. The full tree can be displayed again by using the `Redraw tree` button.
 3) Select all children: Adds all of the external nodes associated with the clade to the selection list.
 
 ### Metadata Editor
 
-The metadata editor enables users to view and edit the metadata associated with the phylogeny to add additional contextual information to the analysis. This function also enables the user to quickly and efficiently make changes to the metadata, without needing to open and edit it in a separate program.
+The metadata editor enables users to view and edit the metadata associated with the phylogeny to add additional contextual information to the analysis. This function also enables the user to quickly and efficiently make changes to the metadata, without needing to open and edit it in a separate program. To make changes permanent, it is possible to export modified metadata into a text file and re-import it at the later date via the `Export Full Table` button.
 
 For example:
 - A phylogeny is coloured by the "National Outbreak Code" column in the associated sample metadata, and the user notices there is an unassigned sample that is clustering with a specific outbreak.
@@ -73,8 +73,8 @@ The program functions are denoted by the buttons present on the left-hand portio
 | `Upload Newick` | Uploads a Newick file formatted phylogeny for visualization. |
 | `Upload Metadata` | Uploads a tab-delimited metadata file to add additional contextual information to the phylogeny. |
 | `Export IDs` | Exports a list of IDs that correlate to the user-selected nodes of interest on the phylogeny. |
-| `Export SVG` | Exports the phylogeny as a SVG file. |
-| `Export PNG` | Exports the phylogeny as a PNG file. |
+| `Export SVG` | Exports the current phylogenetic tree as a SVG file. |
+| `Export PNG` | Exports the current phylogenetic tree as a PNG file. |
 | `Export Full Table` | Exports the metadata table as a tab-delimited file. |
 | `Export Filtered Table` | Exports the filtered metadata table as a tab-delimited file. |
 | `Redraw Tree` | Re-builds the phylogeny using the original Newick File. |
@@ -84,7 +84,7 @@ The program functions are denoted by the buttons present on the left-hand portio
 | `Legend` | If using colour coding, it shows ("on") or hides ("off") the legend. |
 | `Branch lengths` | Shows ("on") or hides ("off") the branch length values. |
 | `Colour tree by column` | Enables the user to quickly colour the nodes on the tree using a column selected from the associated metadata. If the legend is turned on, the user can click on the boxes to customize the colours that are used for the visualization (as opposed to using the pre-set colour options). |
-| `Filter data` | If a node is selected from the tree using the tree editor, the user can use this button to quickly filter the associated metadata for the sample. |
+| `Filter data` | If a node is selected from the tree using the tree editor, the user can use this button to quickly filter the associated metadata for the sample. To properly export filtered/queried metadata displayed in the metadata editor, press this button to apply current filters followed by the `Export Filtered Table` button.|
 | `Clear nodes` | Clears the selected nodes from the tree editor. Note this does not remove the nodes, but simply unselects them so other nodes may be selected for further filtering. |
 | `Clear Filters` | Enables the user to clear any filters they may have set on the tree. |
 
@@ -103,15 +103,15 @@ The program functions are denoted by the buttons present on the left-hand portio
 
 - Metadata associated with samples present in the phylogenetic tree.
 
-- Must be in a tab-delimed file format, with the header as the first line and `sample_id` as the first column.
+- Must be in a tab-delimed file format, with the header as the first line and `sample_id` as the first column. **This is a mandatory requirement**.
 
-- Additional metadata fields that could be useful from a public health perspective are shown in the above sample; however, this does not represent an exhaustive list.
+- Additional metadata fields could have any name.
 
 ## Data Output
 
 - Phylogenetic trees that are visualized in ArborView can be exported as either PNG or SVG files.
 
-- It is also possible to export both the full metadata table and a filtered metadata table as tab-delimited files.
+- It is also possible to export both the full metadata table and a filtered metadata table as tab-delimited files. Do not forget to apply filters by pressing `Filter Data` button before data export.
 
 # Legal and Compliance Information
 
@@ -128,6 +128,3 @@ Unless required by applicable law or agreed to in writing, software distributed 
 # Updates and Release Notes
 
 Please see the `CHANGELOG.md`.
-=======
-
-
