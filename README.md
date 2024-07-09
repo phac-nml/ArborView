@@ -32,7 +32,7 @@ For any questions, issues or comments please make a Github issue or reach out to
 
 # Install
 
-ArborView has no installation or dependancy requirements. It can be accessed as a static page and was already deployed on repository hosting. The current version of the web-application can be accessed by [**clicking here**](http://daad.pages.cscscience.ca/ArborView/).
+ArborView has no installation or dependancy requirements. It can be accessed as a static page and was already deployed on repository hosting. The current version of the web-application can be accessed by [**clicking here**](https://phac-nml.github.io/ArborView/html/table.html).
 
 ### Compatibility
 
