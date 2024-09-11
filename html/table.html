@@ -128,7 +128,8 @@
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
         var SHOW_BRANCH_LENGTHS = true;
-        var SHOW_METADATA_IN_NAME = true;
+        var SHOW_METADATA_IN_NAME = false;
+        var LINE_THICKNESS = 2.0;
         
         //var TREE_VAL = 1; // sets defualt tree to draw
         var TREE_VAL = "Dendrogram"; // sets defualt tree to draw
@@ -223,7 +224,8 @@
                     .attr("fill", "none")
                     .attr("stroke", "#555")
                     .attr("stroke-opacity", 0.8)
-                    .attr("stroke-width", 2.0);
+                    .attr("class", "adjustable-line")
+                    .attr("stroke-width", LINE_THICKNESS);
 
                 const gNode = svg.append("g")
                     .attr("cursor", "pointer")
@@ -320,7 +322,7 @@
                         .attr("text-anchor", d => d.parent === null ? "start" : "end")
                         .attr("dx", (d) => { 
                             let val = Number((d.data.d).toFixed(DECIMAL_PLACES)).toString(); 
-                            return `${-val.length}pt`;
+                            return `${-val.length + 1}pt`;
                         })
                         .attr("dy", 14)
                         .attr("font-size", 12);
@@ -452,7 +454,8 @@
                     .attr("fill", "none")
                     .attr("stroke", "#555")
                     .attr("stroke-opacity", 0.8)
-                    .attr("stroke-width", 2.0);
+                    .attr("class", "adjustable-line")
+                    .attr("stroke-width", LINE_THICKNESS);
 
                 const gNode = svg.append("g")
                     .attr("cursor", "pointer")
@@ -573,7 +576,7 @@
                         .attr("text-anchor", d => d.parent === null ? "start" : "end")
                         .attr("dx", (d) => { 
                                 let val = Number((d.data.d).toFixed(DECIMAL_PLACES)).toString(); 
-                                return `${-val.length}pt`;
+                                return `${-val.length + 1}pt`;
                         })
                         .attr("dy", 14)
                         .attr("font-size", 12);
@@ -717,7 +720,8 @@
                     .attr("fill", "none")
                     .attr("stroke", "#555")
                     .attr("stroke-opacity", 0.8)
-                    .attr("stroke-width", 2.0)
+                    .attr("class", "adjustable-line")
+                    .attr("stroke-width", LINE_THICKNESS)
                     .attr("transform", `translate(${outerRadius}, ${outerRadius})`);
             
             root.data.d = 0
@@ -861,7 +865,7 @@
                         //.attr("position", "relative")
                     .attr("dx", (d) => { 
                         let val = Number((d.data.d).toFixed(DECIMAL_PLACES)).toString(); 
-                        return `${-val.length}pt`;
+                        return `${-val.length + 1}pt`;
                     })
                     .attr("transform", (d) => {
                         return ""
@@ -978,7 +982,8 @@
                     .attr("fill", "none")
                     .attr("stroke", "#555")
                     .attr("stroke-opacity", 0.8)
-                    .attr("stroke-width", 0.8);
+                    .attr("class", "adjustable-line")
+                    .attr("stroke-width", LINE_THICKNESS);
 
                 const gNode = svg.append("g")
                     .attr("cursor", "pointer")
@@ -1076,7 +1081,7 @@
                         //.attr("position", "relative")
                         .attr("dx", (d) => { 
                             let val = Number((d.data.d).toFixed(DECIMAL_PLACES)).toString(); 
-                            return `${-val.length}pt`;
+                            return `${-val.length + 1}pt`;
                         })
                         .attr("dy", 18)
                         .attr("font-size", "12");
@@ -1698,6 +1703,15 @@
             document.querySelector('#colour-legend').style.left = `${document.querySelector('#TreeData').scrollLeft}px`
 
         };
+        
+
+        let lineThickness = (ele) => {
+            if(ele){
+                LINE_THICKNESS = ele.value;
+            }
+            $("#line-thickness-value").html(`${Number(LINE_THICKNESS).toFixed(1)}`);
+            $(".adjustable-line").css('stroke-width', LINE_THICKNESS)
+        }
 
 
         let changeLegendItemColour = (div) => {
@@ -1863,6 +1877,9 @@
             });
 
             initialize_tree_menu();
+            lineThickness();
+
+
             // ! Below disables the right click menu for the page
             document.oncontextmenu = (event) => {
                 // Disables context menu for TreeData div, e.g. default web menu does not appear
@@ -2342,8 +2359,6 @@
             let svg_height = svg.getBoundingClientRect().height;
             //extract SVG element
             const svgData = new XMLSerializer().serializeToString(svg);
-            //const svgDataBase64 = btoa(unescape(encodeURIComponent(svgData)))
-            //const svgDataUrl = `data:image/svg+xml;charset=utf-8;base64,${svgDataBase64}`
 
             //create canvas to the size of the SVG
             let canvas = document.createElement('canvas')
@@ -2589,6 +2604,17 @@
                                     </div>    
                                 </div>  
 
+                                <!--Slider for adjusting line thickness-->
+                                <div data-toggle="tooltip" data-placement="top" title="Adjust line thickness" class="d-flex flex-wrap align-items-center p-1">
+                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Line Weight</small>
+                                    <div class="flex-grow-1 w-50">
+                                        <input type="range" class="form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
+                                    </div>
+                                    <div class="flex-grow-1 fw-bold text-center">
+                                        <span id="line-thickness-value">2.0</span>
+                                    </div>    
+                                </div> 
+
                                 <div id="dropdown_tree_types" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="tree_dropdown_menu"  class="btn btn-primary btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
                                         Select a tree layout</button>
@@ -2607,7 +2633,7 @@
                                 <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn inner node labels on and off" >
                                     <small data-toggle="tooltip" data-placement="top" title="Turn inner node labels on and off" class="flex-grow-1" for="legend_toggle">Inner node labels</small>
                                     <input onchange="show_inner_node_labels(this)" id="inner_node_labels_toggle" 
-                                    checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn inner node labels on and off" data-onstyle="primary" data-size="sm">
+                                    type="checkbox" data-toggle="toggle" data-placement="top" title="Turn inner node labels on and off" data-onstyle="primary" data-size="sm">
                                 </div>  
                                 <div id="dropdown_legend" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
