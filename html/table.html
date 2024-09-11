@@ -128,6 +128,7 @@
         var LAST_MOVE_X = 0;
         var LAST_MOVE_Y = 0;
         var SHOW_BRANCH_LENGTHS = true;
+        var SHOW_METADATA_IN_NAME = true;
         
         //var TREE_VAL = 1; // sets defualt tree to draw
         var TREE_VAL = "Dendrogram"; // sets defualt tree to draw
@@ -169,7 +170,7 @@
                 const marginBottom = 30; // updated for viewing
                 const marginLeft = 40;
 
-                const label_safety_factor = 200; 
+                const label_safety_factor = 300; 
                 const inner_radius = width - label_safety_factor;
 
 
@@ -332,7 +333,9 @@
                         .attr("x", d => !d.data.leaf ? -10 : 6)
                         .attr("font-size", 12)
                         .attr("text-anchor", d => !d.data.leaf ? "end" : "start")
-                        .text(d => d.data.name)
+                        .attr("class", d => d.data.leaf ? "" : "inner-node-label")
+                        .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
+                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
                         .clone(true).lower()
                         .attr("stroke", "white");
                     
@@ -400,7 +403,7 @@
                 const marginBottom = 30; // updated for viewing
                 const marginLeft = 40;
 
-                let label_safety_factor = 200; 
+                let label_safety_factor = 300; 
                 const inner_radius = width - label_safety_factor;
 
                 function setDistance(d, y0, k) {
@@ -583,7 +586,9 @@
                         .attr("x", d => !d.data.leaf ? -10 : 6)
                         .attr("font-size", 12)
                         .attr("text-anchor", d => !d.data.leaf ? "end" : "start")
-                        .text(d => d.data.name)
+                        .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
+                        .attr("class", d => d.data.leaf ? "" : "inner-node-label")
+                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
                         .clone(true).lower()
                         .attr("stroke", "white");
                     
@@ -874,7 +879,9 @@
                             hyp = d.data.d - 10;
                         }
                         return hyp}) // labels are not bein moved to the correct pos when redrawn
-                    .text(d => d.data.name)
+                    .attr("class", d => d.data.leaf ? "" : "inner-node-label")
+                    .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
+                    .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
                     .clone(true).lower()
                     .attr("font-size", "12")
                     .attr("stroke-linejoin", "round")
@@ -1078,7 +1085,9 @@
                     nodeEnter.append("text")
                         .attr("dy", d => !d.data.leaf ? -6 : 0) 
                         .attr("x", d => !d.data.leaf ? -6 : 6)
-                        .text(d => d.data.name)
+                        .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
+                        .attr("class", d => d.data.leaf ? "" : "inner-node-label")
+                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
                         .clone(true).lower()
                         .attr("stroke-linejoin", "round")
                         .attr("stroke-width", 3)
@@ -2125,6 +2134,16 @@
                         });
         }
         
+        let show_inner_node_labels = (node) => {
+            SHOW_METADATA_IN_NAME = !SHOW_METADATA_IN_NAME
+            $(".inner-node-label").css("visibility", () => {
+                            if(!SHOW_METADATA_IN_NAME){
+                                return "hidden"
+                            }else{
+                                return "visible"
+                            }
+                        });
+        }
 
 
         scroll_legend_into_view = function(node,full_screen_btn, node_TreeData){
@@ -2378,7 +2397,6 @@
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
                 let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                console.log(`hide meta div collapse event  ${heightTreeDataDiv} + ${heightMetaDiv} `)
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
                 document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
@@ -2387,7 +2405,6 @@
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
                 let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                console.log(`show meta div collapse event  ${heightTreeDataDiv} - ${heightMetaDiv}`)
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
                 document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
@@ -2586,6 +2603,11 @@
                                     <small data-toggle="tooltip" data-placement="top" title="Turn branch lengths on or off" class="flex-grow-1" for="legend_toggle">Branch lengths</small>
                                     <input onchange="branch_lengths_on_off(this)" id="branch_lengths_toggle" 
                                     checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn branch lengths on or off" data-onstyle="primary" data-size="sm">
+                                </div>  
+                                <div class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn inner node labels on and off" >
+                                    <small data-toggle="tooltip" data-placement="top" title="Turn inner node labels on and off" class="flex-grow-1" for="legend_toggle">Inner node labels</small>
+                                    <input onchange="show_inner_node_labels(this)" id="inner_node_labels_toggle" 
+                                    checked type="checkbox" data-toggle="toggle" data-placement="top" title="Turn inner node labels on and off" data-onstyle="primary" data-size="sm">
                                 </div>  
                                 <div id="dropdown_legend" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
