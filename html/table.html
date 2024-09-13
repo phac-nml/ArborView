@@ -2379,7 +2379,9 @@
             let svg =  document.getElementById("TreeSVG");
             let remove_svg = false;
             if(ORIGINAL_DATA){
-                // SVG value needs to be in DOM to be rendered in the canvas, but we also need ta copy to update the text attributes in the tree
+                // SVG value needs to be in DOM to be rendered in the canvas, 
+                // but we also need ta copy to update the text attributes in the tree
+                // or else the displayed tree is modified
                 // Copies are only needed if metadata is included as well
                 let leaves = svg.querySelectorAll(".leaf-node")
                 let longest_label = 10
