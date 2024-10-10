@@ -2358,7 +2358,14 @@
             let downloadLink = document.createElement("a");
             downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
                 (date.getMonth()+1)+'-'+date.getFullYear()+'_'+date.getHours()+'h.svg';
-            let svg =  document.getElementById("TreeData")    
+            let svg =  document.getElementById("TreeData").cloneNode(true)
+            //remove duplicated leaf nodes text duplication for more accurate searches
+            svg.querySelectorAll('g .tree-node').forEach(node => {
+                text_nodes_leafs = node.querySelectorAll('text[class=""]')
+                if(text_nodes_leafs.length === 2){
+                    text_nodes_leafs[0].remove()
+                }
+            })  
             const blob = serialize2svg(svg)[0];
             downloadLink.href = window.URL.createObjectURL(blob);
             downloadLink.click(); //Trigger a click on the element
