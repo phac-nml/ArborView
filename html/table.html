@@ -116,7 +116,7 @@
         const TREE = __DEADBEEF__;
         // the '= __DEADFOOD__' is an expression to find and replace and inline tsv string e.g. 'head1\thead2\nv1\tv2\n's
         const DATA = __DEADFOOD__;
-        const DEBUG = false;
+        const DEBUG = true;
         const TREE_OFFSET = 100;
         var NEWICK = null;
         var tree_root = null;
@@ -133,9 +133,7 @@
         var SHOW_METADATA_IN_NAME = false;
         var LINE_THICKNESS = 2.0;
         
-        //var TREE_VAL = 1; // sets defualt tree to draw
         var TREE_VAL = "Dendrogram"; // sets defualt tree to draw
-        //var TREE_SWITCH = false;
         var collapse_subtree = false; // can think of another way to signal state without our larger refactor 
         var focused_element = null; // Focused element to have its colour reset
         var RADIUS_INCREASED = false;
@@ -2262,7 +2260,6 @@
 
         export_metadata_table = function(e){
             // Export updated metadata
-            console.log(e.id)
             if(!ORIGINAL_DATA){
                 console.error("No contextual data imported yet");
                 Swal.fire({
@@ -2343,9 +2340,34 @@
             css_export.appendChild(link_style_sheet);
             svg.insertBefore(css_export, svg.firstChild);
 
+            
+            let longest_label = 10
+            if(ORIGINAL_DATA){
+                let leaves = svg.querySelectorAll(".leaf-node")
+                leaves.forEach((ele) => {
+                    let [element, circle, text] = SelectedNodes.getNodeData(ele)
+                    let input_text = text.textContent
+                    if(ORIGINAL_DATA.has(input_text) && input_text){
+                        let row = ORIGINAL_DATA.get(input_text)
+                        let new_label = `${input_text}\t${row.slice(1, -1).join('\t')}`
+                        text.textContent = new_label
+                        let text_length = new_label.length;
+                        if(text_length > longest_label){
+                            longest_label = text_length;
+                        }
+                    }
+                })
+            }
+            svg.style.overflow = "visible"
             const tree_svg = svg.querySelector("#TreeSVG");
-            const offset_safety_factor = 20;
-            tree_svg.style.marginLeft = legend_width + offset_safety_factor;
+            tree_svg.style.overflow = "visible"
+            tree_svg.style.paddingLeft = "4em"
+            tree_svg.style.height = "auto"
+            tree_svg.style.width = "auto"
+            tree_svg.width = tree_svg.width.baseVal.value + (longest_label*4);
+            const attr = tree_svg.getAttributeNode("height")
+            tree_svg.removeAttributeNode(attr);
+            tree_svg.setAttribute("viewBox", `${0} -${tree_svg.viewBox.baseVal.height} ${tree_svg.width.baseVal.value + (longest_label*4)} ${tree_svg.viewBox.baseVal.height + (longest_label*4)}`);
 
             const serializer = new window.XMLSerializer;
             const xml_string = serializer.serializeToString(svg);
@@ -2374,9 +2396,38 @@
 
         /*Adapted from https://gist.github.com/tatsuyasusukida/1261585e3422da5645a1cbb9cf8813d6 and https://zooper.pages.dev/articles/how-to-convert-a-svg-to-png-using-canvas*/
         export_tree_to_png = function(){
-            let svg =  document.getElementById("TreeSVG")
+            let svg =  document.getElementById("TreeSVG");
+            let remove_svg = false;
+            if(ORIGINAL_DATA){
+                // SVG value needs to be in DOM to be rendered in the canvas, 
+                // but we also need ta copy to update the text attributes in the tree
+                // or else the displayed tree is modified
+                // Copies are only needed if metadata is included as well
+                let leaves = svg.querySelectorAll(".leaf-node")
+                let longest_label = 10
+                svg = svg.cloneNode(true);
+                svg.style.zIndex = '-1';
+                document.getElementById("TreeData").appendChild(svg);
+                remove_svg = true;
+                leaves.forEach((ele) => {
+                    let [element, circle, text] = SelectedNodes.getNodeData(ele)
+                    let input_text = text.textContent
+                    if(ORIGINAL_DATA.has(input_text) && input_text){
+                        let row = ORIGINAL_DATA.get(input_text)
+                        // End is not included in the slice, as it is simply a bool added on the program to track changed values
+                        let new_label = `${input_text}\t${row.slice(1, -1).join('\t')}`
+                        text.textContent = new_label
+                        let text_length = new_label.length;
+                        if(text_length > longest_label){
+                            longest_label = text_length;
+                        }
+                    }
+                })
+            }
+
             let svg_width = svg.getBoundingClientRect().width;
             let svg_height = svg.getBoundingClientRect().height;
+
             //extract SVG element
             const svgData = new XMLSerializer().serializeToString(svg);
 
@@ -2403,12 +2454,9 @@
                 downloadLink.href = pngUrl;
                 downloadLink.click();
                 downloadLink.remove();
+                canvas.remove();
+                if(remove_svg) svg.remove();
             }
-
-
-            
-
-
         }    
 
         tree_full_screen_mode = function(){
