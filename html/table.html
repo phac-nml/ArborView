@@ -2449,20 +2449,50 @@
                 }
                 text2copyArray.push(node.textContent)
             })
-            let text2copy = text2copyArray.join('\n');
-            let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
-            if(DEBUG){
-                console.log(text2copy);
+            if(text2copyArray.length > 0){
+                let text2copy = text2copyArray.join('\n');
+                navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+                    if (result.state === "granted" || result.state === "prompt") {
+		                navigator.clipboard.writeText(text2copy)
+                        Swal.fire({
+                            html: `<p>Copied ${text2copyArray.length} nodes to clipboard<br>Generate a text file?</p>`,
+                            icon: "info",
+                            showDenyButton: true,
+                            showCancelButton: false,
+                            confirmButtonText: 'Yes',
+                            denyButtonText: 'No'
+                        }).then( (result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire('Saved!', '', 'success')
+                            } else if (result.isDenied) {
+                                Swal.fire('Changes are not saved', '', 'info')
+                            }
+                        });
+                    }    
+                   
+                });
+
+                let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
+                if(DEBUG){
+                    console.log(text2copy);
+                }
+                let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
+                //create a ObjectURL in order to download the created file
+                url = window.URL.createObjectURL(file);
+                let a = document.createElement("a");
+                a.style = "display: none";
+                a.href = url;
+                a.download = file.name;
+                a.click();
+                window.URL.revokeObjectURL(url);
             }
-            let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
-            //create a ObjectURL in order to download the created file
-            url = window.URL.createObjectURL(file);
-            let a = document.createElement("a");
-            a.style = "display: none";
-            a.href = url;
-            a.download = file.name;
-            a.click();
-            window.URL.revokeObjectURL(url);        
+            else{
+                Swal.fire({
+                    html: "<b>No nodes to copy and export!</b><p>Select tree node(s) first and try again</p>",
+                    icon: "error"
+                    });
+                
+            }            
         }
 
         vertical_div_resize = function(event){
