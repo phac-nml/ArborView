@@ -2455,7 +2455,7 @@
                     if (result.state === "granted" || result.state === "prompt") {
 		                navigator.clipboard.writeText(text2copy)
                         Swal.fire({
-                            html: `<p>Copied ${text2copyArray.length} nodes to clipboard<br>Generate a text file?</p>`,
+                            html: `<p>Successfully copied ${text2copyArray.length} node IDs to the clipboard<br>Generate a text file with the ${text2copyArray.length} IDs?</p>`,
                             icon: "info",
                             showDenyButton: true,
                             showCancelButton: false,
@@ -2463,28 +2463,26 @@
                             denyButtonText: 'No'
                         }).then( (result) => {
                             if (result.isConfirmed) {
-                                Swal.fire('Saved!', '', 'success')
-                            } else if (result.isDenied) {
-                                Swal.fire('Changes are not saved', '', 'info')
+                                let success_msg = `Copied ${text2copyArray.length} sample IDs to the clipboard`
+                                if(DEBUG){
+                                    console.log(text2copy);
+                                }
+                                let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
+                                //create a ObjectURL in order to download the created file
+                                url = window.URL.createObjectURL(file);
+                                let a = document.createElement("a");
+                                a.style = "display: none";
+                                a.href = url;
+                                a.download = file.name;
+                                a.click();
+                                window.URL.revokeObjectURL(url);
                             }
                         });
                     }    
                    
                 });
 
-                let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
-                if(DEBUG){
-                    console.log(text2copy);
-                }
-                let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
-                //create a ObjectURL in order to download the created file
-                url = window.URL.createObjectURL(file);
-                let a = document.createElement("a");
-                a.style = "display: none";
-                a.href = url;
-                a.download = file.name;
-                a.click();
-                window.URL.revokeObjectURL(url);
+                
             }
             else{
                 Swal.fire({
@@ -2577,7 +2575,7 @@
                                 
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
-                                        title="Copy selected node ID's to your clipboard to paste into another application." onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
+                                        title="Copy selected node IDs to your clipboard to paste into another application and optionally generate a text file" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
                                     </button>
                                     <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top" 
