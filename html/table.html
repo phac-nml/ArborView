@@ -70,6 +70,31 @@
             animation: updown 1s ease infinite
         }
 
+        /* dataTables Search input box */
+ 
+    .dataTables_filter {
+        position: relative;
+    }
+    .dataTables_wrapper .dataTables_filter input{
+        border-radius: 20px !important;
+        margin-top: 1px;
+    }
+ 
+    .dataTables_filter input {
+        width: 250px;
+        height: 24px;
+        background: #fcfcfc;
+        box-shadow: 0 0 3px #ccc, 0 10px 15px #ebebeb inset;
+        text-indent: 10px;
+    }
+ 
+    .dataTables_filter .fa-search {
+        position: absolute;
+        top: 10px;
+        left: auto;
+        right: 10px;
+    }
+
 
     </style>
     
@@ -1607,8 +1632,13 @@
         let CreateDataTable = () => {
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
+                //"paging": false,
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
+                initComplete: function (settings, json) {
+                    console.log("DataTables has finished its initialization");
+                    
+                },
                 columnDefs: [{
                         targets: '_all',
                         createdCell : (td, cellData, rowData, row, col) =>
@@ -1619,6 +1649,55 @@
                         }
                     }
                 ],
+                //dom: 'lfrtip',
+                drawCallback: function(){
+        
+         
+         
+         //html.innerHTML='<div class="paginate_button displayAll">DISPLAY ALL RECORDS</div>'
+         
+         
+        //let icon=document.create("i")
+        ///icon.style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+        //icon.id="tree_fullscreen_btn"
+        //icon.onclick="tree_full_screen_mode()"
+
+        let html=document.createElement("div");
+        html.className = "paginate_button displayAll"
+        html.id = "paginate_button_all"
+        html.textContent = "ALL records"
+        document.querySelector("#metadata_paginate").appendChild(html)
+         
+          
+
+         $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
+         .on('click', function(){
+            
+            if(data_table.context[0]._iDisplayLength !== -1){
+                console.log("Paginate OFF")
+                
+                //this.textContent="XXXXXX"
+                data_table.context[0]._iDisplayLength=-1; //remove pagination
+                data_table.draw();
+                $('#metadata_length select').val(-1); //change "Show X entires" selector to ALL value
+                
+                $('#paginate_button_all').text("First 10")
+                console.log(this.textContent)
+                
+            }else{
+                console.log("Paginate ON")
+                console.log($('#paginate_button_all').text())
+                data_table.context[0]._iDisplayLength=10;
+                $('#metadata_length select').val(10); //change "Show X entires" selector to ALL value
+                //
+                data_table.draw();
+                $('#paginate_button_all').text("ALL records");
+                console.log(this.textContent)
+                
+            }    
+            
+         });       
+   }
 
             });
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
