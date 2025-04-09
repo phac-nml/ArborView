@@ -74,6 +74,7 @@
     
         .dataTables_filter {
             position: relative;
+            margin-right: 24px;
         }
         .dataTables_wrapper .dataTables_filter input{
             border-radius: 20px !important;
@@ -129,6 +130,9 @@
     <!-- Sweet Alerts 2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!--Colour distances calculation library at https://github.com/color-js/color.js-->
+    <script src="https://colorjs.io/dist/color.global.js"></script>
+
     
 
     <script type="text/javascript">
@@ -141,6 +145,7 @@
         const DATA = __DEADFOOD__;
         const DEBUG = false;
         const TREE_OFFSET = 100;
+        let METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
         var NEWICK = null;
         var tree_root = null;
         var METADATA = null;
@@ -1666,8 +1671,17 @@
         html.className = "paginate_button displayAll"
         html.id = "paginate_button_all"
         html.textContent = "ALL records"
-        document.querySelector("#metadata_paginate").appendChild(html)
-         
+        if(document.querySelector("#paginate_button_all") === null){
+            document.querySelector("#metadata_paginate").appendChild(html)
+        }
+        let maximize_button_html=document.createElement("i");
+        maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+        maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
+        maximize_button_html.id = "metadata_fullscreen_btn"
+        maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
+        if(document.querySelector("#metadata_fullscreen_btn") === null){
+            document.querySelector("#metadata_wrapper").appendChild(maximize_button_html)
+        }    
           
 
          $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
@@ -1901,10 +1915,68 @@
             break_down_values.sort()
             
             // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
-            let group_vals = CreateColoringGroups(break_down_values);
-            break_down_values = PopulateGroups(group_vals, col_index);
+            let group_vals = CreateColoringGroups(break_down_values); // {"unique_item":[],"unique_item2":[]}
+            break_down_values = PopulateGroups(group_vals, col_index); //{"unique_item":["id1","id2"...],"unique_item2":["id3"]}
+            
 
             let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "hex"});
+            console.log(colours);
+
+        
+
+            //given a random colours for legend items test all and find highly similar colours
+            if(colours.length <= 50){
+                const deltaE2000_threshold = 10;
+                let problematic_colours_idx=[];
+                colours.map((picked_color, j)=>{
+                //console.log(`Checking ${Object.keys(break_down_values)[j]}: ${picked_color}`)
+                
+                //find highly similar colours in a panel
+                for (const [i,legend_color] of colours.entries()){
+                    let deltaE2000 = Color.deltaE2000(picked_color, legend_color)
+                    //console.log(`${Object.keys(break_down_values)[j]} vs ${Object.keys(break_down_values)[i]} --> ${deltaE2000}`)
+                    if(deltaE2000 <= deltaE2000_threshold && deltaE2000 !== 0){
+                        //console.log(`Found problematic color pair in legend ${Object.keys(break_down_values)[j]} vs ${Object.keys(break_down_values)[i]}`)
+                        problematic_colours_idx.push(i)            
+                    }
+
+                }//for loop
+
+                problematic_colours_idx = [ ... new Set(problematic_colours_idx)].sort((a,b)=> a-b)
+                
+                });
+                console.log(`Found problematic too similar ${problematic_colours_idx} with indices ${problematic_colours_idx.length} out of ${colours.length}`)    
+                
+                let found_new_color_bool = false;
+                problematic_colours_idx.forEach(i =>{
+                    //console.log(`Working on ${Object.keys(break_down_values)[i]}`);
+                    found_new_color_bool = false
+                    //while( found_new_color_bool === false){
+                    let randomInt = parseInt(Math.random()*100000)+1;
+                    colour_random_list = randomColor({ seed:randomInt, count:1000, format:'hex'})
+                
+                    for(const random_color_hex of colour_random_list) {
+                        //check distance to all colours in the legend
+                        let deltaE2000_list = colours.map(legend_color => {
+                            return Color.deltaE2000(random_color_hex, legend_color)
+                        });
+                        //console.log(deltaE2000_list,Math.min(...deltaE2000_list))
+                        let minDeltaE2000 = Math.min(...deltaE2000_list)
+                    
+                        if(minDeltaE2000 > deltaE2000_threshold){
+                            //console.log(`Found a suitable color ${random_color_hex} with min deltaE2000 ${minDeltaE2000} for ${Object.keys(break_down_values)[i]}`)
+                            colours[i] = random_color_hex;
+                            found_new_color_bool = true;
+                            break;
+                        }
+                    }//for      
+                    if (found_new_color_bool === false){
+                        //console.log(`Failed to find a suitable color for ${Object.keys(break_down_values)[i]}`)
+                    }
+                });//forEach   
+            }//if
+
+
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
             for(const item in break_down_values){
@@ -2471,21 +2543,38 @@
         }    
 
         tree_full_screen_mode = function(){
-            document.querySelector('#TreeData').requestFullscreen()
+            if (document.fullscreenElement === null){
+                document.querySelector('#TreeData').requestFullscreen()
+            }else{
+                document.exitFullscreen();  
+            }    
             
+        }
+
+        metadata_full_screen_mode = function(){
+            let metadata_panel = document.querySelector('#ClusterInfo>div')
+            if (document.fullscreenElement === null){
+                METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = metadata_panel.style.height;
+                document.querySelector('#ClusterInfo').requestFullscreen()
+                metadata_panel.style.height = '100vh';
+            }else{
+                document.exitFullscreen();
+                console.log(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
+                metadata_panel.style.height = METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH;
+            }            
         }
 
         document.addEventListener("DOMContentLoaded",()=>{
             let button = document.querySelector('#tree_fullscreen_btn')
 
-            document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
+            /*document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
                 
                 if(button.classList.contains("d-none")){
                     button.classList.remove('d-none')
                 }else{
                     button.classList.add('d-none')
                 }
-            })
+            })*/
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
@@ -2793,8 +2882,8 @@
                 background-color: #dc3545; width:50px; height:10px; z-index: 2;">
                 </div>
             </div>
-            <div id="ClusterInfo" class="row collapse show border border-primary w-100 m-0">
-                <div class="col-12 overflow-auto" style="height:28.9vh">
+            <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
+                <div class="col-12 p-0 overflow-auto" style="height:28.9vh">
                     <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display overflow-scroll" >
                     </table>
