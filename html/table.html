@@ -145,7 +145,7 @@
         const DATA = __DEADFOOD__;
         const DEBUG = false;
         const TREE_OFFSET = 100;
-        let METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
+        var METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
         var NEWICK = null;
         var tree_root = null;
         var METADATA = null;
@@ -1920,61 +1920,57 @@
             
 
             let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "hex"});
-            console.log(colours);
-
         
-
-            //given a random colours for legend items test all and find highly similar colours
+            /* Heuristic alogrithm to pick non-overlapping colours above threshold */ 
+            
+            //given a random colours for legend items find highly similar colours below the deltaE2000 threshold
             if(colours.length <= 50){
                 const deltaE2000_threshold = 10;
                 let problematic_colours_idx=[];
                 colours.map((picked_color, j)=>{
-                //console.log(`Checking ${Object.keys(break_down_values)[j]}: ${picked_color}`)
                 
-                //find highly similar colours in a panel
-                for (const [i,legend_color] of colours.entries()){
-                    let deltaE2000 = Color.deltaE2000(picked_color, legend_color)
-                    //console.log(`${Object.keys(break_down_values)[j]} vs ${Object.keys(break_down_values)[i]} --> ${deltaE2000}`)
-                    if(deltaE2000 <= deltaE2000_threshold && deltaE2000 !== 0){
-                        //console.log(`Found problematic color pair in legend ${Object.keys(break_down_values)[j]} vs ${Object.keys(break_down_values)[i]}`)
-                        problematic_colours_idx.push(i)            
-                    }
+                    //find highly similar colours in a panel below deltaE2000_threshold
+                    for (const [i,legend_color] of colours.entries()){
+                        let deltaE2000 = Color.deltaE2000(picked_color, legend_color)
+                        if(deltaE2000 <= deltaE2000_threshold && deltaE2000 !== 0){
+                            problematic_colours_idx.push(i)            
+                        }
 
-                }//for loop
+                    }//for loop ends
 
-                problematic_colours_idx = [ ... new Set(problematic_colours_idx)].sort((a,b)=> a-b)
+                    problematic_colours_idx = [ ... new Set(problematic_colours_idx)].sort((a,b)=> a-b)
                 
                 });
-                console.log(`Found problematic too similar ${problematic_colours_idx} with indices ${problematic_colours_idx.length} out of ${colours.length}`)    
+
+                console.debug(`Found problematic too similar ${problematic_colours_idx} with indices ${problematic_colours_idx.length} out of ${colours.length}`)    
                 
+                //if highly similar colours in legend found, try to find a suitable replacement that will be above the deltaE2000_threshold
+                //try randomly pick 1000 colours and test them against all colours in the legend
                 let found_new_color_bool = false;
                 problematic_colours_idx.forEach(i =>{
-                    //console.log(`Working on ${Object.keys(break_down_values)[i]}`);
                     found_new_color_bool = false
-                    //while( found_new_color_bool === false){
-                    let randomInt = parseInt(Math.random()*100000)+1;
-                    colour_random_list = randomColor({ seed:randomInt, count:1000, format:'hex'})
+                 
+                    const seed_offset = parseInt(Math.random()*100000)+1;
+                    const max_random_colours = 1000;
+                    colour_random_list = randomColor({ seed: seed_offset, count: max_random_colours, format:'hex'})
                 
                     for(const random_color_hex of colour_random_list) {
                         //check distance to all colours in the legend
                         let deltaE2000_list = colours.map(legend_color => {
                             return Color.deltaE2000(random_color_hex, legend_color)
                         });
-                        //console.log(deltaE2000_list,Math.min(...deltaE2000_list))
                         let minDeltaE2000 = Math.min(...deltaE2000_list)
                     
                         if(minDeltaE2000 > deltaE2000_threshold){
-                            //console.log(`Found a suitable color ${random_color_hex} with min deltaE2000 ${minDeltaE2000} for ${Object.keys(break_down_values)[i]}`)
+                            console.debug(`Found a suitable color ${random_color_hex} with min deltaE2000 ${minDeltaE2000} for ${Object.keys(break_down_values)[i]}`)
                             colours[i] = random_color_hex;
                             found_new_color_bool = true;
                             break;
                         }
                     }//for      
-                    if (found_new_color_bool === false){
-                        //console.log(`Failed to find a suitable color for ${Object.keys(break_down_values)[i]}`)
-                    }
-                });//forEach   
-            }//if
+                    
+                });//forEach ends 
+            }//if ends
 
 
             let colour_idx = 0;
