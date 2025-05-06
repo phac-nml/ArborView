@@ -117,7 +117,7 @@
         const TREE = __DEADBEEF__;
         // the '= __DEADFOOD__' is an expression to find and replace and inline tsv string e.g. 'head1\thead2\nv1\tv2\n's
         const DATA = __DEADFOOD__;
-        const DEBUG = false;
+        const DEBUG = true;
         const TREE_OFFSET = 100;
         var NEWICK = null;
         var tree_root = null;
@@ -187,17 +187,63 @@
         }
 
         const addTreeDisplayDistance = (tree_root) => {
-            console.log(tree_root)
             tree_root.display_dist = tree_root.data.max_length
             if(TREE_ULTRAMETRIC_P){
                 // Get the root to leaf length for display
-                console.log("max length", maxLength(tree_root))
                 tree_root.display_dist = maxLength(tree_root)
-                console.log("new", tree_root)
             }
 
             tree_root.children.forEach(d => addDisplayDistance(tree_root, tree_root.display_dist))
 
+        }
+
+
+        function drawScale(length, height){
+            /*
+                Render a scale to show the tree distances. 
+                It needs to update dynamically with the rest
+                of the tree. 
+
+                length: length of the scale to draw, units still tbd
+            */
+
+           //let scale_element = document.createElementNS("http://www.w3.org/http://www.w3.org/2000/svg", 'path')
+           //scale_element.setAttribute("d", scale);
+           //let svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg')
+           const svg = d3.create("svg");
+           console.log(svg)
+           document.querySelector("#TreeData").append(svg.node())
+
+           console.log(svg)
+           //let scale = `M 0 -${height} H ${length}`
+           let scale = `M 0 100 H ${length}`
+           let stroke_width = 5
+           let bar_opacity = 0.4
+           svg.append("path")
+            .attr("d", scale)
+            .attr("stroke-width", stroke_width)
+            .attr("stroke-opacity", bar_opacity)
+            .attr("stroke", "#000")
+            .attr("fill-opacity", 1)
+
+            let test_inc = length / 10 // 10 was chosen randomly as I mock something up
+            for(let i=0; i <= length; i+=test_inc){
+                svg.append("path")
+                .attr("d", `M ${i} -${height - stroke_width}  V -${height + stroke_width}`)
+                .attr("fill-opacity", 1)
+                .attr("stroke", "#000")
+                
+            }
+
+            let test_inc_sub = length / 100
+            for(let i=0; i <=length; i+=test_inc_sub){
+                svg.append("path")
+                .attr("d", `M ${i} -${height - stroke_width} V -${height}`)
+                .attr("fill-opacity", 1)
+                .attr("stroke", "#000")
+            }
+           //console.log(svg, scale_element)
+           //svg.appendChild(scale_element)
         }
 
 
@@ -445,7 +491,6 @@
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
-    
                 //var width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
@@ -469,7 +514,8 @@
                 const root = d3.hierarchy(data);
                 root.sort((a, b) => b.height - a.height || d3.ascending(a.id, b.id));
 
-                setDistance(root, root.data.d = 0, (inner_radius / maxLength(root))) // Third value is a scaling factor
+                let max_length = maxLength(root)
+                setDistance(root, root.data.d = 0, (inner_radius / max_length)) // Third value is a scaling factor
 
                 const leaves_in_tree = root.leaves();
                 const pixels_per_label = 15;
@@ -477,6 +523,8 @@
                 const dx = 20;
                 //const dy = (width - marginRight - marginLeft) / (1 + root.height);
                 const dy = inner_radius / root.height;
+                // Test Scale drawing
+
                 tree = d3.cluster()
                             .nodeSize([dx, dy])
                             .separation( (a, b) => { return 1;}) // Can pass in a custom function to alter distance between labels, 1 means all labels are spaced the same distance
@@ -484,8 +532,6 @@
 
 
                 diagonal = (d) => {
-                    //console.log(d.source);
-                    // TODO have this reflect the branch length
                     // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanings
                     return `M${d.source.distance},${d.source.x} L${d.source.distance},${d.target.x} L${d.target.distance},${d.target.x}`
                 };
@@ -692,6 +738,10 @@
             addTreeDisplayDistance(root)
             update(null, root);
             
+            //console.log("stuff", inner_radius, max_length, dx * leaves_in_tree.length)
+            //! This math is not working out for all general cases :(
+            drawScale(inner_radius, (dx * leaves_in_tree.length) / 2.0)
+
             return svg.node();
         };
 
@@ -2295,7 +2345,6 @@
 
             let selected_node_ids = data_table.cells(indexes,0).data();
             for(var i = 0; i < selected_node_ids.length; i++) {
-                // TODO need to batch select and deselct from this
                 let tree_node = document.querySelector( `[id='${selected_node_ids[i]}']`)
                 let [ele, circle, text] = SelectedNodes.getNodeData(tree_node);
 
@@ -2343,7 +2392,7 @@
 
         export_metadata_table = function(e){
             // Export updated metadata
-            console.log(e.id)
+            console.debug(e.id)
             if(!ORIGINAL_DATA){
                 console.error("No contextual data imported yet");
                 Swal.fire({
