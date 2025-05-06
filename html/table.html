@@ -228,7 +228,6 @@
                 const root = d3.hierarchy(data);
                 root.sort((a, b) => b.height - a.height || d3.ascending(a.id, b.id));
                 
-                addTreeDisplayDistance(root)
                 
                 const leaves_in_tree = root.leaves();
                 const pixels_per_label = 15;
@@ -356,7 +355,7 @@
                     // Add branch length to all inner nodes
                     nodeEnter.append("text")
                         .text((d) => {
-                            if(!d.data.leaf){
+                            if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
                                 return Number((d.display_dist).toFixed(DECIMAL_PLACES))
                             }})
                         .attr("class", "branch-length")
@@ -905,7 +904,7 @@
 
                 nodeEnter.append("text")
                     .text((d) => {
-                        if(!d.data.leaf){
+                        if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
                             return Number((d.display_dist).toFixed(DECIMAL_PLACES))
                         }})
                     .attr("class", "branch-length")
@@ -1125,7 +1124,7 @@
 
                     nodeEnter.append("text") // TODO can do this with if statement and recurse over them all may be a bit slower but more mem friednly
                         .text((d) => {
-                            if(!d.data.leaf){
+                            if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
                                 return Number((d.display_dist).toFixed(DECIMAL_PLACES))
                             }})
                         .attr("class", "branch-length")
