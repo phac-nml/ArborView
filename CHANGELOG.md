@@ -5,6 +5,8 @@
 
 ### `Changed`
 
+- Added scale bar for dendrogram layout. [PR 14](https://github.com/phac-nml/ArborView/pull/14)
+
 - Added an alternative distance display for ultrametric and ML trees. [PR 13](https://github.com/phac-nml/ArborView/pull/13)
 
 - Tree layout selection is now a drop down menu and not a slider. [PR 2](https://github.com/phac-nml/ArborView/pull/2)

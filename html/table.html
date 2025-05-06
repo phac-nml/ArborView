@@ -113,7 +113,7 @@
         const __DEADBEEF__ = 0xDEADBEEF;
         const __DEADFOOD__ = 0xDEADF00D;
         //var test_newick = "(((B:1.000000,A:1.000000):3.0,C:4.000000):4.0,D:8.000000);"
-        var test_newick = "((BGIOSIFCE006902.1_ORYSA:0.652945[&&NHX:S=ORYSA],(At4g19560.1_ARATH:0.566484[&&NHX:S=ARATH],(At4g19600.1_ARATH:0.229647[&&NHX:S=ARATH],At5g45190.1_ARATH:0.149569[&&NHX:S=ARATH]):0.109796[&&NHX:S=ARATH:SIS=100:D=Y:B=100]):0.283052[&&NHX:S=ARATH:SIS=100:D=Y:B=100]):0.930921[&&NHX:S=Magnoliophyta:D=N:B=100],((((((((((((CCNK_HUMAN:0.001351[&&NHX:S=HUMAN],CCNK_F3_PANTR:0.001588[&&NHX:S=PANTR]):0.009317[&&NHX:S=Homo/Pan/Gorilla_group:D=N:B=100],CCNK_MACMU:0.01227[&&NHX:S=MACMU]):0.020339[&&NHX:S=Catarrhini:D=N:B=100],(CCNK_BOVIN:0.049478[&&NHX:S=BOVIN],CCNK_CANFA:0.076883[&&NHX:S=CANFA]):0.026972[&&NHX:S=Laurasiatheria:D=N:B=97]):0.01376[&&NHX:S=Eutheria:D=N:B=62],(Ccnk_MOUSE:0.018183[&&NHX:S=MOUSE],LOC500715_RAT:0.02728[&&NHX:S=RAT]):0.054247[&&NHX:S=Murinae:D=N:B=100]):0.087752[&&NHX:S=Eutheria:D=N:B=65],CCNK_MONDO:0.069457[&&NHX:S=MONDO]):0.053263[&&NHX:S=Theria:D=N:B=83],NP_001026380_CHICK:0.085022[&&NHX:S=CHICK]):0.059401[&&NHX:S=Amniota:D=N:B=80],CCNK_XENTR:0.175799[&&NHX:S=XENTR]):0.075577[&&NHX:S=Tetrapoda:D=N:B=97],((si_dkey-60a16_F2_BRARE:0.143195[&&NHX:S=BRARE],(CCNK_TETNG:0.142629[&&NHX:S=TETNG],CCNK_F2_GASAC:0.115749[&&NHX:S=GASAC]):0.130837[&&NHX:S=Percomorpha:D=N:B=100]):0.077038[&&NHX:S=Clupeocephala:D=N:B=95],ENSGACT00000017400_GASAC:0.40355[&&NHX:S=GASAC]):0.058401[&&NHX:S=Clupeocephala:SIS=33:D=Y:B=13]):0.233994[&&NHX:S=Euteleostomi:D=N:B=18],(ENSCINT00000017473_CIOIN:0[&&NHX:S=CIOIN],ENSCINT00000026852_CIOIN:0.002343[&&NHX:S=CIOIN]):0.481407[&&NHX:S=CIOIN:SIS=100:D=Y:B=100]):0.090892[&&NHX:S=Chordata:D=N:B=98],((CycK-RA_DROME:0.17719[&&NHX:S=DROME],dper_GLEANR_8777_caf1_DROPE:0.174477[&&NHX:S=DROPE]):0.199588[&&NHX:S=Sophophora:D=N:B=100],(AAEL013531-RA_AEDAE:0.214131[&&NHX:S=AEDAE],XP_317464_ANOGA:0.204436[&&NHX:S=ANOGA]):0.178396[&&NHX:S=Culicidae:D=N:B=100]):0.293157[&&NHX:S=Diptera:D=N:B=100]):0.104694[&&NHX:S=Coelomata:D=N:B=98],Smp_130980_SCHMA:0.624197[&&NHX:S=SCHMA]):0.041513[&&NHX:S=Bilateria:D=N:B=84],(WBGene00009650_CAEEL:0.186775[&&NHX:S=CAEEL],(CBG04574_CAEBR:0.21279[&&NHX:S=CAEBR],cr01.sctg48.wum.67.1_CAERE:0.192611[&&NHX:S=CAERE]):0.076335[&&NHX:S=Caenorhabditis:D=N:B=86]):1.18006[&&NHX:S=Caenorhabditis:D=N:B=86]):0.311276[&&NHX:S=Bilateria:D=N:B=84])[&&NHX:S=Eukaryota:D=N:B=0];"
+        //var test_newick = "((BGIOSIFCE006902.1_ORYSA:0.652945[&&NHX:S=ORYSA],(At4g19560.1_ARATH:0.566484[&&NHX:S=ARATH],(At4g19600.1_ARATH:0.229647[&&NHX:S=ARATH],At5g45190.1_ARATH:0.149569[&&NHX:S=ARATH]):0.109796[&&NHX:S=ARATH:SIS=100:D=Y:B=100]):0.283052[&&NHX:S=ARATH:SIS=100:D=Y:B=100]):0.930921[&&NHX:S=Magnoliophyta:D=N:B=100],((((((((((((CCNK_HUMAN:0.001351[&&NHX:S=HUMAN],CCNK_F3_PANTR:0.001588[&&NHX:S=PANTR]):0.009317[&&NHX:S=Homo/Pan/Gorilla_group:D=N:B=100],CCNK_MACMU:0.01227[&&NHX:S=MACMU]):0.020339[&&NHX:S=Catarrhini:D=N:B=100],(CCNK_BOVIN:0.049478[&&NHX:S=BOVIN],CCNK_CANFA:0.076883[&&NHX:S=CANFA]):0.026972[&&NHX:S=Laurasiatheria:D=N:B=97]):0.01376[&&NHX:S=Eutheria:D=N:B=62],(Ccnk_MOUSE:0.018183[&&NHX:S=MOUSE],LOC500715_RAT:0.02728[&&NHX:S=RAT]):0.054247[&&NHX:S=Murinae:D=N:B=100]):0.087752[&&NHX:S=Eutheria:D=N:B=65],CCNK_MONDO:0.069457[&&NHX:S=MONDO]):0.053263[&&NHX:S=Theria:D=N:B=83],NP_001026380_CHICK:0.085022[&&NHX:S=CHICK]):0.059401[&&NHX:S=Amniota:D=N:B=80],CCNK_XENTR:0.175799[&&NHX:S=XENTR]):0.075577[&&NHX:S=Tetrapoda:D=N:B=97],((si_dkey-60a16_F2_BRARE:0.143195[&&NHX:S=BRARE],(CCNK_TETNG:0.142629[&&NHX:S=TETNG],CCNK_F2_GASAC:0.115749[&&NHX:S=GASAC]):0.130837[&&NHX:S=Percomorpha:D=N:B=100]):0.077038[&&NHX:S=Clupeocephala:D=N:B=95],ENSGACT00000017400_GASAC:0.40355[&&NHX:S=GASAC]):0.058401[&&NHX:S=Clupeocephala:SIS=33:D=Y:B=13]):0.233994[&&NHX:S=Euteleostomi:D=N:B=18],(ENSCINT00000017473_CIOIN:0[&&NHX:S=CIOIN],ENSCINT00000026852_CIOIN:0.002343[&&NHX:S=CIOIN]):0.481407[&&NHX:S=CIOIN:SIS=100:D=Y:B=100]):0.090892[&&NHX:S=Chordata:D=N:B=98],((CycK-RA_DROME:0.17719[&&NHX:S=DROME],dper_GLEANR_8777_caf1_DROPE:0.174477[&&NHX:S=DROPE]):0.199588[&&NHX:S=Sophophora:D=N:B=100],(AAEL013531-RA_AEDAE:0.214131[&&NHX:S=AEDAE],XP_317464_ANOGA:0.204436[&&NHX:S=ANOGA]):0.178396[&&NHX:S=Culicidae:D=N:B=100]):0.293157[&&NHX:S=Diptera:D=N:B=100]):0.104694[&&NHX:S=Coelomata:D=N:B=98],Smp_130980_SCHMA:0.624197[&&NHX:S=SCHMA]):0.041513[&&NHX:S=Bilateria:D=N:B=84],(WBGene00009650_CAEEL:0.186775[&&NHX:S=CAEEL],(CBG04574_CAEBR:0.21279[&&NHX:S=CAEBR],cr01.sctg48.wum.67.1_CAERE:0.192611[&&NHX:S=CAERE]):0.076335[&&NHX:S=Caenorhabditis:D=N:B=86]):1.18006[&&NHX:S=Caenorhabditis:D=N:B=86]):0.311276[&&NHX:S=Bilateria:D=N:B=84])[&&NHX:S=Eukaryota:D=N:B=0];"
         const TREE = __DEADBEEF__;
         // the '= __DEADFOOD__' is an expression to find and replace and inline tsv string e.g. 'head1\thead2\nv1\tv2\n's
         const DATA = __DEADFOOD__;
@@ -156,7 +156,7 @@
         const CIRCLE_SIZE_SELECTED = 6;
         const INNER_NODE_SIZE = 4;
         const LEAF_NODE_SIZE = 6;
-        const DECIMAL_PLACES = 4;
+        const DECIMAL_PLACES = 2;
         const DISTANCE_LABEL_OFFSET = 5.2
 
 
@@ -187,17 +187,69 @@
         }
 
         const addTreeDisplayDistance = (tree_root) => {
-            console.log(tree_root)
             tree_root.display_dist = tree_root.data.max_length
             if(TREE_ULTRAMETRIC_P){
                 // Get the root to leaf length for display
-                console.log("max length", maxLength(tree_root))
                 tree_root.display_dist = maxLength(tree_root)
-                console.log("new", tree_root)
             }
 
             tree_root.children.forEach(d => addDisplayDistance(tree_root, tree_root.display_dist))
 
+        }
+
+
+        function drawScale(svg, length, height, max_length){
+            /*
+                Render a scale to show the tree distances. 
+                It needs to update dynamically with the rest
+                of the tree. 
+
+                scale bar is slightly difficult to add, as the svg viewport data
+                only shows up after rendering
+
+                length: length of the scale to draw, units still tbd
+            */
+
+           //let scale = `M 0 -${height} H ${length}`
+           let scale = `M 0 -${height} H ${length}`
+           let stroke_width = 5
+           let bar_opacity = 0.4
+           svg.append("path")
+            .attr("d", scale)
+            .attr("stroke-width", stroke_width)
+            .attr("stroke-opacity", bar_opacity)
+            .attr("stroke", "#000")
+            .attr("fill-opacity", 1)
+
+            let test_inc =  max_length / 10 // 10 was chosen randomly as I mock something up
+            let increase_factor = length / max_length
+
+            for(let i=0; i <= max_length; i+=test_inc){
+                svg.append("path")
+                .attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
+                .attr("fill-opacity", 1)
+                .attr("stroke", "#000")
+                
+                svg.append("text")
+                .attr("dx", i * increase_factor)
+                .attr("stroke", "#000")
+                .attr("fill", "#000")
+                .attr("stroke-width", 1)
+                .attr("fill-opacity", 1)
+                .attr("dy", -height - 5)
+                .text( d => !TREE_ULTRAMETRIC_P ? Number(i).toFixed(DECIMAL_PLACES) : Number(max_length - i).toFixed(DECIMAL_PLACES))
+                .attr("font-size", 14)
+                
+            }
+
+            let test_inc_sub = length / 100
+            for(let i=0; i <=length; i+=test_inc_sub){
+                svg.append("path")
+                .attr("d", `M ${i} -${height - stroke_width} V -${height}`)
+                .attr("fill-opacity", 1)
+                .attr("stroke", "#000")
+            }
+           //svg.appendChild(scale_element)
         }
 
 
@@ -445,7 +497,6 @@
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
-    
                 //var width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
@@ -469,23 +520,24 @@
                 const root = d3.hierarchy(data);
                 root.sort((a, b) => b.height - a.height || d3.ascending(a.id, b.id));
 
-                setDistance(root, root.data.d = 0, (inner_radius / maxLength(root))) // Third value is a scaling factor
+                let max_length = maxLength(root)
+                setDistance(root, root.data.d = 0, (inner_radius / max_length)) // Third value is a scaling factor
 
                 const leaves_in_tree = root.leaves();
                 const pixels_per_label = 15;
-                
+                                
                 const dx = 20;
+                const root_node_height = dx * 0.5;
                 //const dy = (width - marginRight - marginLeft) / (1 + root.height);
                 const dy = inner_radius / root.height;
+                // Test Scale drawing
+
                 tree = d3.cluster()
                             .nodeSize([dx, dy])
                             .separation( (a, b) => { return 1;}) // Can pass in a custom function to alter distance between labels, 1 means all labels are spaced the same distance
 
 
-
                 diagonal = (d) => {
-                    //console.log(d.source);
-                    // TODO have this reflect the branch length
                     // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanings
                     return `M${d.source.distance},${d.source.x} L${d.source.distance},${d.target.x} L${d.target.distance},${d.target.x}`
                 };
@@ -517,7 +569,14 @@
                         return path.toString();
                 }
 
+                let below_root = 0; 
                 function update(event, source) {
+
+                    // Recalculate tree lengths on collapse
+                    let max_length = maxLength(root)
+                    setDistance(root, root.data.d = 0, (inner_radius / max_length)) // Third value is a scaling factor
+
+
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse(); // Might be able to replace with the recurse tree function for speed up
                     const links = root.links();
@@ -572,6 +631,10 @@
                         })
                         .attr("class", (d) => {
                             if(d.data.leaf){
+                                // count nodes below the root to set offset height for the scale
+                                if(d.x > -root_node_height){
+                                    below_root++
+                                }
                                 return "tree-node leaf-node";
                             }
                             return "tree-node inner-node";
@@ -582,8 +645,7 @@
                             if(event.which == left_mouse){
                                 NodeDropDownMenu(event, d, () => {
                                     if(update(event, d)){
-                                        // TODO event does not need to be called on collapse only un-collapse
-                                        let descendants = d.descendants(); // TODO the d3 leaves may be too slow, recurseTree better
+                                        let descendants = d.descendants();
                                         let uncollapsed_descendants_length = 1;
                                         // The length of the uncollapsed descendants is greater than one on uncollapse
                                         if(descendants.length > uncollapsed_descendants_length){
@@ -605,8 +667,8 @@
                     nodeEnter.append("circle")
                         .attr("r", d => !d.data.leaf ? INNER_NODE_SIZE : LEAF_NODE_SIZE) // size 6 for leaf nodes and 4 for inner nodes
                         .attr("fill", d => !d.data.leaf ? "#555" : "#999")
-                        .attr("stroke-width", 10);
-                    
+                        .attr("stroke-width", 10);                    
+
                     // Add branch length to all inner nodes
                     nodeEnter.append("text")
                         .text((d) => {
@@ -629,7 +691,8 @@
                         })
                         .attr("dy", 14)
                         .attr("font-size", 12);
-                    
+
+
                     nodeEnter.append("text")
                         // dx the 12 corresponds to a safety metric to add some space between nodes, no children, dx is 0 to align leaves to inner nodes
                         // Below two lines allow for inner nodes to show up
@@ -692,6 +755,26 @@
             addTreeDisplayDistance(root)
             update(null, root);
             
+            //! This math is not working out for all general cases :(
+            /* 
+                Formula for getting the scale bar at the top is
+                
+                (dx * number of leaves in the tree) - (number of leaves below root * dx)
+            */
+           console.log(below_root)
+            if(below_root > 1){
+                // Just one value is likely the root, and it needs to be ignored in its offset
+                below_root--
+            }
+
+            if(!TREE_ULTRAMETRIC_P){
+                max_length = maxLength(root)
+            }else{
+                max_length = root.display_dist
+            }
+            //let display_width = parseInt(ele_style.width) - label_safety_factor
+            drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx), max_length)
+
             return svg.node();
         };
 
@@ -1301,9 +1384,9 @@
                 if(!SelectedNodes.nodes.has(text.textContent)){
                     SelectedNodes.nodes.set(text.textContent, parent);
                     SelectedNodes.setSelectedColours(text, circle);
-                }else if (DEBUG){
-                    console.log(`${text.textContent} already exists in map.`)
                 }
+                console.debug(`${text.textContent} already exists in map.`)
+                
             }
 
             static unselectNode(element){
@@ -1313,9 +1396,7 @@
                 SelectedNodes.deSelectedColours(text, circle);
                 let dropped = SelectedNodes.nodes.delete(text.textContent)
 
-                if (DEBUG) {
-                    console.log("Dropping values:", text.textContent, dropped);
-                }
+                console.debug("Dropping values:", text.textContent, dropped);
                 
             }
 
@@ -2103,9 +2184,7 @@
 
 
             $("#metadata").on( "dblclick", "tr:not(:first) td:first-child", function(evt) {
-                if(DEBUG){
-                    console.log(`trying to add ${evt.target.textContent}`)
-                }
+                console.debug(`trying to add ${evt.target.textContent}`)
                 
                 let tree_node = document.querySelector( `[id='${evt.target.textContent}']`)
                 let text = tree_node.lastChild
@@ -2125,9 +2204,7 @@
             // TODO need to change from sorting_1, to  :first
             // Zoom in on a NODE on single click event
             $("#metadata").on('click', 'tr td:first-child', (evt) => {
-                if(DEBUG){
-                    console.log(`ZOOMING on node selected in metadata table ${evt.target.textContent}`)
-                } 
+                console.debug(`ZOOMING on node selected in metadata table ${evt.target.textContent}`)
                 
                 let identified_point = document.querySelector(`[id='${evt.target.textContent}']`)
                 let identified_point_id = identified_point.childNodes[0].textContent; // gets nodes name
@@ -2147,9 +2224,7 @@
 
                 if(!is_selected){
                     // Highlight selected item unless it is already highlighted due to being selected
-                    if(DEBUG){
-                        console.log("Selected element", identified_point)
-                    }
+                    console.debug("Selected element", identified_point)
                     identified_point.childNodes[2].style.fill = clicked_color;
                 }
                 
@@ -2167,9 +2242,7 @@
             });
 
             $("#TreeData").on('scroll', '#TreeSVG', (evt) => {
-                if(DEBUG){
-                    console.log("scrolling");
-                }
+                console.debug("scrolling");
             });
 
         });
@@ -2223,9 +2296,7 @@
         }
 
         legend_on_off = function(node){
-            if(DEBUG){
-                console.debug(node.checked)
-            }
+            console.debug(node.checked)
             
             if(node.checked === false){
                 document.querySelector('#colour-legend').classList.add("d-none");
@@ -2295,7 +2366,6 @@
 
             let selected_node_ids = data_table.cells(indexes,0).data();
             for(var i = 0; i < selected_node_ids.length; i++) {
-                // TODO need to batch select and deselct from this
                 let tree_node = document.querySelector( `[id='${selected_node_ids[i]}']`)
                 let [ele, circle, text] = SelectedNodes.getNodeData(tree_node);
 
@@ -2343,7 +2413,7 @@
 
         export_metadata_table = function(e){
             // Export updated metadata
-            console.log(e.id)
+            console.debug(e.id)
             if(!ORIGINAL_DATA){
                 console.error("No contextual data imported yet");
                 Swal.fire({
@@ -2545,16 +2615,12 @@
             let text2copyArray=[]
             
             document.querySelectorAll('#SelectedNodes div>div:first-child').forEach(node => {
-                if(DEBUG){
-                    console.log(node.textContent)
-                }
+                console.debug(node.textContent)
                 text2copyArray.push(node.textContent)
             })
             let text2copy = text2copyArray.join('\n');
             let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
-            if(DEBUG){
-                console.log(text2copy);
-            }
+            console.debug(text2copy);
             let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
             //create a ObjectURL in order to download the created file
             url = window.URL.createObjectURL(file);
