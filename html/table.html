@@ -249,7 +249,6 @@
                 .attr("fill-opacity", 1)
                 .attr("stroke", "#000")
             }
-           //svg.appendChild(scale_element)
         }
 
 
@@ -632,7 +631,7 @@
                         .attr("class", (d) => {
                             if(d.data.leaf){
                                 // count nodes below the root to set offset height for the scale
-                                if(d.x > -root_node_height){
+                                if(d.x > -root_node_height){ 
                                     below_root++
                                 }
                                 return "tree-node leaf-node";
@@ -761,7 +760,6 @@
                 
                 (dx * number of leaves in the tree) - (number of leaves below root * dx)
             */
-           console.log(below_root)
             if(below_root > 1){
                 // Just one value is likely the root, and it needs to be ignored in its offset
                 below_root--
@@ -1101,7 +1099,6 @@
                 // “bottom”, in the data domain. The width of a column is based on the tree’s height.
                 const root = d3.hierarchy(data);
                 root.sort((a, b) => b.height - a.height || d3.ascending(a.id, b.id));
-                addTreeDisplayDistance(root)
                 const dx = 20;
                 const dy = (width - marginRight - marginLeft) / (1 + root.height);
 
