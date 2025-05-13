@@ -122,7 +122,7 @@
         const TREE = __DEADBEEF__;
         // the '= __DEADFOOD__' is an expression to find and replace and inline tsv string e.g. 'head1\thead2\nv1\tv2\n's
         const DATA = __DEADFOOD__;
-        const DEBUG = true;
+        const DEBUG = false;
         const TREE_OFFSET = 100;
         var NEWICK = null;
         var tree_root = null;
@@ -271,7 +271,8 @@
 
         const cladeogram_chart = (data) => {
             // Made with lost of help from: https://observablehq.com/d/6c52fee38fb28b2f
-
+                $("#branch_lengths_toggle").bootstrapToggle('off')
+                SHOW_BRANCH_LENGTHS = false;
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
@@ -1099,6 +1100,8 @@
         const tidytree_chart = (data) => {
                 // Specify the charts’ dimensions. The height is variable, depending on the layout.
 
+                $("#branch_lengths_toggle").bootstrapToggle('off')
+                SHOW_BRANCH_LENGTHS = false;
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
@@ -2800,7 +2803,7 @@
                                 </div>  
                                 <!-- Decimal rounding -->
                                 <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="decimal_rounding" class="form-label">Decimals</small>
+                                    <small class="flex-grow-1" for="decimal_rounding" class="form-label">Decimal Rounding</small>
                                     <div class="flex-grow-1 w-50">
                                         <input type="range" class="form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="6" step="1">
                                     </div>
