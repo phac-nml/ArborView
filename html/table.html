@@ -205,14 +205,15 @@
 
         function drawScale(svg, length, height, max_length){
             /*
-                Render a scale to show the tree distances. 
+                Render a scale to show the tree distances / height. 
                 It needs to update dynamically with the rest
                 of the tree. 
 
                 scale bar is slightly difficult to add, as the svg viewport data
                 only shows up after rendering
 
-                length: length of the scale to draw, units still tbd
+                length: length of the scale to draw in pixels
+                max_length: max length of the tree in units the tree was rendered specified in Newick file (usually distance counted in # of alleles)
             */
 
             let scale_bar_menu = `<div id="scale-bar-menu" class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn scalebar on/off">
@@ -224,7 +225,7 @@
             $("#scale-bar-toggle").bootstrapToggle()
             $("#scale-bar").css("visibility", "visible");
 
-           let scale = `M 0 -${height} H ${length}`
+           let scale = `M 0 -${height} H ${length}` //defines the length of the scale object
            let stroke_width = 5
            let bar_opacity = 0.4
            svg.append("path")
@@ -237,35 +238,93 @@
 
             let test_inc =  max_length / 10 // 10 was chosen randomly as I mock something up
             let increase_factor = length / max_length
+            console.log(`length=${length}px max_length=${max_length} test_inc=${test_inc} increase_factor=${increase_factor}`)
 
-            for(let i=0; i <= max_length; i+=test_inc){
-                svg.append("path")
-                .attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
-                .attr("fill-opacity", 1)
-                .attr("stroke", "#000")
-                .attr("class", "scale-bar")
-                
-                svg.append("text")
-                .attr("dx", i * increase_factor)
-                .attr("stroke", "#000")
-                .attr("fill", "#000")
-                .attr("stroke-width", 1)
-                .attr("fill-opacity", 1)
-                .attr("dy", -height - 5)
-                .text( d => !TREE_ULTRAMETRIC_P ? Number(i).toFixed(DECIMAL_PLACES) : Number(max_length - i).toFixed(DECIMAL_PLACES))
-                .attr("font-size", 14)
-                .attr("class", "scale-bar")
-                
+            //const calc_scale_text = (i) => {return !TREE_ULTRAMETRIC_P ? Number(i).toFixed(DECIMAL_PLACES) : Number(max_length - i).toFixed(DECIMAL_PLACES);};
+            
+            //let test_inc_sub = length / 53 //minor divisions
+            let n_minor_divisions = 0, n_minor_divisions_step = 0.1;
+    
+            //try to get multiple of 10 minor divisions on a given scale length
+            while (n_minor_divisions < 10){
+                n_minor_divisions = Math.round(max_length/n_minor_divisions_step) //using default step of 0.1
+                if (n_minor_divisions < 10){
+                    n_minor_divisions_step = n_minor_divisions_step/0.1 //keep dividing until 10 divisions or more are obtained
+                }
             }
+            
+            let test_inc_sub = length/n_minor_divisions //minor division size in tree scale units
+            let minor_ticks_coordinates_px = [];
+            
+            //draw minor scale ticks first going from left to right (-->) 
+            for(let i=0; i <=n_minor_divisions; i+=1){
+                svg.append("path")
+                .attr("d", `M ${i*test_inc_sub} -${height - stroke_width} V -${height}`)
+                .attr("fill-opacity", 1)
+                .attr("stroke", "#000")
+                .attr("class", "scale-bar")
+                .attr("stroke-width","1")
+                minor_ticks_coordinates_px.push(i*test_inc_sub)   
+            }
+            
 
-            let test_inc_sub = length / 100
-            for(let i=0; i <=length; i+=test_inc_sub){
-                svg.append("path")
-                .attr("d", `M ${i} -${height - stroke_width} V -${height}`)
-                .attr("fill-opacity", 1)
-                .attr("stroke", "#000")
-                .attr("class", "scale-bar")
-            }
+            //phylogenetic tree showing cumulative distance from root to the leaf (-->)
+            if(!TREE_ULTRAMETRIC_P){
+                for(let i=0; i <= max_length; i+=test_inc){
+                    let d = Number(i).toFixed(DECIMAL_PLACES)
+                    svg.append("path")
+                    .attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
+                    .attr("fill-opacity", 1)
+                    .attr("stroke", "#000")
+                    .attr("class", "scale-bar")
+                    .attr("stroke-width","3")
+                    
+                    svg.append("text")
+                    .attr("dx", i * increase_factor)
+                    .attr("stroke", "#000")
+                    .attr("fill", "#000")
+                    .attr("stroke-width", 1)
+                    .attr("fill-opacity", 1)
+                    .attr("dy", -height - 5)
+                    .text( d )
+                    .attr("font-size", 14)
+                    .attr("class", "scale-bar")
+                    //console.log(`i=${i} d=${d}`)
+                    
+                }
+            }else{
+                //ultrametric tree showing distance from leaf to the root that is from right to left (<--)
+                let num_major_ticks = Math.trunc(max_length)
+                let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
+                for(let i=0; i <= num_major_ticks; i+=1){
+                    //let d = Number(max_length - i).toFixed(DECIMAL_PLACES);
+                    svg.append("path")
+                    //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
+                    .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
+                    .attr("fill-opacity", 1)
+                    .attr("stroke", "red")
+                    .attr("class", "scale-bar")
+                    .attr("stroke-width","2")
+                   
+                    //add major ticks numbers
+                    svg.append("text")
+                    .attr("dx", length-(i*increase_factor))
+                    .attr("stroke", "#000")
+                    .attr("fill", "#000")
+                    .attr("stroke-width", 1)
+                    .attr("fill-opacity", 1)
+                    .attr("dy", -height - 5)
+                    .text( i )
+                    .attr("font-size", 14)
+                    .attr("class", "scale-bar")
+                    //console.log(`i=${i} d=${d}`)
+                    
+                }
+
+            }    
+       
+
+            
         }
 
 
@@ -789,7 +848,8 @@
                 max_length = root.display_dist
             }
             //let display_width = parseInt(ele_style.width) - label_safety_factor
-            drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx), max_length)
+            console.log(`max_length ${max_length.toFixed(1)}`)
+            drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length)
 
             return svg.node();
         };
@@ -2100,6 +2160,7 @@
                 let reader = new FileReader();
                 let newick_file = event.target.files[0];
                 reader.readAsText(newick_file, "UTF-8");
+                console.log(`Successfully loaded ${newick_file.name}`)
                 reader.onload = (evt) => {
                     newick = evt.target.result;
                     drawTree(newick);
