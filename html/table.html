@@ -242,17 +242,25 @@
 
             //const calc_scale_text = (i) => {return !TREE_ULTRAMETRIC_P ? Number(i).toFixed(DECIMAL_PLACES) : Number(max_length - i).toFixed(DECIMAL_PLACES);};
             
-            //let test_inc_sub = length / 53 //minor divisions
-            let n_minor_divisions = 0, n_minor_divisions_step = 0.1;
-    
-            //try to get multiple of 10 minor divisions on a given scale length
-            while (n_minor_divisions < 10){
-                n_minor_divisions = Math.round(max_length/n_minor_divisions_step) //using default step of 0.1
-                if (n_minor_divisions < 10){
-                    n_minor_divisions_step = n_minor_divisions_step/0.1 //keep dividing until 10 divisions or more are obtained
-                }
-            }
             
+            let n_minor_divisions = 0, num_major_ticks = 0; 
+                factors=Array(10).fill(0).map((i,index)=>{return Math.pow(10,index)}); //generate array of factor from 1 to 1e10
+                factor_selected = 1; n_minor_divisions_step = 0.1;
+    
+            //given a max length of the tree, understand its decimal point precision (is it >0 or <0)
+            //if less than zero find a factor that will covert it to integer space via multiplication (i.e for 0.53 multiply by 10)
+            //identifies the major and minor number of divisions for ultrametic trees
+            //identifies scaling factor in the number space
+            for (var i=0; i<factors.length;i++){
+                if(Math.trunc(max_length*factors[i]) > 0){
+                    num_major_ticks = Math.trunc(max_length*factors[i])
+                    n_minor_divisions = Math.round(max_length*factors[i]/n_minor_divisions_step) //using default step of 0.1
+                    factor_selected = factors[i]
+                    break
+                }
+               
+            }
+            console.log(n_minor_divisions)
             let test_inc_sub = length/n_minor_divisions //minor division size in tree scale units
             let minor_ticks_coordinates_px = [];
             
@@ -294,10 +302,9 @@
                 }
             }else{
                 //ultrametric tree showing distance from leaf to the root that is from right to left (<--)
-                let num_major_ticks = Math.trunc(max_length)
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
                 for(let i=0; i <= num_major_ticks; i+=1){
-                    //let d = Number(max_length - i).toFixed(DECIMAL_PLACES);
+                    //add major ticks in RED
                     svg.append("path")
                     //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
                     .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
@@ -306,18 +313,18 @@
                     .attr("class", "scale-bar")
                     .attr("stroke-width","2")
                    
-                    //add major ticks numbers
+                    //add major ticks text
                     svg.append("text")
-                    .attr("dx", length-(i*increase_factor))
+                    .attr("dx", major_ticks_coordinates_px[i]) //length-(i*increase_factor))
                     .attr("stroke", "#000")
                     .attr("fill", "#000")
                     .attr("stroke-width", 1)
                     .attr("fill-opacity", 1)
                     .attr("dy", -height - 5)
-                    .text( i )
+                    .text( i/factor_selected )
                     .attr("font-size", 14)
                     .attr("class", "scale-bar")
-                    //console.log(`i=${i} d=${d}`)
+                    console.log(`i=${i}`)
                     
                 }
 
