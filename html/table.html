@@ -203,18 +203,58 @@
         }
 
 
-        function drawScale(svg, length, height, max_length){
-            /*
-                Render a scale to show the tree distances / height. 
-                It needs to update dynamically with the rest
-                of the tree. 
-
-                scale bar is slightly difficult to add, as the svg viewport data
-                only shows up after rendering
-
-                length: length of the scale to draw in pixels
-                max_length: max length of the tree in units the tree was rendered specified in Newick file (usually distance counted in # of alleles)
-            */
+        function drawScale(svg, length, height, max_length, root){
+            /**
+             * Draws a scale bar in a dendrogram or phylogenetic tree visualization,
+             * indicating tree distances or heights. Supports both ultrametric and non-ultrametric trees.
+             * The scale bar includes major and minor ticks, and dynamically adjusts to the tree layout.
+             *
+             * @function drawScale
+             * @param {d3.Selection} svg - SVG element where the scale bar will be drawn.
+             * @param {number} length - Length of the scale bar in pixels.
+             * @param {number} height - Vertical position of the scale bar from the top of the SVG in pixels.
+             * @param {number} max_length - Maximum length of the tree in the same units as the Newick file (e.g., number of alleles).
+             * @param {d3.HierarchyNode} root - A D3 hierarchy node, typically created using `d3.hierarchy(data)`. 
+             *   Should include a `data.max_length` field representing the starting cumulative distance from the root,
+             *   which is used in non-ultrametric trees to adjust the scale bar labels.
+             *
+             * @returns {void}
+             *
+             * @example
+             * // Assuming you have a D3 SVG selection and tree metadata:
+             * drawScale(svg, 200, 30, 1.2, treeRootNode);
+             *
+             * @remarks
+             * - Automatically appends a toggle switch UI to enable/disable the scale bar.
+             * - Minor ticks are drawn at 0.1 unit intervals by default.
+             * - Major ticks are drawn in red with corresponding numerical labels.
+             * - For ultrametric trees, the scale bar is rendered in reverse (right to left).
+             
+             * @notes
+             * scale bar is slightly difficult to add, as the svg viewport dat only shows up AFTER rendering
+             */
+            
+             // --- Input Validation ---
+            try {
+                if (!svg || typeof svg.append !== 'function' || svg.empty()) {
+                    throw new Error("Invalid 'svg' parameter: expected a D3 selection.");
+                }
+                if (typeof length !== 'number' || isNaN(length) || length <= 0) {
+                    throw new Error("Invalid 'length' parameter: must be a positive number.");
+                }
+                if (typeof height !== 'number' || isNaN(height) || height < 0) {
+                    throw new Error("Invalid 'height' parameter: must be a non-negative number.");
+                }
+                if (typeof max_length !== 'number' || isNaN(max_length) || max_length <= 0) {
+                    throw new Error("Invalid 'max_length' parameter: must be a positive number.");
+                }
+                if (!root || typeof root !== 'object' || !root.data || typeof root.data.max_length !== 'number') {
+                    throw new Error("Invalid 'root' parameter: must be an object with 'data.max_length' number.");
+                }
+            } catch (error) {
+                console.error("drawScale() failed due to invalid input:", error.message);
+                return; // Exit early to avoid rendering with bad input
+            }
 
             let scale_bar_menu = `<div id="scale-bar-menu" class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn scalebar on/off">
                 <small  class="flex-grow-1" for="scale_bar_toggle">Scale Bar</small>
@@ -238,19 +278,15 @@
 
             let test_inc =  max_length / 10 // 10 was chosen randomly as I mock something up
             let increase_factor = length / max_length
-            console.log(`length=${length}px max_length=${max_length} test_inc=${test_inc} increase_factor=${increase_factor}`)
-
-            //const calc_scale_text = (i) => {return !TREE_ULTRAMETRIC_P ? Number(i).toFixed(DECIMAL_PLACES) : Number(max_length - i).toFixed(DECIMAL_PLACES);};
-            
             
             let n_minor_divisions = 0, num_major_ticks = 0; 
                 factors=Array(10).fill(0).map((i,index)=>{return Math.pow(10,index)}); //generate array of factor from 1 to 1e10
                 factor_selected = 1; n_minor_divisions_step = 0.1;
     
-            //given a max length of the tree, understand its decimal point precision (is it >0 or <0)
-            //if less than zero find a factor that will covert it to integer space via multiplication (i.e for 0.53 multiply by 10)
-            //identifies the major and minor number of divisions for ultrametic trees
-            //identifies scaling factor in the number space
+            //given a max length of the tree, understand the tree total length decimal point precision if it is less than 1.
+            //if less than zero find a factor that will covert it to integer space via multiplication (i.e for 0.53 multiply by 10 = 5.3)
+            //then identify the major and minor number of divisions valid for ultramertic trees
+            //from factors array find a scaling factor in the number space
             for (var i=0; i<factors.length;i++){
                 if(Math.trunc(max_length*factors[i]) > 0){
                     num_major_ticks = Math.trunc(max_length*factors[i])
@@ -260,7 +296,7 @@
                 }
                
             }
-            console.log(n_minor_divisions)
+            
             let test_inc_sub = length/n_minor_divisions //minor division size in tree scale units
             let minor_ticks_coordinates_px = [];
             
@@ -275,18 +311,44 @@
                 minor_ticks_coordinates_px.push(i*test_inc_sub)   
             }
             
-
-            //phylogenetic tree showing cumulative distance from root to the leaf (-->)
+             /**
+             * @remarks
+             * Renders major tick marks and numeric labels along the scale bar
+             *
+             * - For **non-ultrametric trees** such as ML (max likelihood) and phylogenetic trees (`TREE_ULTRAMETRIC_P` is `false`):
+             *   - tick marks and distances progress from left to right (→), representing
+             *     cumulative evolutionary distance from the root to leaves rendered
+             *     in red.
+             *   - Uses `root.data.max_length` as a starting offset, which may be non-zero
+             *     in ML trees or rooted trees inferred from input data (i.e. newick file).
+             *   - Major tick text labels are generated at regular intervals (defined by `test_inc`) rendered above each major tick
+             *
+             * - For **ultrametric trees** (`TREE_ULTRAMETRIC_P` is `true`):
+             *   - tick marks and labels progress from right to left (←), reflecting the cummulative
+             *     distance/height from leaves to the root.
+             *   - Major ticks coordinates are extracted from reversed minor tick coordinates,
+             *     with every 10th tick selected.
+             *   - Each tick is labeled with the corresponding tree distance, scaled
+             *     by the selected factor to maintain appropriate precision.
+             *
+             * In both cases, red tick marks represent major divisions, and text labels
+             * above them denote tree distance values based on `DECIMAL_PLACES` selected value defaulting to 1.
+             */
+            
             if(!TREE_ULTRAMETRIC_P){
+                //phylogenetic tree showing cumulative distance from root to the leaf (-->)
+                let distance_root_start = root.data.max_length //root node might start not at zero in ML phylo tree
                 for(let i=0; i <= max_length; i+=test_inc){
-                    let d = Number(i).toFixed(DECIMAL_PLACES)
+                    let d = Number(i+distance_root_start).toFixed(DECIMAL_PLACES)
+                    //major divisions
                     svg.append("path")
                     .attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
                     .attr("fill-opacity", 1)
-                    .attr("stroke", "#000")
+                    .attr("stroke", "red")
                     .attr("class", "scale-bar")
                     .attr("stroke-width","3")
                     
+                    //major divisons text
                     svg.append("text")
                     .attr("dx", i * increase_factor)
                     .attr("stroke", "#000")
@@ -297,16 +359,13 @@
                     .text( d )
                     .attr("font-size", 14)
                     .attr("class", "scale-bar")
-                    //console.log(`i=${i} d=${d}`)
-                    
                 }
             }else{
-                //ultrametric tree showing distance from leaf to the root that is from right to left (<--)
+                //the tree is ultrametric showing a distance bar from leaf to the root that is from right to left (<--)
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
                 for(let i=0; i <= num_major_ticks; i+=1){
                     //add major ticks in RED
                     svg.append("path")
-                    //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
                     .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
                     .attr("fill-opacity", 1)
                     .attr("stroke", "red")
@@ -324,14 +383,10 @@
                     .text( i/factor_selected )
                     .attr("font-size", 14)
                     .attr("class", "scale-bar")
-                    console.log(`i=${i}`)
-                    
                 }
 
             }    
-       
 
-            
         }
 
 
@@ -576,7 +631,7 @@
 
 
         const dendrogram_chart = (data) => {
-            // Made with lost of help from: https://observablehq.com/d/6c52fee38fb28b2f
+                // Made with lost of help from: https://observablehq.com/d/6c52fee38fb28b2f
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
@@ -848,15 +903,14 @@
                 // Just one value is likely the root, and it needs to be ignored in its offset
                 below_root--
             }
-
+            
             if(!TREE_ULTRAMETRIC_P){
                 max_length = maxLength(root)
             }else{
                 max_length = root.display_dist
             }
             //let display_width = parseInt(ele_style.width) - label_safety_factor
-            console.log(`max_length ${max_length.toFixed(1)}`)
-            drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length)
+            drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length, root)
 
             return svg.node();
         };
