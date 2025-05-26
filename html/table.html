@@ -353,8 +353,7 @@
                 console.error("drawScale() failed due to invalid input:", error.message);
                 return; // Exit early to avoid rendering with bad input
             }
-            const scaleBarGroup = svg.append("g").attr("id", "
-                  -group") //group all svg path elements under single group
+            const scaleBarGroup = svg.append("g").attr("id", "scale-bar-group") //group all svg path elements under single group
             enableVerticalElementDrag(scaleBarGroup); //enables vertical drag of the scale bar
 
             let scale_bar_menu = `<div id="scale-bar-menu" class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn scalebar on/off">
