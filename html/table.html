@@ -75,6 +75,11 @@
             animation: updown 1s ease infinite
         }
 
+        #scale-bar-svg {
+            cursor: move;
+        }
+
+
         
 
 
@@ -202,6 +207,73 @@
 
         }
 
+        function enableVerticalElementDrag(targetGroup) {
+            let isDragging = false;
+            let startY = 0;
+            let initialTransformY = 0;
+            let isSelected = false;
+
+            // Make it focusable and style cursor
+            targetGroup
+                .attr("tabindex", 0)
+                .style("cursor", "move");
+
+            // Handle selection and mouse dragging
+            targetGroup.on("mousedown", function (event) {
+                event.stopPropagation(); // Prevent body from deselecting
+                isSelected = true;
+                targetGroup.node().focus(); // Give focus so keyboard works
+                isDragging = true;
+                startY = event.clientY;
+                initialTransformY = getCurrentY();
+                event.preventDefault();
+            });
+
+            // Deselect when clicking elsewhere
+            d3.select("body").on("mousedown", function () {
+                isSelected = false;
+                targetGroup.node().blur(); // Remove focus
+            });
+
+            // Keyboard interaction only when selected
+            targetGroup.on("keydown", function (event) {
+                if (!isSelected) return;
+                const currentY = getCurrentY();
+                const step = 5;
+                if (event.key === "ArrowUp") {
+                setTransform(currentY - step);
+                event.preventDefault();
+                } else if (event.key === "ArrowDown") {
+                setTransform(currentY + step);
+                event.preventDefault();
+                }
+            });
+
+            // Global mouse movement tracking for dragging
+            d3.select(window)
+                .on("mousemove.scaleBar", function (event) {
+                if (isDragging) {
+                    const deltaY = event.clientY - startY;
+                    setTransform(initialTransformY + deltaY);
+                }
+                })
+                .on("mouseup.scaleBar", function () {
+                isDragging = false;
+                });
+
+            // Helpers
+            function getCurrentY() {
+                const transform = targetGroup.attr("transform");
+                const match = transform && transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+                return match ? parseFloat(match[2]) : 0;
+            }
+
+            function setTransform(y) {
+                targetGroup.attr("transform", `translate(0, ${y})`);
+            }
+        }
+   
+
 
         function drawScale(svg, length, height, max_length, root){
             /**
@@ -255,6 +327,8 @@
                 console.error("drawScale() failed due to invalid input:", error.message);
                 return; // Exit early to avoid rendering with bad input
             }
+            const scaleBarGroup = svg.append("g").attr("id", "scale-bar-group") //group all svg path elements under single group
+            enableVerticalElementDrag(scaleBarGroup); //enables vertical drag of the scale bar
 
             let scale_bar_menu = `<div id="scale-bar-menu" class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn scalebar on/off">
                 <small  class="flex-grow-1" for="scale_bar_toggle">Scale Bar</small>
@@ -268,7 +342,9 @@
            let scale = `M 0 -${height} H ${length}` //defines the length of the scale object
            let stroke_width = 5
            let bar_opacity = 0.4
-           svg.append("path")
+           
+
+           scaleBarGroup.append("path")
             .attr("d", scale)
             .attr("stroke-width", stroke_width)
             .attr("stroke-opacity", bar_opacity)
@@ -310,7 +386,7 @@
             
             //draw minor scale ticks first going from left to right (-->) 
             for(let i=0; i <=n_minor_divisions; i+=1){
-                svg.append("path")
+                scaleBarGroup.append("path")
                 .attr("d", `M ${i*test_inc_sub} -${height - stroke_width} V -${height}`)
                 .attr("fill-opacity", 1)
                 .attr("stroke", "#000")
@@ -354,7 +430,7 @@
                     //use minor divisions minor tick units and covert it to a major tick unit plus the root start distance
                     let d = Number(max_length/n_minor_divisions*10*i + distance_root_start).toFixed(DECIMAL_PLACES)
                     //major divisions
-                    svg.append("path")
+                    scaleBarGroup.append("path")
                     //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
                     .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
                     .attr("fill-opacity", 1)
@@ -363,7 +439,7 @@
                     .attr("stroke-width","3")
                     
                     //major divisions text
-                    svg.append("text")
+                    scaleBarGroup.append("text")
                     //.attr("dx", i * increase_factor)
                     .attr("dx",major_ticks_coordinates_px[i])
                     .attr("stroke", "#000")
@@ -380,7 +456,7 @@
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
                 for(let i=0; i <= num_major_ticks; i+=1){
                     //add major ticks in RED
-                    svg.append("path")
+                    scaleBarGroup.append("path")
                     .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
                     .attr("fill-opacity", 1)
                     .attr("stroke", "red")
@@ -388,7 +464,7 @@
                     .attr("stroke-width","2")
                    
                     //add major ticks text
-                    svg.append("text")
+                    scaleBarGroup.append("text")
                     .attr("dx", major_ticks_coordinates_px[i]) //length-(i*increase_factor))
                     .attr("stroke", "#000")
                     .attr("fill", "#000")
@@ -2942,7 +3018,7 @@
                                 <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." class="d-flex flex-wrap align-items-center p-1">
                                     <small class="flex-grow-1" for="decimal_rounding" class="form-label"># of decimals</small>
                                     <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="6" step="1">
+                                        <input type="range" class="form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
                                     </div>
                                     <div class="flex-grow-1 fw-bold text-center">
                                         <span id="decimal-slider-value">1</span>
