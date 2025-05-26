@@ -168,9 +168,9 @@
         var LAST_MOVE_Y = 0;
         var SHOW_BRANCH_LENGTHS = true;
         var SHOW_METADATA_IN_NAME = false;
-        var LINE_THICKNESS = 2.0;
-        
-        var TREE_VAL = "Dendrogram"; // sets defualt tree to draw
+        var LINE_THICKNESS = 2.0;  
+        var TREE_VAL = "Dendrogram"; // sets default tree style to draw
+        var PREVIOUS_UNCOLLAPSED_TREE_HEIGHT = 0; //previous tree hight uncollapsed useful when tree branches collapse
         /*
          As we are not passing the tree object into the d3 tree drawing functions
          we need this to be a global constant sadly. Unless we perform a larger refactor.
@@ -587,6 +587,7 @@
 
 
                 function update(event, source) {
+                    console.log("590")
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse(); // Might be able to replace with the recurse tree function for speed up
                     const links = root.links();
@@ -612,7 +613,7 @@
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
                     // Update the nodes…
-                    const node = gNode.selectAll("g")
+                    const node = gNode.selectAll("g:not(#scale-bar-group)")
                         .data(nodes, d => d.id);
 
                     // Enter any new nodes at the parent's previous position.
@@ -826,7 +827,7 @@
 
                 let below_root = 0; 
                 function update(event, source) {
-
+                    console.log("Performing tree update")
                     // Recalculate tree lengths on collapse
                     let max_length = maxLength(root)
                     setDistance(root, root.data.d = 0, (inner_radius / max_length)) // Third value is a scaling factor
@@ -839,8 +840,9 @@
                     // Compute the new tree layout.
                     // Converting tree to cluster may solve our conundrum...
                     tree(root);
-
+                    
                     svg.selectAll(".extension-node-links").remove();
+                    
 
                     const linkExtension = svg.append("g") // Would probably save rendering if this was tied to the "entered nodes"
                             .attr("class", "extension-node-links")
@@ -853,13 +855,29 @@
                             .join("path")
                             .each(function(d) { d.target.linkExtensionNode = this; })
                             .attr("d", (d) => showLinkExtension(d, true)); // Shows lines to link
-
+                    
                     let left = root;
                     let right = root;
                     root.eachBefore(node => {
                         if (node.x < left.x) left = node;
                         if (node.x > right.x) right = node;
                     });
+                    
+                    
+                    //calculate a tree height
+                    const newTreeHeight = right.x - left.x + marginTop + marginBottom
+                    if (newTreeHeight > PREVIOUS_UNCOLLAPSED_TREE_HEIGHT ){
+                        PREVIOUS_UNCOLLAPSED_TREE_HEIGHT = newTreeHeight
+                    }
+
+                    function updateScaleBarPosition(newTreeHeight) {
+                        d3.select("#scale-bar-group")
+                            .transition()
+                            .duration(750) // Smooth transition
+                            .attr("transform", `translate(0, ${newTreeHeight})`);
+                    }
+                    updateScaleBarPosition(PREVIOUS_UNCOLLAPSED_TREE_HEIGHT - newTreeHeight)
+
 
 
                     ORIGINAL_WIDTH_SVG=width
@@ -871,7 +889,7 @@
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
                     // Update the nodes…
-                    const node = gNode.selectAll("g")
+                    const node = gNode.selectAll("g:not(#scale-bar-group)")
                         .data(nodes, d => d.id);
 
                     // Enter any new nodes at the parent's previous position.
@@ -1150,7 +1168,7 @@
             
             
             function update(event, source){
-                
+                console.log("1156")
 
                 const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                 const nodes = root.descendants().reverse(); // Might be able to replace with the recurse tree function for speed up
@@ -1188,7 +1206,7 @@
                     .attr("viewBox", [0, 0, width, height])
                     .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
-                const node = gNode.selectAll("g")
+                const node = gNode.selectAll("g:not(#scale-bar-group)")
                     .data(nodes, d => d.id);
 
                 const nodeEnter = node.enter().append("g")
@@ -1387,6 +1405,7 @@
                 
 
                 function update(event, source) {
+                    console.log("1394")
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse();
                     const links = root.links();
@@ -1412,7 +1431,7 @@
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
                     // Update the nodes…
-                    const node = gNode.selectAll("g")
+                    const node = gNode.selectAll("g:not(#scale-bar-group)")
                         .data(nodes, d => d.id);
 
                     // Enter any new nodes at the parent's previous position.
