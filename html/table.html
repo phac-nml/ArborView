@@ -29,6 +29,7 @@
 
 
         .scale-bar {
+            cursor: move;
             visibility: visible;
         }
 
@@ -75,12 +76,33 @@
             animation: updown 1s ease infinite
         }
 
-        #scale-bar-svg {
-            cursor: move;
+
+        /* dataTables Search input box */
+    
+        .dataTables_filter {
+            position: relative;
+            margin-right: 24px;
+        }
+        .dataTables_wrapper .dataTables_filter input{
+            border-radius: 20px !important;
+            margin-top: 1px;
+        }
+    
+        .dataTables_filter input {
+            width: 250px;
+            height: 26px;
+            background: #fcfcfc;
+            box-shadow: 0 0 3px #ccc, 0 10px 15px #ebebeb inset;
+            text-indent: 10px;
+        }
+    
+        .dataTables_filter .fa-search {
+            position: absolute;
+            top: 10px;
+            left: auto;
+            right: 10px;
         }
 
-
-        
 
 
     </style>
@@ -116,6 +138,9 @@
     <!-- Sweet Alerts 2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!--Colour distances calculation library at https://github.com/color-js/color.js-->
+    <script src="https://colorjs.io/dist/color.global.js"></script>
+
     
 
     <script type="text/javascript">
@@ -129,6 +154,7 @@
         const DATA = __DEADFOOD__;
         const DEBUG = false;
         const TREE_OFFSET = 100;
+        var METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
         var NEWICK = null;
         var tree_root = null;
         var METADATA = null;
@@ -327,7 +353,8 @@
                 console.error("drawScale() failed due to invalid input:", error.message);
                 return; // Exit early to avoid rendering with bad input
             }
-            const scaleBarGroup = svg.append("g").attr("id", "scale-bar-group") //group all svg path elements under single group
+            const scaleBarGroup = svg.append("g").attr("id", "
+                  -group") //group all svg path elements under single group
             enableVerticalElementDrag(scaleBarGroup); //enables vertical drag of the scale bar
 
             let scale_bar_menu = `<div id="scale-bar-menu" class="d-flex flex-wrap p-1 align-items-center text-left" data-toggle="tooltip" data-placement="top" title="Turn scalebar on/off">
@@ -2014,8 +2041,13 @@
         let CreateDataTable = () => {
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
+                //"paging": false,
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
+                initComplete: function (settings, json) {
+                    console.log("DataTables has finished its initialization");
+                    
+                },
                 columnDefs: [{
                         targets: '_all',
                         createdCell : (td, cellData, rowData, row, col) =>
@@ -2026,6 +2058,64 @@
                         }
                     }
                 ],
+                //dom: 'lfrtip',
+                drawCallback: function(){
+        
+         
+         
+         //html.innerHTML='<div class="paginate_button displayAll">DISPLAY ALL RECORDS</div>'
+         
+         
+        //let icon=document.create("i")
+        ///icon.style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+        //icon.id="tree_fullscreen_btn"
+        //icon.onclick="tree_full_screen_mode()"
+
+        let html=document.createElement("div");
+        html.className = "paginate_button displayAll"
+        html.id = "paginate_button_all"
+        html.textContent = "ALL records"
+        if(document.querySelector("#paginate_button_all") === null){
+            document.querySelector("#metadata_paginate").appendChild(html)
+        }
+        let maximize_button_html=document.createElement("i");
+        maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+        maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
+        maximize_button_html.id = "metadata_fullscreen_btn"
+        maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
+        if(document.querySelector("#metadata_fullscreen_btn") === null){
+            document.querySelector("#metadata_wrapper").appendChild(maximize_button_html)
+        }    
+          
+
+         $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
+         .on('click', function(){
+            
+            if(data_table.context[0]._iDisplayLength !== -1){
+                console.log("Paginate OFF")
+                
+                //this.textContent="XXXXXX"
+                data_table.context[0]._iDisplayLength=-1; //remove pagination
+                data_table.draw();
+                $('#metadata_length select').val(-1); //change "Show X entires" selector to ALL value
+                
+                $('#paginate_button_all').text("First 10")
+                console.log(this.textContent)
+                
+            }else{
+                console.log("Paginate ON")
+                console.log($('#paginate_button_all').text())
+                data_table.context[0]._iDisplayLength=10;
+                $('#metadata_length select').val(10); //change "Show X entires" selector to ALL value
+                //
+                data_table.draw();
+                $('#paginate_button_all').text("ALL records");
+                console.log(this.textContent)
+                
+            }    
+            
+         });       
+   }
 
             });
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
@@ -2229,10 +2319,64 @@
             break_down_values.sort()
             
             // Instead of searching the array for ID's using the datatable, I am just going to use a linear look up
-            let group_vals = CreateColoringGroups(break_down_values);
-            break_down_values = PopulateGroups(group_vals, col_index);
+            let group_vals = CreateColoringGroups(break_down_values); // {"unique_item":[],"unique_item2":[]}
+            break_down_values = PopulateGroups(group_vals, col_index); //{"unique_item":["id1","id2"...],"unique_item2":["id3"]}
+            
 
             let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "hex"});
+        
+            /* Heuristic alogrithm to pick non-overlapping colours above threshold */ 
+            
+            //given a random colours for legend items find highly similar colours below the deltaE2000 threshold
+            if(colours.length <= 50){
+                const deltaE2000_threshold = 10;
+                let problematic_colours_idx=[];
+                colours.map((picked_color, j)=>{
+                
+                    //find highly similar colours in a panel below deltaE2000_threshold
+                    for (const [i,legend_color] of colours.entries()){
+                        let deltaE2000 = Color.deltaE2000(picked_color, legend_color)
+                        if(deltaE2000 <= deltaE2000_threshold && deltaE2000 !== 0){
+                            problematic_colours_idx.push(i)            
+                        }
+
+                    }//for loop ends
+
+                    problematic_colours_idx = [ ... new Set(problematic_colours_idx)].sort((a,b)=> a-b)
+                
+                });
+
+                console.debug(`Found problematic too similar ${problematic_colours_idx} with indices ${problematic_colours_idx.length} out of ${colours.length}`)    
+                
+                //if highly similar colours in legend found, try to find a suitable replacement that will be above the deltaE2000_threshold
+                //try randomly pick 1000 colours and test them against all colours in the legend
+                let found_new_color_bool = false;
+                problematic_colours_idx.forEach(i =>{
+                    found_new_color_bool = false
+                 
+                    const seed_offset = parseInt(Math.random()*100000)+1;
+                    const max_random_colours = 1000;
+                    colour_random_list = randomColor({ seed: seed_offset, count: max_random_colours, format:'hex'})
+                
+                    for(const random_color_hex of colour_random_list) {
+                        //check distance to all colours in the legend
+                        let deltaE2000_list = colours.map(legend_color => {
+                            return Color.deltaE2000(random_color_hex, legend_color)
+                        });
+                        let minDeltaE2000 = Math.min(...deltaE2000_list)
+                    
+                        if(minDeltaE2000 > deltaE2000_threshold){
+                            console.debug(`Found a suitable color ${random_color_hex} with min deltaE2000 ${minDeltaE2000} for ${Object.keys(break_down_values)[i]}`)
+                            colours[i] = random_color_hex;
+                            found_new_color_bool = true;
+                            break;
+                        }
+                    }//for      
+                    
+                });//forEach ends 
+            }//if ends
+
+
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
             for(const item in break_down_values){
@@ -2818,21 +2962,38 @@
         }    
 
         tree_full_screen_mode = function(){
-            document.querySelector('#TreeData').requestFullscreen()
+            if (document.fullscreenElement === null){
+                document.querySelector('#TreeData').requestFullscreen()
+            }else{
+                document.exitFullscreen();  
+            }    
             
+        }
+
+        metadata_full_screen_mode = function(){
+            let metadata_panel = document.querySelector('#ClusterInfo>div')
+            if (document.fullscreenElement === null){
+                METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = metadata_panel.style.height;
+                document.querySelector('#ClusterInfo').requestFullscreen()
+                metadata_panel.style.height = '100vh';
+            }else{
+                document.exitFullscreen();
+                console.log(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
+                metadata_panel.style.height = METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH;
+            }            
         }
 
         document.addEventListener("DOMContentLoaded",()=>{
             let button = document.querySelector('#tree_fullscreen_btn')
 
-            document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
+            /*document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
                 
                 if(button.classList.contains("d-none")){
                     button.classList.remove('d-none')
                 }else{
                     button.classList.add('d-none')
                 }
-            })
+            })*/
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
@@ -2873,18 +3034,50 @@
                 console.debug(node.textContent)
                 text2copyArray.push(node.textContent)
             })
-            let text2copy = text2copyArray.join('\n');
-            let success_msg = `copied ${text2copyArray.length} sample IDs to the clipboard`
-            console.debug(text2copy);
-            let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
-            //create a ObjectURL in order to download the created file
-            url = window.URL.createObjectURL(file);
-            let a = document.createElement("a");
-            a.style = "display: none";
-            a.href = url;
-            a.download = file.name;
-            a.click();
-            window.URL.revokeObjectURL(url);        
+
+            if(text2copyArray.length > 0){
+                let text2copy = text2copyArray.join('\n');
+                navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+                    if (result.state === "granted" || result.state === "prompt") {
+		                navigator.clipboard.writeText(text2copy)
+                        Swal.fire({
+                            html: `<p>Successfully copied ${text2copyArray.length} node IDs to the clipboard<br>Generate a text file with the ${text2copyArray.length} IDs?</p>`,
+                            icon: "info",
+                            showDenyButton: true,
+                            showCancelButton: false,
+                            confirmButtonText: 'Yes',
+                            denyButtonText: 'No'
+                        }).then( (result) => {
+                            if (result.isConfirmed) {
+                                let success_msg = `Copied ${text2copyArray.length} sample IDs to the clipboard`
+                                if(DEBUG){
+                                    console.log(text2copy);
+                                }
+                                let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
+                                //create a ObjectURL in order to download the created file
+                                url = window.URL.createObjectURL(file);
+                                let a = document.createElement("a");
+                                a.style = "display: none";
+                                a.href = url;
+                                a.download = file.name;
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                            }
+                        });
+                    }    
+                   
+                });
+
+                
+            }
+            else{
+                Swal.fire({
+                    html: "<b>No nodes to copy and export!</b><p>Select tree node(s) first and try again</p>",
+                    icon: "error"
+                    });
+                
+            }            
+
         }
 
         vertical_div_resize = function(event){
@@ -2969,7 +3162,7 @@
                                 
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
-                                        title="Copy selected node ID's to your clipboard to paste into another application." onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
+                                        title="Copy selected node IDs to your clipboard to paste into another application and optionally generate a text file" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
                                         <i class="bi bi-clipboard me-1"></i>IDs
                                     </button>
                                     <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top" 
@@ -3107,8 +3300,8 @@
                 background-color: #dc3545; width:50px; height:10px; z-index: 2;">
                 </div>
             </div>
-            <div id="ClusterInfo" class="row collapse show border border-primary">
-                <div class="col-12 overflow-auto" style="height:28.9vh">
+            <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
+                <div class="col-12 p-0 overflow-auto" style="height:28.9vh">
                     <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display overflow-scroll" >
                     </table>
