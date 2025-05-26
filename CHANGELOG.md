@@ -5,6 +5,10 @@
 
 ### `Changed`
 
+- Added scale bar for dendrogram layout. [PR 14](https://github.com/phac-nml/ArborView/pull/14)
+
+- Added an alternative distance display for ultrametric and ML trees. [PR 13](https://github.com/phac-nml/ArborView/pull/13)
+
 - Tree layout selection is now a drop down menu and not a slider. [PR 2](https://github.com/phac-nml/ArborView/pull/2)
   
 - Text selection cursor symbol changes from hand to a pipe symbol (`|`) when mouse over the text in both the webapp tree and SVG exported image. [PR 8](https://github.com/phac-nml/ArborView/pull/8)
