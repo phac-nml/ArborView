@@ -18,7 +18,7 @@ jobs:
       - name: Build (or copy) static site
         run: |
           mkdir site
-          cp -r static/* site/
+          cp -r html/* site/
 
       - name: Checkout main branch into output directory
         uses: actions/checkout@v3
