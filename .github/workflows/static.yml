@@ -1,44 +1,55 @@
 # Simple workflow for deploying static content to GitHub Pages both from main an dev branches
 name: Deploy to GitHub Pages folder by branch name
 
+name: Deploy table.html from main and dev branches
+
 on:
   push:
     branches:
       - main
       - dev
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout current branch
-        uses: actions/checkout@v3
-
-      - name: Build (or copy) static site
-        run: |
-          mkdir site
-          cp -r html/table.html site/
-
-      - name: Checkout main branch into output directory
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          ref: main
-          path: output
+          fetch-depth: 0  # Fetch all history for all branches
 
-      - name: Copy build into named subfolder
+      - name: Set up Git
         run: |
-          BRANCH=${{ github.ref_name }}
-          rm -rf output/$BRANCH
-          mkdir -p output/$BRANCH
-          cp -r site/* output/$BRANCH/
-
-      - name: Commit and push to main
-        run: |
-          cd output
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create deployment directory
+        run: |
+          mkdir -p deploy
+
+      - name: Copy table.html from main branch
+        run: |
+          git checkout origin/main
+          cp table.html deploy/main.html
+
+      - name: Copy table.html from dev branch
+        run: |
+          git checkout origin/dev
+          cp table.html deploy/dev.html
+
+      - name: Prepare gh-pages branch
+        run: |
+          git checkout gh-pages || git checkout --orphan gh-pages
+          git rm -rf . || true
+          mkdir -p main dev
+          cp deploy/main.html main/index.html
+          cp deploy/dev.html dev/index.html
+          touch .nojekyll
           git add .
-          git commit -m "Deploy branch ${{ github.ref_name }} to /${{ github.ref_name }}/"
-          git push origin main
+          git commit -m "Deploy table.html from main and dev branches"
+          git push origin gh-pages --force
+
 
