@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages both from main an dev branches
-name: Deploy to GitHub Pages
+name: Deploy Static Site to GitHub Pages
 
 on:
   push:
@@ -10,40 +10,39 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source branch
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v3
         with:
           ref: gh-pages
           path: gh-pages
-      
-      - name: Copy static site files
-        run: |
-          mkdir -p gh-pages/${{ github.ref_name == 'main' && echo '.' || echo github.ref_name }}
-          cp -r static/* gh-pages/${{ github.ref_name == 'main' && echo '.' || echo github.ref_name }}/
-    
-      - name: Copy built files
-        run: |
-          BRANCH_NAME=${{ github.ref_name }}
-          if [ "$BRANCH_NAME" = "main" ]; then
-            TARGET_DIR="."
-          else
-            TARGET_DIR="$BRANCH_NAME"
-          fi
-          rm -rf gh-pages/$TARGET_DIR
-          mkdir -p gh-pages/$TARGET_DIR
-          cp -r build/* gh-pages/$TARGET_DIR/
 
-      - name: Commit and push changes
+      - name: Copy static site to gh-pages folder
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" = "main" ]; then
+            TARGET="."
+          else
+            TARGET="$BRANCH"
+          fi
+
+          rm -rf gh-pages/$TARGET
+          mkdir -p gh-pages/$TARGET
+          cp -r * gh-pages/$TARGET/
+          rm -rf gh-pages/$TARGET/gh-pages  # Avoid nesting gh-pages copy if present
+
+      - name: Commit and push to gh-pages
         run: |
           cd gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Deploy ${{ github.ref_name }} branch to GitHub Pages"
+          git commit -m "Deploy from ${{ github.ref_name }} branch" || echo "No changes to commit"
           git push origin gh-pages
