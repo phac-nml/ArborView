@@ -32,7 +32,7 @@ For any questions, issues or comments please make a Github issue or reach out to
 
 # Install
 
-ArborView has no installation or dependancy requirements. It can be accessed as a static page and was already deployed on repository hosting. The current version of the web-application from `main` branch can be accessed by [**clicking here**](https://phac-nml.github.io/ArborView/main/index.html) and from `dev` branch by [**clicking here**](https://phac-nml.github.io/ArborView/dev/index.html).
+ArborView has no installation or dependancy requirements. It can be accessed as a static page and was already deployed on repository hosting. The current version of the web-application from the `main` branch can be accessed by [**clicking here**](https://phac-nml.github.io/ArborView/main/index.html) and from the `dev` branch by [**clicking here**](https://phac-nml.github.io/ArborView/dev/index.html).
 
 ### Compatibility
 
