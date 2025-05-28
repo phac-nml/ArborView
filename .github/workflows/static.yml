@@ -31,12 +31,12 @@ jobs:
       - name: Copy table.html from main branch
         run: |
           git checkout origin/main
-          cp table.html deploy/main.html
+          cp html/table.html deploy/main.html
 
       - name: Copy table.html from dev branch
         run: |
           git checkout origin/dev
-          cp table.html deploy/dev.html
+          cp html/table.html deploy/dev.html
 
       - name: Prepare gh-pages branch
         run: |
