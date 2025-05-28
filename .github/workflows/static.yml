@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages both from main an dev branches
-name: Deploy Static Site to GitHub Pages
+name: Deploy to GitHub Pages folder by branch name
 
 on:
   push:
@@ -12,37 +12,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source branch
+      - name: Checkout current branch
         uses: actions/checkout@v3
 
-      - name: Set up Git
+      - name: Build (or copy) static site
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir site
+          cp -r static/* site/
 
-      - name: Checkout gh-pages branch
+      - name: Checkout main branch into output directory
         uses: actions/checkout@v3
         with:
-          ref: gh-pages
-          path: gh-pages
+          ref: main
+          path: output
 
-      - name: Copy static site to gh-pages folder
+      - name: Copy build into named subfolder
         run: |
-          BRANCH="${{ github.ref_name }}"
-          if [ "$BRANCH" = "main" ]; then
-            TARGET="."
-          else
-            TARGET="$BRANCH"
-          fi
+          BRANCH=${{ github.ref_name }}
+          rm -rf output/$BRANCH
+          mkdir -p output/$BRANCH
+          cp -r site/* output/$BRANCH/
 
-          rm -rf gh-pages/$TARGET
-          mkdir -p gh-pages/$TARGET
-          cp -r * gh-pages/$TARGET/
-          rm -rf gh-pages/$TARGET/gh-pages  # Avoid nesting gh-pages copy if present
-
-      - name: Commit and push to gh-pages
+      - name: Commit and push to main
         run: |
-          cd gh-pages
+          cd output
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Deploy from ${{ github.ref_name }} branch" || echo "No changes to commit"
-          git push origin gh-pages
+          git commit -m "Deploy branch ${{ github.ref_name }} to /${{ github.ref_name }}/"
+          git push origin main
+
