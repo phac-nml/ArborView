@@ -2459,15 +2459,14 @@
                 return true;
             };
 
-            // Save some clicking
-            //if(DEBUG || TREE != __DEADBEEF__){
-            //    if(TREE != __DEADBEEF__){
-            //        drawTree(TREE);
-            ///    }else if(DEBUG){
-            //        drawTree(test_newick);
-            //        
-            //    }
-            //}
+            // Check if TREE is defined or injected via the inline_arborview.py script (used by Arborator and GAS)
+            if(TREE != __DEADBEEF__){
+                // If a valid TREE variable is defined
+                if(TREE != __DEADBEEF__){
+                    // Render the actual TREE data
+                    drawTree(TREE);
+                }
+            }
 
             $("#tree-selector").change((event) => {
                 let reader = new FileReader();
