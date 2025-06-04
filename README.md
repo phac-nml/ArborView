@@ -113,6 +113,10 @@ The program functions are denoted by the buttons present on the left-hand portio
 
 - It is also possible to export both the full metadata table and a filtered metadata table as tab-delimited files. Do not forget to apply filters by pressing `Filter Data` button before data export.
 
+## Scripts
+
+Additional utility scripts are available in the [`scripts/`](./scripts) directory to extend ArborView's functionality.
+
 # Legal and Compliance Information
 
 Copyright Government of Canada 2024
