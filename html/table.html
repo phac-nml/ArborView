@@ -586,7 +586,6 @@
 
 
                 function update(event, source) {
-                    console.log("590")
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse(); // Might be able to replace with the recurse tree function for speed up
                     const links = root.links();
@@ -653,7 +652,7 @@
                                 });
                             }
                         });
-
+                    
                     nodeEnter.append("circle")
                         .attr("r", d => !d.data.leaf ? INNER_NODE_SIZE : LEAF_NODE_SIZE) // size 6 for leaf nodes and 4 for inner nodes
                         .attr("fill", d => !d.data.leaf ? "#555" : "#999")               
@@ -748,7 +747,8 @@
 
 
         const dendrogram_chart = (data) => {
-                // Made with lost of help from: https://observablehq.com/d/6c52fee38fb28b2f
+                
+                // Made with lots of help from: https://observablehq.com/d/6c52fee38fb28b2f
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width);
@@ -842,7 +842,7 @@
                     
                     svg.selectAll(".extension-node-links").remove();
                     
-
+                    
                     const linkExtension = svg.append("g") // Would probably save rendering if this was tied to the "entered nodes"
                             .attr("class", "extension-node-links")
                             .attr("fill", "none")
@@ -964,7 +964,7 @@
                         .attr("dy", 14)
                         .attr("font-size", 12);
 
-
+                       
                     nodeEnter.append("text")
                         // dx the 12 corresponds to a safety metric to add some space between nodes, no children, dx is 0 to align leaves to inner nodes
                         // Below two lines allow for inner nodes to show up
@@ -975,7 +975,10 @@
                         .attr("text-anchor", d => !d.data.leaf ? "end" : "start")
                         .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
                         .attr("class", d => d.data.leaf ? "" : "inner-node-label")
-                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
+                        .text(d => {
+                            // If meta is a string or name is defined for the node
+                            return d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name
+                        })
                         .clone(true).lower()
                         .attr("stroke", "white");
                     
@@ -1167,7 +1170,6 @@
             
             
             function update(event, source){
-                console.log("1156")
 
                 const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                 const nodes = root.descendants().reverse(); // Might be able to replace with the recurse tree function for speed up
@@ -1404,7 +1406,6 @@
                 
 
                 function update(event, source) {
-                    console.log("1394")
                     const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
                     const nodes = root.descendants().reverse();
                     const links = root.links();
@@ -1477,7 +1478,7 @@
                         .attr("r", d => d.data.leaf ? LEAF_NODE_SIZE : INNER_NODE_SIZE)
                         .attr("fill", d => d.data.leaf ? "#555" : "#999")
                         .attr("stroke-width", 10);
-
+        
                     nodeEnter.append("text") // TODO can do this with if statement and recurse over them all may be a bit slower but more mem friednly
                         .text((d) => {
                             if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
@@ -1500,7 +1501,7 @@
                         .attr("dy", 18)
                         .attr("font-size", "12");
 
-
+                       
                     nodeEnter.append("text")
                         .attr("dy", d => !d.data.leaf ? -6 : 0) 
                         .attr("x", d => !d.data.leaf ? -6 : 6)
@@ -2017,8 +2018,8 @@
             $("#scale-bar-menu").remove()
             let chart_ = null;
             if(tree_root !== null){
-                
                 chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
+                console.debug("Switching chart type via renderer function selected ", TREE_SWITCH.get(TREE_VAL).name);
                 chart_.style.paddingLeft = chart_.style.paddingLeft + TREE_OFFSET;
                 $("#TreeData").append(chart_);
                 $(".leaf-node").each((i, elm) => {
@@ -2033,7 +2034,80 @@
             }
         };
 
+        /**
+         * Extracts all metadata from the DataTables table with id "metadata" and returns a Map
+         * where each key is the sample ID (taken from the first column), and the value is a string
+         * concatenation of all the fields in that row separated by pipe (`|`) characters.
+         *
+         * This function accesses the full dataset managed by DataTables API, so it returns
+         * all rows regardless of pagination or filtering.
+         *
+         * Requires jQuery and DataTables library to be loaded.
+         *
+         * @returns {Map<string, string>} A map of sample IDs to their concatenated metadata string.
+         */
+         function extractAllMetadataJoined(selectedFields) {
+            const allDataMap = new Map();
+            const tableElement = $('#metadata');
+
+            const selected_indexes = selectedFields.map(item => TABLE_HEADERS.indexOf(item)); 
+            if (selected_indexes.length === 0){
+                console.warn("Empty selected metadata table indexes")
+            }   
+            // Check if table element exists and is initialized as a DataTable
+            if (!tableElement.length || !$.fn.DataTable.isDataTable(tableElement)) {
+                console.warn("DataTable '#metadata' not found or not initialized.");
+                return allDataMap;
+            }
+
+            const table = tableElement.DataTable();    
+            // Get all data rows as an array of arrays or objects (depending on your config)
+            const allRowsData = table.rows({ search: 'applied' }).data(); 
+            // 'applied' gets filtered rows; use {} or 'none' for all rows (even filtered out)
+            // Use table.rows().data() to get all rows regardless of filter
+
+            // Iterate over each row
+            allRowsData.each(row => {
+                // If row is an array (default), sampleID is row[0]
+                // If row is an object (if columns.data used), adjust accordingly
+
+                const sampleID = row[0].trim();
+                //all fields
+                //const joinedFields = row.slice(1).map(field => String(field).trim()).join('|');
+                 // Use only fields at the specified selected indexes (excluding the sampleID at index 0)
+                const selectedFields = selected_indexes.map(i => String(row[i]).trim());
+                const joinedFields = selectedFields.join(' | ');
+           
+
+                allDataMap.set(sampleID, joinedFields);
+            });
+
+            return allDataMap;
+        }
+
+        /**
+         * Annotate leaf nodes of the tree_root object with metadata from metadataMap.
+         * Assumes leaf nodes have `leaf === true`, match sampleID via `name`,
+         * and update the `meta` property.
+         *
+         * @param {Object} node - The root node of the tree (or subtree).
+         * @param {Map<string, string>} metadataMap - Map of sampleID (name) to metadata string.
+         * @returns {Object} The updated node (tree_root) with leaf nodes annotated.
+         */
+        function annotateLeafNodesWithMeta(node, metadataMap) {
         
+
+            if (node.leaf === true) {
+                const sampleID = node.name;
+                node.meta = metadataMap.has(sampleID) ? metadataMap.get(sampleID) : null;
+                return node;
+            }
+
+            if (node.children && node.children.length > 0) {
+                node.children = node.children.map(child => annotateLeafNodesWithMeta(child, metadataMap));
+            }
+            return node;
+        }
 
         let drawTree = (newick_) => {
             $("#tree-splash").remove()
@@ -2041,16 +2115,33 @@
             $("#tree-upload-button").remove()
             $("#scale-bar-menu").remove()
             let tree = kn_parse(newick_);
+            
             if(tree_root != null){
                 console.error("A tree is already drawn");
                 return false;
             }
-            tree_root = tree.root; // Save the trees root to redraw the tree when needed
-            let node_out = TREE_SWITCH.get(TREE_VAL)(tree_root)
-            node_out.style.paddingLeft = node_out.style.paddingLeft + TREE_OFFSET;
+            //Store the root for later access (used in updates, selections, etc.)
+            tree_root = tree.root; // Save the tree root to redraw the tree when needed
 
-            $("#TreeData").append(node_out);
+            
+
+            // Retrieve the rendering function from TREE_SWITCH based on current selection
+            // E.g. dendrogram_chart(), tidytree_chart(), dendrogram_circle(), cladeogram_chart()
+            const treeRendererFunction = TREE_SWITCH.get(TREE_VAL);
+            if (typeof treeRendererFunction !== "function") {
+                console.error("Invalid tree renderer function selected:", TREE_VAL);
+                return false;
+            }
+        
+            let renderedTree = treeRendererFunction(tree_root);      
+            renderedTree.style.paddingLeft = renderedTree.style.paddingLeft + TREE_OFFSET;
+            
+            // Insert rendered svg tree into the DOM
+            $("#TreeData").append(renderedTree);
+
+            // Resize the side panel to match tree height
             document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+            // Scroll to center horizontally
             document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
 
@@ -2080,61 +2171,61 @@
         
          
          
-         //html.innerHTML='<div class="paginate_button displayAll">DISPLAY ALL RECORDS</div>'
+                //html.innerHTML='<div class="paginate_button displayAll">DISPLAY ALL RECORDS</div>'
          
          
-        //let icon=document.create("i")
-        ///icon.style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
-        //icon.id="tree_fullscreen_btn"
-        //icon.onclick="tree_full_screen_mode()"
+                //let icon=document.create("i")
+                ///icon.style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+                //icon.id="tree_fullscreen_btn"
+                //icon.onclick="tree_full_screen_mode()"
 
-        let html=document.createElement("div");
-        html.className = "paginate_button displayAll"
-        html.id = "paginate_button_all"
-        html.textContent = "ALL records"
-        if(document.querySelector("#paginate_button_all") === null){
-            document.querySelector("#metadata_paginate").appendChild(html)
-        }
-        let maximize_button_html=document.createElement("i");
-        maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
-        maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
-        maximize_button_html.id = "metadata_fullscreen_btn"
-        maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
-        if(document.querySelector("#metadata_fullscreen_btn") === null){
-            document.querySelector("#metadata_wrapper").appendChild(maximize_button_html)
-        }    
-          
+                let html=document.createElement("div");
+                html.className = "paginate_button displayAll"
+                html.id = "paginate_button_all"
+                html.textContent = "ALL records"
+                if(document.querySelector("#paginate_button_all") === null){
+                    document.querySelector("#metadata_paginate").appendChild(html)
+                }
+                let maximize_button_html=document.createElement("i");
+                maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
+                maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
+                maximize_button_html.id = "metadata_fullscreen_btn"
+                maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
+                if(document.querySelector("#metadata_fullscreen_btn") === null){
+                    document.querySelector("#metadata_wrapper").appendChild(maximize_button_html)
+                }    
+            
 
-         $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
-         .on('click', function(){
+                $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
+                .on('click', function(){
             
-            if(data_table.context[0]._iDisplayLength !== -1){
-                console.log("Paginate OFF")
+                    if(data_table.context[0]._iDisplayLength !== -1){
+                        console.log("Paginate OFF")
+                        
+                        data_table.context[0]._iDisplayLength=-1; //remove pagination
+                        data_table.draw();
+                        $('#metadata_length select').val(-1); //change "Show X entires" selector to ALL value
+                        
+                        $('#paginate_button_all').text("First 10")
+                        console.log(this.textContent)
+                        
+                    }else{
+                        console.log("Paginate ON")
+                        console.log($('#paginate_button_all').text())
+                        data_table.context[0]._iDisplayLength=10;
+                        $('#metadata_length select').val(10); //change "Show X entires" selector to ALL value
+                        //
+                        data_table.draw();
+                        $('#paginate_button_all').text("ALL records");
+                        console.log(this.textContent)
+                        
+                    }    
                 
-                //this.textContent="XXXXXX"
-                data_table.context[0]._iDisplayLength=-1; //remove pagination
-                data_table.draw();
-                $('#metadata_length select').val(-1); //change "Show X entires" selector to ALL value
-                
-                $('#paginate_button_all').text("First 10")
-                console.log(this.textContent)
-                
-            }else{
-                console.log("Paginate ON")
-                console.log($('#paginate_button_all').text())
-                data_table.context[0]._iDisplayLength=10;
-                $('#metadata_length select').val(10); //change "Show X entires" selector to ALL value
-                //
-                data_table.draw();
-                $('#paginate_button_all').text("ALL records");
-                console.log(this.textContent)
-                
-            }    
-            
-         });       
-   }
+                });       
+            }
 
             });
+
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
 
             // TODO initializing table from json object would minimize copies
@@ -2151,7 +2242,21 @@
             }
         };
 
-
+        /**
+         * Creates and populates an HTML table with parsed metadata, then initializes a DataTable.
+         *
+         * This function removes existing UI elements related to loading and metadata selection,
+         * dynamically constructs the table header and body from the provided data and headers,
+         * injects the resulting HTML into the specified table element by table_id variable, 
+         * and then applies the
+         * DataTables jQuery plugin to enhance the table looks and add sorting, filtering, and pagination.
+         *
+         * @param {Array<Object>} parsed_data - Array of objects representing metadata rows.
+         *   Each object should contain properties corresponding to the headers.
+         * @param {string} table_id - jQuery selector string for the target table element (e.g., "#myTable").
+         * @param {Array<string>} table_headers - Array of strings specifying column headers and
+         * keys to access in each metadata object.
+         */
         let CreateTable = (parsed_data, table_id, table_headers) => {
             $("#table-splash").remove();
             $("#metadata-selector-input").remove();
@@ -2280,16 +2385,61 @@
         };
 
 
-
+        /**
+         * Initializes and updates UI properties of 'legend_dropdown_button' and 'metadata_fields_dropdown_button'  buttons.
+         *
+         * This function targets two specific dropdown buttons by their IDs:
+         * `#legend_dropdown_button` and `#metadata_fields_dropdown_button`.
+         * It sets appropriate button text, ensures they are marked as Bootstrap dropdown toggles,
+         * and updates the button style from `btn-danger` to `btn-primary` if applicable.
+         *
+         *
+         * Modifies:
+         * - Button text content
+         * - `data-bs-toggle` attribute so they are clickable
+         * - Bootstrap button classes (`btn-danger` to `btn-primary`)
+         *
+         * @function initialize_legend_menu
+         * @returns {void}
+         */
         let initialize_legend_menu = () => {
-            // update the legend text to reflect loading
-            let button = document.querySelector("#legend_dropdown_button");
-            button.textContent = "Colour tree by column";
-            button.dataset.bsToggle = "dropdown";
-            button.classList.remove("btn-danger");
-            button.classList.add("btn-primary");
-        }
+            console.log("initialize legend menu")
+            const buttonIds = ["#legend_dropdown_button", "#metadata_fields_dropdown_button"];
 
+            buttonIds.forEach(id => {
+                const button = document.querySelector(id);
+                if (!button) return;
+
+                // Update button text based on button ID
+                if (id === "#legend_dropdown_button") {
+                    button.textContent = "Colour tree by column";
+                } else if (id === "#metadata_fields_dropdown_button") {
+                    button.textContent = "Add metadata to nodes";
+                }
+
+                button.dataset.bsToggle = "dropdown";
+
+                // Replace btn-danger with btn-primary if exists
+                if (button.classList.contains("btn-danger")) {
+                    button.classList.remove("btn-danger");
+                    button.classList.add("btn-primary");
+                }
+
+            });
+        };
+
+        /**
+         * Initializes and renders the tree layout selection menu allowing to change layouts.
+         *
+         * This function updates the tree layout selection dropdown menu values.
+         * It generates a list of available tree layout options based on the keys
+         * of the global `TREE_SWITCH` map gloabal variable. Each tree layout option is rendered as a clickable
+         * dropdown item that, when selected, calls `switchTreeType(this)` with the
+         * chosen tree layout identifier.
+         *
+         * @function initialize_tree_menu
+         * @returns {void}
+         */
         let initialize_tree_menu = () => {
             let button = document.querySelector("#tree_dropdown_menu")
             button.textContent = "Select a tree layout"
@@ -2303,17 +2453,176 @@
 
         }
 
-        let create_legend_elements = (headers) => {
-                // Create html elements for the dropdown menu of itmes to creat the legend by
-                let text = new Array;
-                text.push('<div class=\"dropdown-menu\" id=\"legend-items\" style=\"overflow:visible;\">')
-                let header_offset = headers.slice(1);
-                header_offset.forEach((ele, idx) => {
-                    text.push(`\t<a onclick="colour_by_element(this)" class="dropdown-item" href="#" id="${idx+1}">${ele}</a>`)
-                });
-                text.push("</div>\n")
-                return text.join("\n")
+        /**
+         * Attaches event listeners to all metadata checkboxes in the 
+         * "Add metadata to nodes" dropdown menu. This function listens 
+         * for `change` events (i.e. when checkboxes are selected or deselected) 
+         * and logs the selected field and its checked status.
+         * **/
+        function initializeMetadataFieldListeners() {
+            console.log("initializeMetadataFieldListeners")
+            const container = document.querySelector('#dropdown_append_metadata2nodes');
+        
+            if (!container) {
+                console.warn("Dropdown container not found.");
+                return;
+            }
+
+            
+            // Select all items inside the dropdown menu based on label tag
+            const dropdownMenu = container.querySelector('.dropdown-menu');
+            
+            if (!dropdownMenu) {
+                console.warn("No .dropdown-menu found in metadata dropdown.");
+                return;
+            }
+            
+            const labels = dropdownMenu.querySelectorAll('label.dropdown-item');
+            if (labels.length === 0) {
+                console.warn("No label.dropdown-item elements found in .dropdown-menu.");
+                return;
+            }
+            labels.forEach(label => {
+                label.addEventListener('click', (event) => {
+                    const checkbox = label.querySelector('input[type="checkbox"]');
+                    if (!checkbox) return;
+                    
+                    // Only manually toggle if click was NOT directly on the checkbox area
+                    if (event.target !== checkbox) {
+                        if (checkbox.checked  === false) {
+                            checkbox.checked = true;
+                        }else{
+                            checkbox.checked = false;
+                    }
+                       
+                    }
+
+                    // Log checked and unchecked fields
+                    const allCheckboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
+                    const checkedFields = [];
+                    const uncheckedFields = [];
+
+                    allCheckboxes.forEach(cb => {
+                        if (cb.checked) {
+                            checkedFields.push(cb.value);
+                        } else {
+                            uncheckedFields.push(cb.value);
+                        }
+                    });
+
+                    
+                    // Extract all metadata already loaded as a map
+                    const metadataJoined = extractAllMetadataJoined(checkedFields);
+
+                    console.log(checkedFields,TABLE_HEADERS, metadataJoined)
+        
+                    // Append metadata to tree leaf nodes if available
+                    if (metadataJoined.size !== 0) {
+                        tree_root = annotateLeafNodesWithMeta(tree_root, metadataJoined);
+                        redrawTree()
+                    }else{
+                        console.warn("The metadata table map is empty.");
+                    }
+
+              
+                }); //event
+            });
         }
+        
+
+
+        /**
+         * Dynamically creates and appends dropdown menu elements of the metadata fields
+         *
+         * This function handles rendering of dropdown menus for two different UI components:
+         * - A single-select legend dropdown (`#dropdown_legend`) where a user selects ONE metadata field to color tree nodes.
+         * - A multi-select metadata attachment dropdown (`#dropdown_append_metadata2nodes`) that allows users to check multiple metadata fields to annotate nodes.
+         *
+         * Each dropdown is rebuilt from scratch: any existing `.dropdown-menu` within the target container is removed and replaced
+         * with a newly generated one based on the `headers` array.
+         *
+         * @function create_legend_elements
+         * @param {string[]} headers - Array of metadata field names, with the first element typically being a sample ID (skipped).
+         *
+         * @example
+         * create_legend_elements(["SampleID", "Host", "Country", "Collection Date"]);
+         *
+         * Effects:
+         * - Clears and repopulates `.dropdown-menu` elements inside target containers.
+         * - Enables both single and multi-select interactions depending on the dropdown.
+         */
+
+        function create_legend_elements(headers) {
+            if (!headers || headers.length < 2) return;
+
+            const metadataFields = headers.slice(1); // skip sample ID
+
+            // Define target dropdowns and whether they should be multi-select
+            const dropdowns = [
+                { selector: '#dropdown_legend', multiSelect: false },
+                { selector: '#dropdown_append_metadata2nodes', multiSelect: true }
+            ];
+
+            dropdowns.forEach(({ selector, multiSelect }) => {
+                // Clear any existing dropdown-menu
+                const container = document.querySelector(selector);
+                if (!container) return;
+
+                // Remove old dropdown menu if exists
+                const oldMenu = container.querySelector('.dropdown-menu');
+                if (oldMenu) container.removeChild(oldMenu);
+
+                const button = container.querySelector('button');
+                const dropdown = document.createElement('div');
+                dropdown.className = 'dropdown-menu';
+                dropdown.style.overflow = 'visible';
+                //dropdown.style.maxHeight = '300px';
+                dropdown.style.overflow = 'auto';
+                dropdown.style.whiteSpace = 'nowrap';
+                dropdown.style.marginLeft = '4px';
+                dropdown.style.minWidth = `${button.offsetWidth + 8}px`;
+
+                
+
+                metadataFields.forEach((field, index) => {
+                    if (multiSelect) {
+                        // Multi-select item with checkbox "add metadta to nodes" button
+                        const label = document.createElement('label');
+                        label.className = 'dropdown-item d-flex align-items-center';
+                        label.style.cursor = 'pointer';
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'metadata-field-checkbox me-2';
+                        checkbox.id = `metadata-field-${index + 1}`;
+                        checkbox.value = field;
+
+                        label.appendChild(checkbox);
+                        label.appendChild(document.createTextNode(field));
+                        dropdown.appendChild(label);
+                        
+                    } else {
+                        // Single-select item with link
+                        const link = document.createElement('a');
+                        link.className = 'dropdown-item';
+                        link.href = '#';
+                        link.id = `legend-item-${index + 1}`;
+                        link.textContent = field;
+                        link.setAttribute('onclick', 'colour_by_element(this)');
+                        dropdown.appendChild(link);
+                    }
+                });
+
+                // Append new one
+                container.appendChild(dropdown);
+                
+                // Attach label listeners if this is the metadata multi-select dropdown
+                if (selector === '#dropdown_append_metadata2nodes' && multiSelect) {
+                    initializeMetadataFieldListeners();
+                }
+                });
+        }
+        
         
         let colour_by_element = (ele) => {
             // Create a legend for the column selected
@@ -2545,7 +2854,8 @@
                 CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                 METADATA = null;
                 initialize_legend_menu();
-                $("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
+                //$("#dropdown_legend").append(create_legend_elements(TABLE_HEADERS));
+                $("#dropdown_legend, #dropdown_append_metadata2nodes").append(create_legend_elements(TABLE_HEADERS));
             }
 
             $("#metadata-selector").change((event) => {
@@ -3265,10 +3575,16 @@
                                     <input onchange="show_inner_node_labels(this)" id="inner_node_labels_toggle" 
                                     type="checkbox" data-toggle="toggle" data-placement="top" title="Turn inner node labels on and off" data-onstyle="primary" data-size="sm">
                                 </div>  
-                                <div id="dropdown_legend" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
+                                <div id="dropdown_legend"  class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="legend_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
                                         Awaiting metadata</button>
-                                </div> 
+                                </div>
+                                <div id="dropdown_append_metadata2nodes"  class="d-flex flex-wrap p-0 dropdown mb-1">
+                                    <button id="metadata_fields_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" data-bs-auto-close="false" title="List of fields to colour nodes by.">
+                                        Add metadata to nodes</button>
+                                </div>
+
+                                
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
                                     class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
