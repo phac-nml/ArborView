@@ -690,7 +690,7 @@
                         .attr("text-anchor", d => !d.data.leaf ? "end" : "start")
                         .attr("class", d => d.data.leaf ? "" : "inner-node-label")
                         .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
-                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
+                        .text(d => d.data.meta ? d.data.name ? `${d.data.name} | ${d.data.meta}` : d.data.meta : d.data.name )
                         .clone(true).lower()
                         .attr("stroke", "white");
                     
@@ -977,7 +977,7 @@
                         .attr("class", d => d.data.leaf ? "" : "inner-node-label")
                         .text(d => {
                             // If meta is a string or name is defined for the node
-                            return d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name
+                            return d.data.meta ? d.data.name ? `${d.data.name} | ${d.data.meta}` : d.data.meta : d.data.name
                         })
                         .clone(true).lower()
                         .attr("stroke", "white");
@@ -1295,7 +1295,7 @@
                         return hyp}) // labels are not bein moved to the correct pos when redrawn
                     .attr("class", d => d.data.leaf ? "" : "inner-node-label")
                     .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
-                    .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
+                    .text(d => d.data.meta ? d.data.name ? `${d.data.name} | ${d.data.meta}` : d.data.meta : d.data.name )
                     .clone(true).lower()
                     .attr("font-size", "12")
                     .attr("stroke-linejoin", "round")
@@ -1507,7 +1507,7 @@
                         .attr("x", d => !d.data.leaf ? -6 : 6)
                         .style("visibility", d => d.data.leaf ? "" : SHOW_METADATA_IN_NAME ? "visible" : "hidden")
                         .attr("class", d => d.data.leaf ? "" : "inner-node-label")
-                        .text(d => d.data.meta ? d.data.name ? `${d.data.name}-${d.data.meta}` : d.data.meta : d.data.name )
+                        .text(d => d.data.meta ? d.data.name ? `${d.data.name} | ${d.data.meta}` : d.data.meta : d.data.name )
                         .clone(true).lower()
                         .attr("stroke-linejoin", "round")
                         .attr("stroke-width", 3)
@@ -1690,11 +1690,11 @@
                 // and re-colour selected ones
                 $(SelectedNodes.selection_id).empty().append(() => {
                     let attributes = new Array;
-                    for(const item of SelectedNodes.nodes.keys()){
+                    for(const [, nodeElement] of SelectedNodes.nodes.entries()){
                         attributes.push(`<div class="d-flex border-bottom align-items-center selected-node">
-                        <div onclick="scroll_into_view_treenode('${item}')" class="flex-grow-1">${item}</div>
+                        <div onclick="scroll_into_view_treenode('${nodeElement.id}')" class="flex-grow-1">${nodeElement.id}</div>
                         <div>
-                            <button onclick="remove_selected_node(this.dataset.nodeId)" data-node-id="${item}" 
+                            <button onclick="remove_selected_node(this.dataset.nodeId)" data-node-id="${nodeElement.id}" 
                             class="btn btn-danger m-1 btn-sm">x</button>
                         </div>
                         </div>\n`);
@@ -1949,7 +1949,6 @@
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
                     // Maintain colour of already selected nodes
-
                     let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                     if(SelectedNodes.nodes.has(text.textContent)){
                         SelectedNodes.nodes.set(text.textContent, parent); // update to new parent
@@ -2025,7 +2024,7 @@
                 $(".leaf-node").each((i, elm) => {
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 if(SelectedNodes.nodes.has(text.textContent)){
-                        SelectedNodes.nodes.set(text.textContent, parent); // reset dom postion
+                        SelectedNodes.nodes.set(text.textContent, parent); // reset dom position
                         SelectedNodes.setSelectedColours(text, circle);
                     };
                 });
@@ -2128,6 +2127,8 @@
             // Retrieve the rendering function from TREE_SWITCH based on current selection
             // E.g. dendrogram_chart(), tidytree_chart(), dendrogram_circle(), cladeogram_chart()
             const treeRendererFunction = TREE_SWITCH.get(TREE_VAL);
+            console.debug(`Applying rendering function ${treeRendererFunction.name}()`)
+
             if (typeof treeRendererFunction !== "function") {
                 console.error("Invalid tree renderer function selected:", TREE_VAL);
                 return false;
@@ -2403,7 +2404,6 @@
          * @returns {void}
          */
         let initialize_legend_menu = () => {
-            console.log("initialize legend menu")
             const buttonIds = ["#legend_dropdown_button", "#metadata_fields_dropdown_button"];
 
             buttonIds.forEach(id => {
@@ -2451,6 +2451,48 @@
             })
             $("#dropdown_tree_types").append(tree_types.join("\n"))
 
+        }
+
+        /**
+         * Updates the text labels of all rendered leaf nodes in the existing D3 SVG tree.
+         * 
+         * Each leaf node is expected to be a <g> element with the class `leaf-node` and an `id`
+         * corresponding to the sample ID. The label is updated in the format: `<sampleID> | <joinedFields>`.
+         * 
+         * This function does not re-render the tree — it modifies the existing DOM structure.
+         * 
+         * @param {Map<string, string>} allDataMap - A map of sample IDs to metadata strings (joined fields),
+         *                                           where the key is the leaf node ID and the value is the new label content.
+         * 
+         * @example
+         * const MetaDataMap = new Map([
+         *   ["SRR13243498", "Canada"],
+         *   ["SRR13243499", "USA"]
+         * ]);
+         * updateLeafNodeLabels(MetaDataMap);
+         */
+         function updateLeafNodeLabels(MetaDataMap) {
+            const svg = d3.select("#TreeSVG");
+            if (svg.empty()) {
+                console.warn("Tree SVG not found.");
+                return;
+            }
+
+            svg.selectAll("g.leaf-node").each(function () {
+                const g = d3.select(this);
+                const nodeId = this.id;
+
+                const joinedFields = MetaDataMap.get(nodeId);
+                const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
+                const newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
+
+                g.selectAll("text")
+                    .filter(function () {
+                        // Only update text elements that start with the nodeId
+                        return d3.select(this).text().startsWith(nodeId);
+                    })
+                    .text(newLabel);
+            });
         }
 
         /**
@@ -2512,14 +2554,14 @@
 
                     
                     // Extract all metadata already loaded as a map
-                    const metadataJoined = extractAllMetadataJoined(checkedFields);
-
-                    console.log(checkedFields,TABLE_HEADERS, metadataJoined)
+                    const metadataJoinedMap = extractAllMetadataJoined(checkedFields);
         
                     // Append metadata to tree leaf nodes if available
-                    if (metadataJoined.size !== 0) {
-                        tree_root = annotateLeafNodesWithMeta(tree_root, metadataJoined);
-                        redrawTree()
+                    if (metadataJoinedMap.size !== 0) {
+                        //tree_root = annotateLeafNodesWithMeta(tree_root, metadataJoinedMap);
+                        updateLeafNodeLabels(metadataJoinedMap)
+                        //redrawTree()
+
                     }else{
                         console.warn("The metadata table map is empty.");
                     }
@@ -2606,7 +2648,7 @@
                         const link = document.createElement('a');
                         link.className = 'dropdown-item';
                         link.href = '#';
-                        link.id = `legend-item-${index + 1}`;
+                        link.id = `${index + 1}`;
                         link.textContent = field;
                         link.setAttribute('onclick', 'colour_by_element(this)');
                         dropdown.appendChild(link);
@@ -2640,6 +2682,7 @@
                 unq_data.add(value[col_index])
             })
 
+
             // Need to create groupings of the each set of ID's belonging to each value grouping
             let break_down_values = Array.from(unq_data);
             break_down_values.sort()
@@ -2651,7 +2694,7 @@
 
             let colours = randomColor({luminosity: 'dark', count: Object.keys(break_down_values).length, seed: 42, format: "hex"});
         
-            /* Heuristic alogrithm to pick non-overlapping colours above threshold */ 
+            /* Heuristic algorithm to pick non-overlapping colours above threshold */ 
             
             //given a random colours for legend items find highly similar colours below the deltaE2000 threshold
             if(colours.length <= 50){
@@ -2742,7 +2785,7 @@
                     $(".leaf-node").each((i, elm) => {
                         let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                         if(SelectedNodes.nodes.has(text.textContent)){
-                            SelectedNodes.nodes.set(text.textContent, parent); // reset dom postion
+                            SelectedNodes.nodes.set(text.textContent, parent); // reset dom position
                             SelectedNodes.setSelectedColours(text, circle);
                     };
                 });
@@ -3012,9 +3055,7 @@
             })
         }
 
-        legend_on_off = function(node){
-            console.debug(node.checked)
-            
+        legend_on_off = function(node){        
             if(node.checked === false){
                 document.querySelector('#colour-legend').classList.add("d-none");
             }else{
