@@ -116,7 +116,7 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <!-- Below switching to tidy tree 0.5.1 as the dev broke 0.5.0 -->
 
-    <script rel="stylesheet" type="text/javascript" href="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!--script rel="stylesheet" type="text/javascript" href="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script-->
     
     <!--JQuery Beautiful Data Tables-->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
@@ -128,7 +128,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     
     
     <!--toggle buttons by https://palcarazm.github.io/bootstrap5-toggle/ -->
@@ -2045,7 +2045,7 @@
          *
          * @returns {Map<string, string>} A map of sample IDs to their concatenated metadata string.
          */
-         function extractAllMetadataJoined(selectedFields) {
+         /*function extractAllMetadataJoined(selectedFields) {
             const allDataMap = new Map();
             const tableElement = $('#metadata');
 
@@ -2061,9 +2061,10 @@
 
             const table = tableElement.DataTable();    
             // Get all data rows as an array of arrays or objects (depending on your config)
-            const allRowsData = table.rows({ search: 'applied' }).data(); 
+            const allRowsData = table.rows().data(); 
             // 'applied' gets filtered rows; use {} or 'none' for all rows (even filtered out)
             // Use table.rows().data() to get all rows regardless of filter
+            // Use table.rows({ search: 'applied' }).data() for filtered data
 
             // Iterate over each row
             allRowsData.each(row => {
@@ -2082,6 +2083,43 @@
             });
 
             return allDataMap;
+        }*/
+        function extractAllMetadataJoined(selectedFields) {
+            const MetaDataMap = new Map();
+
+            // Validate the global ORIGINAL_DATA
+            if (!ORIGINAL_DATA || !(ORIGINAL_DATA instanceof Map)) {
+                console.warn("ORIGINAL_DATA is not defined or not a Map.");
+                return MetaDataMap;
+            }
+
+            // Determine indexes of selected fields in the header
+            const selected_indexes = selectedFields.map(field => TABLE_HEADERS.indexOf(field));
+            if (selected_indexes.includes(-1)) {
+                console.warn("Some selected fields not found in TABLE_HEADERS.");
+            }
+            if (selected_indexes.length === 0) {
+                console.warn("No selected metadata field indexes specified.");
+                return MetaDataMap;
+            }
+
+            // Iterate through the full original data
+            for (const [sampleID, row] of ORIGINAL_DATA.entries()) {
+                if (!row || !Array.isArray(row)) {
+                    console.warn(`Invalid row for sampleID ${sampleID}`);
+                    continue;
+                }
+
+                // Get selected metadata fields
+                const selectedValues = selected_indexes.map(i => String(row[i] || "").trim());
+                const joinedFields = selectedValues.every(val => val === "") 
+                    ? sampleID 
+                    : selectedValues.join(" | ");
+
+                MetaDataMap.set(sampleID, joinedFields);
+            }
+
+            return MetaDataMap;
         }
 
         /**
@@ -2478,14 +2516,19 @@
                 return;
             }
 
+            const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
+
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
 
-                const joinedFields = MetaDataMap.get(nodeId);
-                const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
-                const newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
-
+                if (isEmpty) {
+                    newLabel = nodeId;
+                } else {
+                    const joinedFields = MetaDataMap.get(nodeId);
+                    const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
+                    newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
+                }
                 g.selectAll("text")
                     .filter(function () {
                         // Only update text elements that start with the nodeId
@@ -2555,6 +2598,7 @@
                     
                     // Extract all metadata already loaded as a map
                     const metadataJoinedMap = extractAllMetadataJoined(checkedFields);
+                    console.log(metadataJoinedMap.size)
         
                     // Append metadata to tree leaf nodes if available
                     if (metadataJoinedMap.size !== 0) {
@@ -2564,6 +2608,7 @@
 
                     }else{
                         console.warn("The metadata table map is empty.");
+                        updateLeafNodeLabels(metadataJoinedMap)
                     }
 
               
@@ -3510,8 +3555,8 @@
             <div class="row"> <!-- id="TreeSelections" style=""-->
                 <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
                     <div id="tree_menu_buttons" class="row m-0">
-                                <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
-                                    <button class="h-100 flex-grow-1 me-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
+                                <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1 mb-1">
+                                    <button class="h-100 flex-grow-1 me-1 mb-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="tree-upload-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
                                     </button>
@@ -3524,8 +3569,8 @@
                                     <input type="file"  id="metadata-selector" 
                                     name="metadata-selector" accept=".tsv, .tab" hidden>
                                 </div>
-                                <button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
-                                    title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button>                                
+                                <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
+                                    title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->                                
                                 
                                 <div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
@@ -3626,20 +3671,65 @@
                                 </div>
 
                                 
-                                <div class="d-flex flex-row align-items-center p-0 text-left">
+                                <!--div class="d-flex flex-row align-items-center p-0 text-left">
                                     <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
                                     class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
                                     <i class="bi bi-search icon-image"></i> Filter data</button>
                                     <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
                                     class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
                                     onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
-                                </div>       
+                                </div-->     
+                                <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
+                                    <!-- 1) Filter data -->
+                                    <button
+                                      id="metadata-search-button"
+                                      name="SearchMetadata"
+                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1"
+                                      data-bs-toggle="tooltip"
+                                      data-bs-placement="top"
+                                      title="Filter metadata for selected nodes">
+                                      <i class="bi bi-search icon-image"></i>
+                                      Filter data
+                                    </button>
+                                  
+                                    <!-- 2) Clear filters (new) -->
+                                    <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
+                                    title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->   
+                                    <button
+                                      id="reset-table-button"
+                                      name="ResetTable"
+                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
+                                      data-bs-toggle="tooltip"
+                                      data-bs-placement="top"
+                                      title="Clear filters applied to the metadata table."
+                                      onclick="resetMetadataFilters()">
+                                      <i class="bi bi-filter-circle"></i>
+                                      Clear filters
+                                    </button>
+                                  
+                                    <!-- 3) Clear selected nodes -->
+                                    <button
+                                      id="clear-selected-nodes"
+                                      name="ClearSelectedNodes"
+                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
+                                      data-bs-toggle="tooltip"
+                                      data-bs-placement="top"
+                                      title="Clear all selected nodes."
+                                      onclick="clear_selected_nodes()">
+                                      <i class="bi bi-x-square"></i>
+                                      Clear nodes
+                                    </button>
+                                  </div>  
                     </div> 
             
-                    <div data-toggle="tooltip" data-placement="top" title="Selected nodes on the tree will show up here." 
-                      class="col border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
-                                id="SelectedNodes">
-                        <div class="d-flex h-100 text-center text-uppercase text-center"><small class="align-self-center w-100">Selected Nodes</small></div>        
+                    <div data-toggle="tooltip" data-placement="top" 
+                        title="Selected nodes on the tree will show up here." 
+                        style="max-height: 10vh;"
+                        class="col border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
+                        id="SelectedNodes">
+                        <div class="d-flex h-100 text-center text-uppercase text-center">
+                            <small class="align-self-center w-100">Selected Nodes</small>
+                        </div>        
                     </div>
                 </div> 
 
