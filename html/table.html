@@ -6,6 +6,11 @@
             display: inline-block;
         }
 
+        .row.no-wrap {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
         .scrollbar-window{
             overflow: auto;
             /*overflow-x: scroll;*/
@@ -27,6 +32,7 @@
             cursor: pointer;
         }
 
+       
 
         .scale-bar {
             cursor: move;
@@ -2171,15 +2177,37 @@
                 console.error("Invalid tree renderer function selected:", TREE_VAL);
                 return false;
             }
-        
-            let renderedTree = treeRendererFunction(tree_root);      
+            
+            console.log(document.querySelector('#TreeData').offsetHeight, 
+            document.querySelector('#control_panel').offsetHeight)
+            let renderedTree = treeRendererFunction(tree_root); 
+            //Match #TreeData height
+            const treeDataHeight = document.querySelector('#TreeData').offsetHeight;
+            const treeData = document.querySelector('#TreeData');
+            treeData.style.height = `${treeDataHeight}px`;
+            
             renderedTree.style.paddingLeft = renderedTree.style.paddingLeft + TREE_OFFSET;
+            console.log(document.querySelector('#TreeData').offsetHeight, 
+            document.querySelector('#control_panel').offsetHeight)
+            
             
             // Insert rendered svg tree into the DOM
             $("#TreeData").append(renderedTree);
+            console.log(document.querySelector('#TreeData').offsetHeight, 
+            document.querySelector('#control_panel').offsetHeight)
+
+            
+            
+
+            //const treeHeight = document.querySelector('#TreeData').offsetHeight;
+            //const menuHeight = document.querySelector('#tree_menu_buttons').offsetHeight;
+
+            //const availableHeight = treeHeight - menuHeight;
+            //console.log(availableHeight)
 
             // Resize the side panel to match tree height
-            document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+            //console.log(`${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`)
+            //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             // Scroll to center horizontally
             document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
@@ -2282,6 +2310,22 @@
         };
 
         /**
+         * Recalculates and applies the height of the #SelectedNodes panel
+         * based on the current size of #TreeData and #tree_menu_buttons.
+         */
+        function adjustSelectedNodesHeight() {
+            const treeData = document.querySelector('#TreeData');
+            const menuButtons = document.querySelector('#tree_menu_buttons');
+            const selectedNodes = document.querySelector('#SelectedNodes');
+            if (!treeData || !menuButtons || !selectedNodes) return;
+
+            const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-8;
+            // Optionally guard against too-small values:
+            const minHeight = 100; 
+            selectedNodes.style.height = `${Math.max(availableHeight, minHeight)}px`;
+        }
+
+        /**
          * Creates and populates an HTML table with parsed metadata, then initializes a DataTable.
          *
          * This function removes existing UI elements related to loading and metadata selection,
@@ -2318,6 +2362,7 @@
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             // ? A bit odd we are making the table with HTML then converting to jquery datatable...
             CreateDataTable();
+            adjustSelectedNodesHeight();
         };
 
         let CreateColoringGroups = (array_vals) => {
@@ -2536,7 +2581,11 @@
                     })
                     .text(newLabel);
             });
+            
         }
+
+
+       
 
         /**
          * Attaches event listeners to all metadata checkboxes in the 
@@ -2569,17 +2618,21 @@
             }
             labels.forEach(label => {
                 label.addEventListener('click', (event) => {
+                   
                     const checkbox = label.querySelector('input[type="checkbox"]');
                     if (!checkbox) return;
+                    console.log(checkbox, event.target.tag, checkbox.checked )
                     
-                    // Only manually toggle if click was NOT directly on the checkbox area
-                    if (event.target !== checkbox) {
-                        if (checkbox.checked  === false) {
-                            checkbox.checked = true;
-                        }else{
-                            checkbox.checked = false;
-                    }
-                       
+                    
+                    
+                    // If the actual target was the checkbox, let native behavior proceed
+                    // Otherwise use manual checkbox turn on
+                    if (event.target === checkbox) {
+                        // Let the browser handle toggle if user clicks on input box directly
+                    } else {
+                        // Manually toggle if click was on label (not checkbox)
+                        event.preventDefault(); // prevent default label toggle double click
+                        checkbox.checked = !checkbox.checked;
                     }
 
                     // Log checked and unchecked fields
@@ -3395,17 +3448,28 @@
             }            
         }
 
+        
         document.addEventListener("DOMContentLoaded",()=>{
             let button = document.querySelector('#tree_fullscreen_btn')
 
-            /*document.querySelector('#TreeData').addEventListener("fullscreenchange", (event) => {
-                
-                if(button.classList.contains("d-none")){
-                    button.classList.remove('d-none')
-                }else{
-                    button.classList.add('d-none')
-                }
-            })*/
+           /**
+             * Handles dynamic layout adjustments when the #ClusterInfo section is shown or hidden.
+             *
+             * The code manages layout changes triggered by toggling the #ClusterInfo collapsible metadata panel 
+             * (e.g., by clicking on the blue bar), ensuring proper height distribution among surrounding elements.
+             *
+             * When the panel is collapsed or expanded, it adjusts the height of:
+             *  - #TreeData: the main tree visualization container
+             *  - #control_panel: the left-side control panel
+             *  - #SelectedNodes: the panel showing selected tree nodes (via max-height)
+             *
+             * This ensures that when the metadata panel is hidden, the freed vertical space is redistributed to 
+             * other visible panels, allowing them to expand and fully utilize the viewport.
+             *
+             * It relies on inline styles and consistent height units (e.g., px) to compute and apply the new layout.
+             * Designed to enhance UI responsiveness and usability when toggling metadata visibility.
+             *
+             */
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
@@ -3414,7 +3478,9 @@
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
                 document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
-            })
+                adjustSelectedNodesHeight()
+            }) 
+
             document.querySelector('#ClusterInfo').addEventListener('show.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
@@ -3422,10 +3488,17 @@
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
                 document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+                adjustSelectedNodesHeight()
             })
 
     
         });    
+
+
+        // Call once DOM is ready
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeClusterInfoToggleBehavior();
+        });
 
 
         clear_selected_nodes = function(){
@@ -3513,16 +3586,14 @@
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
-            }    
+            }   
+            
         }
         document.addEventListener('mouseup',(event)=>{
                 document.removeEventListener('mousemove', vertical_div_resize,false)
+                adjustSelectedNodesHeight() 
         })
-    window.onload = function(){
-        let heightSelectedNodesPanel = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
-        document.querySelector('#SelectedNodes').style.cssText = `height: ${heightSelectedNodesPanel}; max-height: ${heightSelectedNodesPanel} `
-
-    }    
+    
 
     //The Bootstrap dropdown-menu position absolute css is not working and menu is obscured by other divs
     //This fixes the issue as we do not want to modify original BS code
@@ -3552,7 +3623,7 @@
 </head>
     <body>
         <div class="container-fluid m-0">
-            <div class="row"> <!-- id="TreeSelections" style=""-->
+            <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
                 <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
                     <div id="tree_menu_buttons" class="row m-0">
                                 <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1 mb-1">
@@ -3724,9 +3795,8 @@
             
                     <div data-toggle="tooltip" data-placement="top" 
                         title="Selected nodes on the tree will show up here." 
-                        style="max-height: 10vh;"
                         class="col border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
-                        id="SelectedNodes">
+                        id="SelectedNodes" style="height: 15vh;">
                         <div class="d-flex h-100 text-center text-uppercase text-center">
                             <small class="align-self-center w-100">Selected Nodes</small>
                         </div>        
@@ -3736,7 +3806,7 @@
 
                 <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
                 onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
-                id="TreeData" style="height:70vh;">
+                id="TreeData">
 
                         <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
