@@ -6,9 +6,15 @@
             display: inline-block;
         }
 
-        .row.no-wrap {
-            flex-wrap: nowrap;
+        #TreeData {
+            white-space: nowrap; /*prevents line wrapping inside*/
             overflow-x: auto;
+            box-sizing: border-box;
+        }
+
+
+        .row.no-wrap {
+            flex-wrap: nowrap; /*prevents the TreeData div with the svg tree to wrap around*/
         }
 
         .scrollbar-window{
@@ -518,7 +524,7 @@
                 SHOW_BRANCH_LENGTHS = false;
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
-                const width = parseInt(ele_style.width);
+                const width = parseInt(ele_style.width)-TREE_OFFSET;
     
                 //var width = window.innerWidth;
                 const marginTop = 40;
@@ -574,7 +580,7 @@
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width) //makes sure all tree nodes are within view
-                    .attr("style", `width:100%; height: auto; font: 10px sans-serif; user-select: auto;`)
+                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`)
                 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}"); 
 
@@ -757,7 +763,7 @@
                 // Made with lots of help from: https://observablehq.com/d/6c52fee38fb28b2f
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
-                const width = parseInt(ele_style.width);
+                const width = parseInt(ele_style.width)-TREE_OFFSET;
                 //var width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
@@ -806,8 +812,8 @@
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
-                    .attr("width", width + 20) //makes sure all tree nodes are within view
-                    .attr("style", `width:100%; height: auto; font: 10px sans-serif; user-select: auto;`) 
+                    .attr("width", width) //makes sure all tree nodes are within view
+                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`) 
 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");    
                 
@@ -1064,7 +1070,7 @@
             var ele = document.getElementById("TreeData");
             var ele_style = window.getComputedStyle(ele);
             
-            const width = parseInt(ele_style.width);
+            const width = parseInt(ele_style.width)-TREE_OFFSET;
             const height = width;
             const outerRadius = width / 2; 
             const innerRadius = outerRadius - 170;
@@ -1124,7 +1130,7 @@
                 .attr("viewBox", [0, 0, width, height])
                 .attr("font-family", "sans-serif")
                 .attr("font-size", 10)
-                .attr("style", `width:100%; height: auto; font: 10px sans-serif; user-select: auto;`);
+                .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`);
             
             svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");  
 
@@ -1367,7 +1373,7 @@
                 SHOW_BRANCH_LENGTHS = false;
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
-                const width = parseInt(ele_style.width);
+                const width = parseInt(ele_style.width)-TREE_OFFSET;
     
 
                 
@@ -1394,7 +1400,7 @@
                     .attr("id", "TreeSVG")
                     .attr("width", width + 20) //makes sure all tree nodes are within view
                     .attr("height", dx)
-                    .attr("style", `width:${width}px; height: auto; font: 10px sans-serif; user-select: auto;`)
+                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`)
 
                 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");   
@@ -2555,20 +2561,30 @@
          * updateLeafNodeLabels(MetaDataMap);
          */
          function updateLeafNodeLabels(MetaDataMap) {
-            const svg = d3.select("#TreeSVG");
+
+            const svg = d3.select("#TreeSVG")
+            const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
+            const svgAttrWidth = svg.attr("width")
+            
+            if (treeContainer.empty()) {
+                console.warn("Main tree container group not found.");
+                return;
+            }
+
+            console.debug(`Before change tree width ${treeContainer.node().getBBox().width} and svg declared ${svg.attr("width")}`)
             if (svg.empty()) {
                 console.warn("Tree SVG not found.");
                 return;
             }
 
+            //update leaf nodes update labels
             const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
-
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
 
                 if (isEmpty) {
-                    newLabel = nodeId;
+                    newLabel = `${nodeId} | NA`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
@@ -2581,11 +2597,17 @@
                     })
                     .text(newLabel);
             });
+
             
+            const newWidth = treeContainer.node().getBBox().width
+            console.debug(`Final calculated tree width after node update ${newWidth}`)
+
+            // Parse the existing viewBox
+            const viewBoxAttr = svg.attr("viewBox")
+            const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
+            // Update the width of the svg element
+            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
         }
-
-
-       
 
         /**
          * Attaches event listeners to all metadata checkboxes in the 
@@ -3496,9 +3518,10 @@
 
 
         // Call once DOM is ready
+        /*
         document.addEventListener("DOMContentLoaded", () => {
             initializeClusterInfoToggleBehavior();
-        });
+        });*/
 
 
         clear_selected_nodes = function(){
@@ -3624,7 +3647,7 @@
     <body>
         <div class="container-fluid m-0">
             <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
-                <div id="control_panel" class="col-2 border border-primary px-1 overflow-auto">
+                <div id="control_panel" class="col-2 border border-primary px-1 overflow-visible position-relative">
                     <div id="tree_menu_buttons" class="row m-0">
                                 <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1 mb-1">
                                     <button class="h-100 flex-grow-1 me-1 mb-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
@@ -3658,18 +3681,18 @@
                                     </button>
                                 </div>
                                 <div class="dropdown p-0">
-                                    <button class="w-100 flex-grow-1 mb-1 btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-download me-1"></i> Export Meta Table
+                                    <button class="w-100 flex-grow-1 mb-1 btn-sm btn-primary dropdown-toggle text-wrap" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-download me-1"></i>Export Meta Table
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a id="export-metadata-view" data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." 
-                                        class="dropdown-item flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
-                                            <i class="bi bi-download me-1"></i> Export Filtered Table
+                                        class="dropdown-item text-wrap flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
+                                            <i class="bi bi-download me-1"></i>Export Filtered Table
                                             </a>
                                         </li>
                                         <li><a id="export-metadata-table" data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." 
-                                            class="dropdown-item flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
-                                                <i class="bi bi-download me-1"></i> Export Full Table
+                                            class="dropdown-item text-wrap flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
+                                                <i class="bi bi-download me-1"></i>Export Full Table
                                             </a>
                                         </li>
                                     </ul>
@@ -3737,7 +3760,8 @@
                                         Awaiting metadata</button>
                                 </div>
                                 <div id="dropdown_append_metadata2nodes"  class="d-flex flex-wrap p-0 dropdown mb-1">
-                                    <button id="metadata_fields_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" data-bs-auto-close="false" title="List of fields to colour nodes by.">
+                                    <button id="metadata_fields_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" 
+                                    data-placement="top" data-bs-auto-close="false" title="List of fields to colour nodes by">
                                         Add metadata to nodes</button>
                                 </div>
 
@@ -3808,7 +3832,7 @@
                 onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
                 id="TreeData">
 
-                        <div id="tree-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
+                        <div id="tree-splash" class="w-100 h-100 fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
                         <div id="colour-legend"
                         class="d-none p-1 position-absolute border border-primary text-break Tree inline-block-child scrollbar-window" 
@@ -3820,30 +3844,27 @@
                         
                 </div> 
 
-                </div>
-                
-                
             </div>
-            <div class="row" style="height:5px;background-color: #0d6efd;">
-                <a  href="#" data-bs-toggle="collapse" 
-                data-bs-target="#ClusterInfo">
-                </a>
+                
+                
+        </div>
+        
+        <div class="row m-0" style="height:5px;background-color: #0d6efd;">
+                <a  href="#" data-bs-toggle="collapse" data-bs-target="#ClusterInfo"></a>
                 <div class="p-0" onmousedown="vertical_div_resize(event)" 
-                style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
-                background-color: #dc3545; width:50px; height:10px; z-index: 2;">
+                    style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
+                    background-color: #dc3545; width:50px; height:10px; z-index: 2;">
                 </div>
-            </div>
-            <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
+        </div>
+        
+        <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
                 <div class="col-12 p-0 overflow-auto" style="height:28.9vh">
                     <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display overflow-scroll" >
                     </table>
-                </div>    
-            </div>
-                
-                <!-- Need to have the legend be scrollable and situated under the selected nodes-->
-                
-            
+                    </div>    
+                </div>            
+                <!-- Need to have the legend be scrollable and situated under the selected nodes-->  
         </div> 
         <div id="TestSubTree"></div> 
         
