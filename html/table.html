@@ -393,21 +393,23 @@
             let increase_factor = length / max_length
             
             let n_minor_divisions = 0, num_major_ticks = 0; 
-                factors=Array(10).fill(0).map((i,index)=>{return Math.pow(10,index)}); //generate array of factor from 1 to 1e10
-                factor_selected = 1; n_minor_divisions_step = 0.1;
-    
+            //factors=[1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]
+            factors=Array(10).fill(0).map((i,index)=>{return Math.pow(10,index)}); //generate array of factor from 1 to 1e10
+            factor_selected = 1; n_minor_divisions_step = 0.1;
             //given a max length of the tree, understand the tree total length decimal point precision if it is less than 1.
             //if less than zero find a factor that will covert it to integer space via multiplication (i.e for 0.53 multiply by 10 = 5.3)
             //then identify the major and minor number of divisions valid for ultramertic trees
             //from factors array find a scaling factor in the number space
             for (var i=0; i<factors.length;i++){
+                //for decimal numbers
                 if(Math.trunc(max_length*factors[i]) > 0){
                     num_major_ticks = Math.trunc(max_length*factors[i])
                     n_minor_divisions = Math.round(max_length*factors[i]/n_minor_divisions_step) //using default step of 0.1
                     factor_selected = factors[i]
-
+                    
+                    console.debug(length/num_major_ticks )
                     // If only 1 major tick, try using the next higher factor
-                    if (num_major_ticks === 1 && i + 1 < factors.length) {
+                    if ( num_major_ticks === 1  && i + 1 < factors.length ) {
                         factor_selected = factors[i + 1];
                         num_major_ticks = Math.trunc(max_length * factor_selected);
                         n_minor_divisions = Math.round(max_length * factor_selected / n_minor_divisions_step);
@@ -417,21 +419,67 @@
                 }   
                
             }
-            
-            let test_inc_sub = length/n_minor_divisions //minor division size in tree scale units
-            let minor_ticks_coordinates_px = [];
-            
-            //draw minor scale ticks first going from left to right (-->) 
-            for(let i=0; i <=n_minor_divisions; i+=1){
-                scaleBarGroup.append("path")
-                .attr("d", `M ${i*test_inc_sub} -${height - stroke_width} V -${height}`)
-                .attr("fill-opacity", 1)
-                .attr("stroke", "#000")
-                .attr("class", "scale-bar")
-                .attr("stroke-width","1")
-                minor_ticks_coordinates_px.push(i*test_inc_sub)   
+
+            console.debug("num_major_ticks=" + num_major_ticks +
+                ", minor_divisions=" + n_minor_divisions +
+                ", scale_bar=" + length + "px" +
+                ", factor_selected=" + factor_selected +
+                ", max_length=" + max_length +
+                ", length="+length+"px"+
+                ", num_major_ticks="+length/num_major_ticks+"px"
+                );
+
+            let minMajorTickSpacingPx = 20;              // Minimum spacing between major ticks in pixels
+            let maxMajorTicks = Math.floor(length / minMajorTickSpacingPx);
+
+            let niceSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]; // "Nice" human-friendly steps
+
+            let step = 1;
+            let full_steps = 0;
+            let remainder = 0;
+            let minor_per_step = 10;
+            let minor_step = 0.1;
+            let pixel_per_unit = length / max_length;
+            for (let i = 0; i < niceSteps.length; i++) {
+                let tickCount = Math.ceil(max_length / niceSteps[i]);
+                let tickSpacingPx = length / tickCount;
+                if (tickSpacingPx >= minMajorTickSpacingPx && tickCount <= maxMajorTicks) {
+                    step = niceSteps[i];
+                    minor_step = step / minor_per_step;
+                    full_steps = Math.floor(max_length / step);
+                    remainder = max_length - full_steps * step;
+                    num_major_ticks = full_steps + 1; // last tick will be at full_steps * step
+                    n_minor_divisions = full_steps * minor_per_step + Math.floor(remainder / minor_step);
+                    factor_selected = 1 / step;
+                    break;
+                }
             }
-            
+
+            console.debug("num_major_ticks=" + num_major_ticks +
+                ", n_minor_divisions=" + n_minor_divisions +
+                ", scale_bar=" + length + "px" +
+                ", factor_selected=" + factor_selected +
+                ", max_length=" + max_length +
+                ", length=" + length + "px" +
+                ", step="+step+
+                ", full_steps="+full_steps+
+                ", spacing_per_major=" + (length / num_major_ticks) + "px"
+            );
+
+            // Draw minor ticks going from left to right (-->) 
+            let minor_ticks_coordinates_px = [];
+            for (let i = 0; i <= n_minor_divisions; i++) {
+                let value = i * minor_step;
+                let px = value * pixel_per_unit;
+                scaleBarGroup.append("path")
+                    .attr("d", `M ${px} -${height - stroke_width} V -${height}`)
+                    .attr("fill-opacity", 1)
+                    .attr("stroke", "#000")
+                    .attr("class", "scale-bar")
+                    .attr("stroke-width", "1");
+                minor_ticks_coordinates_px.push(px);
+            }
+                        
             
             
             /**
@@ -459,13 +507,21 @@
              */
             
             if(!TREE_ULTRAMETRIC_P){
+                // From root to leaves (left to right)
                 //phylogenetic tree showing cumulative distance from root to the leaf (-->)
-                let distance_root_start = root.data.max_length //root node might start not at zero in ML phylo tree
+                let distance_root_start = root.data.max_length || 0 //root node might start not at zero in ML phylo tree
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.filter((c,index) => index % 10 === 0);
-                 
-                for(let i=0; i <= num_major_ticks; i+=1 ){
+                
+                for(let i=0; i <= full_steps; i+=1 ){
                     //use minor divisions minor tick units and covert it to a major tick unit plus the root start distance
-                    let d = Number(max_length/n_minor_divisions*10*i + distance_root_start).toFixed(DECIMAL_PLACES)
+                    const px = major_ticks_coordinates_px[i]; 
+                    //let d = Number(max_length/n_minor_divisions*10*i + distance_root_start).toFixed(DECIMAL_PLACES)
+                    //let d = (i * step + distance_root_start).toFixed(DECIMAL_PLACES);
+                    //let d = minor_step*i*pixel_per_unit.toFixed(DECIMAL_PLACES)
+                    console.debug(distance_root_start)
+                    let d = (i * step + distance_root_start).toFixed(DECIMAL_PLACES);
+
+                    console.debug(distance_root_start + i * minor_step)
                     //major divisions
                     scaleBarGroup.append("path")
                     //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
@@ -491,7 +547,9 @@
             }else{
                 //the tree is ultrametric showing a distance bar from leaf to the root that is from right to left (<--)
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
-                for(let i=0; i <= num_major_ticks; i+=1){
+                for(let i=0; i <= full_steps; i+=1){
+                    let d = (i * step).toFixed(DECIMAL_PLACES);
+                 
                     //add major ticks in RED
                     scaleBarGroup.append("path")
                     .attr("d", `M ${major_ticks_coordinates_px[i]} -${height - stroke_width} V -${height + stroke_width}`)
@@ -508,7 +566,7 @@
                     .attr("stroke-width", 1)
                     .attr("fill-opacity", 1)
                     .attr("dy", -height - 5)
-                    .text( i/factor_selected )
+                    .text( d )
                     .attr("font-size", 14)
                     .attr("class", "scale-bar")
                 }
@@ -778,8 +836,6 @@
                     d.distance = (y0 += d.data.d) * k;
                     if (d.children) d.children.forEach(d => setDistance(d, y0, k));
                 }
-
-
 
                 // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
                 // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
