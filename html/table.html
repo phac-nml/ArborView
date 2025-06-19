@@ -2086,57 +2086,7 @@
             }
         };
 
-        /**
-         * Extracts all metadata from the DataTables table with id "metadata" and returns a Map
-         * where each key is the sample ID (taken from the first column), and the value is a string
-         * concatenation of all the fields in that row separated by pipe (`|`) characters.
-         *
-         * This function accesses the full dataset managed by DataTables API, so it returns
-         * all rows regardless of pagination or filtering.
-         *
-         * Requires jQuery and DataTables library to be loaded.
-         *
-         * @returns {Map<string, string>} A map of sample IDs to their concatenated metadata string.
-         */
-         /*function extractAllMetadataJoined(selectedFields) {
-            const allDataMap = new Map();
-            const tableElement = $('#metadata');
-
-            const selected_indexes = selectedFields.map(item => TABLE_HEADERS.indexOf(item)); 
-            if (selected_indexes.length === 0){
-                console.warn("Empty selected metadata table indexes")
-            }   
-            // Check if table element exists and is initialized as a DataTable
-            if (!tableElement.length || !$.fn.DataTable.isDataTable(tableElement)) {
-                console.warn("DataTable '#metadata' not found or not initialized.");
-                return allDataMap;
-            }
-
-            const table = tableElement.DataTable();    
-            // Get all data rows as an array of arrays or objects (depending on your config)
-            const allRowsData = table.rows().data(); 
-            // 'applied' gets filtered rows; use {} or 'none' for all rows (even filtered out)
-            // Use table.rows().data() to get all rows regardless of filter
-            // Use table.rows({ search: 'applied' }).data() for filtered data
-
-            // Iterate over each row
-            allRowsData.each(row => {
-                // If row is an array (default), sampleID is row[0]
-                // If row is an object (if columns.data used), adjust accordingly
-
-                const sampleID = row[0].trim();
-                //all fields
-                //const joinedFields = row.slice(1).map(field => String(field).trim()).join('|');
-                 // Use only fields at the specified selected indexes (excluding the sampleID at index 0)
-                const selectedFields = selected_indexes.map(i => String(row[i]).trim());
-                const joinedFields = selectedFields.join(' | ');
-           
-
-                allDataMap.set(sampleID, joinedFields);
-            });
-
-            return allDataMap;
-        }*/
+        
         function extractAllMetadataJoined(selectedFields) {
             const MetaDataMap = new Map();
 
@@ -2164,10 +2114,8 @@
                 }
 
                 // Get selected metadata fields
-                const selectedValues = selected_indexes.map(i => String(row[i] || "").trim());
-                const joinedFields = selectedValues.every(val => val === "") 
-                    ? sampleID 
-                    : selectedValues.join(" | ");
+                const selectedValues = selected_indexes.map(i => String(row[i] || "NA").trim());
+                const joinedFields =  selectedValues.join(" | ");    
 
                 MetaDataMap.set(sampleID, joinedFields);
             }
@@ -2175,29 +2123,7 @@
             return MetaDataMap;
         }
 
-        /**
-         * Annotate leaf nodes of the tree_root object with metadata from metadataMap.
-         * Assumes leaf nodes have `leaf === true`, match sampleID via `name`,
-         * and update the `meta` property.
-         *
-         * @param {Object} node - The root node of the tree (or subtree).
-         * @param {Map<string, string>} metadataMap - Map of sampleID (name) to metadata string.
-         * @returns {Object} The updated node (tree_root) with leaf nodes annotated.
-         */
-        function annotateLeafNodesWithMeta(node, metadataMap) {
         
-
-            if (node.leaf === true) {
-                const sampleID = node.name;
-                node.meta = metadataMap.has(sampleID) ? metadataMap.get(sampleID) : null;
-                return node;
-            }
-
-            if (node.children && node.children.length > 0) {
-                node.children = node.children.map(child => annotateLeafNodesWithMeta(child, metadataMap));
-            }
-            return node;
-        }
 
         let drawTree = (newick_) => {
             $("#tree-splash").remove()
@@ -2592,7 +2518,6 @@
                 return;
             }
 
-            console.debug(`Before change tree width ${treeContainer.node().getBBox().width} and svg declared ${svg.attr("width")}`)
             if (svg.empty()) {
                 console.warn("Tree SVG not found.");
                 return;
@@ -2600,14 +2525,15 @@
 
             //update leaf nodes update labels
             const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
+            
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
-
                 if (isEmpty) {
-                    newLabel = `${nodeId} | NA`;
+                    newLabel = `${nodeId}`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
+                    console.log(joinedFields)
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
                     newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
                 }
@@ -2621,7 +2547,6 @@
 
             
             const newWidth = treeContainer.node().getBBox().width
-            console.debug(`Final calculated tree width after node update ${newWidth}`)
 
             // Parse the existing viewBox
             const viewBoxAttr = svg.attr("viewBox")
@@ -2694,13 +2619,11 @@
                     
                     // Extract all metadata already loaded as a map
                     const metadataJoinedMap = extractAllMetadataJoined(checkedFields);
-                    console.log(metadataJoinedMap.size)
+                    
         
                     // Append metadata to tree leaf nodes if available
                     if (metadataJoinedMap.size !== 0) {
-                        //tree_root = annotateLeafNodesWithMeta(tree_root, metadataJoinedMap);
                         updateLeafNodeLabels(metadataJoinedMap)
-                        //redrawTree()
 
                     }else{
                         console.warn("The metadata table map is empty.");
@@ -3678,7 +3601,7 @@
         if (document.fullscreen === true) {
             controlPanelOffset = 0;
         }
-        
+
         let isDown = true;
 
         function move(e) {
