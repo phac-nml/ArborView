@@ -454,17 +454,7 @@
                 }
             }
 
-            console.debug("num_major_ticks=" + num_major_ticks +
-                ", n_minor_divisions=" + n_minor_divisions +
-                ", scale_bar=" + length + "px" +
-                ", factor_selected=" + factor_selected +
-                ", max_length=" + max_length +
-                ", length=" + length + "px" +
-                ", step="+step+
-                ", full_steps="+full_steps+
-                ", spacing_per_major=" + (length / num_major_ticks) + "px"
-            );
-
+            
             // Draw minor ticks going from left to right (-->) 
             let minor_ticks_coordinates_px = [];
             for (let i = 0; i <= n_minor_divisions; i++) {
@@ -513,11 +503,9 @@
                 
                 for(let i=0; i <= full_steps; i+=1 ){
                     const px = major_ticks_coordinates_px[i];
-                    console.debug(distance_root_start)
                     let raw_dist = i * step + distance_root_start; //some trees might start from non-zero distance at root
                     let d = raw_dist === 0 ? "0" : raw_dist.toFixed(DECIMAL_PLACES);  //do not apply decimal points correction to 0
 
-                    console.debug(distance_root_start + i * minor_step)
                     //major divisions
                     scaleBarGroup.append("path")
                     //.attr("d", `M ${i * increase_factor} -${height - stroke_width}  V -${height + stroke_width}`)
@@ -2237,8 +2225,6 @@
                 return false;
             }
             
-            console.log(document.querySelector('#TreeData').offsetHeight, 
-            document.querySelector('#control_panel').offsetHeight)
             let renderedTree = treeRendererFunction(tree_root); 
             //Match #TreeData height
             const treeDataHeight = document.querySelector('#TreeData').offsetHeight;
@@ -2246,27 +2232,9 @@
             treeData.style.height = `${treeDataHeight}px`;
             
             renderedTree.style.paddingLeft = renderedTree.style.paddingLeft + TREE_OFFSET;
-            console.log(document.querySelector('#TreeData').offsetHeight, 
-            document.querySelector('#control_panel').offsetHeight)
-            
             
             // Insert rendered svg tree into the DOM
             $("#TreeData").append(renderedTree);
-            console.log(document.querySelector('#TreeData').offsetHeight, 
-            document.querySelector('#control_panel').offsetHeight)
-
-            
-            
-
-            //const treeHeight = document.querySelector('#TreeData').offsetHeight;
-            //const menuHeight = document.querySelector('#tree_menu_buttons').offsetHeight;
-
-            //const availableHeight = treeHeight - menuHeight;
-            //console.log(availableHeight)
-
-            // Resize the side panel to match tree height
-            //console.log(`${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`)
-            //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             // Scroll to center horizontally
             document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
@@ -3677,23 +3645,66 @@
         document.querySelector('.dropdown-menu').style['position']="fixed"
     }
 
+    /**
+     * Enables dragging of the #colour-legend div by mouse.
+     * 
+     * When the user clicks and holds the mouse down on the legend div, 
+     * this function tracks mouse movements and moves the legend accordingly,
+     * preserving the initial grab offset within the div to prevent jumpiness.
+     * 
+     * It also accounts for the width of a left-side control panel (#control_panel)
+     * by offsetting the drag position, except when the document is in fullscreen mode,
+     * in which case the offset is ignored.
+     * 
+     * @param {MouseEvent} event - The initial mouse down event that starts dragging.
+     *                             It provides the starting coordinates of the drag.
+     * 
+     
+    * **/
     dragDivByMouse = function(event) {
-        let isDown = true;
-        let legend_div = document.querySelector('#colour-legend')
-        let control_panel_div = document.querySelector("#control_panel")
-        let TreeData_div = document.querySelector('#TreeData')
-        let offset = {"x": event.clientX - control_panel_div.offsetWidth, "y": event.clientY + TreeData_div.scrollTop}   
-        document.addEventListener('mouseup', function(){isDown = false}, true)
-        document.addEventListener('mousemove', move, true)
-        function move(event){
-            event.preventDefault();
-            if(isDown === true){
-                offset = {"x": event.clientX-control_panel_div.offsetWidth, "y": event.clientY + TreeData_div.scrollTop}
-                legend_div.style['left'] = offset.x+"px"
-                legend_div.style['top'] = offset.y+"px"
-            }    
+        const legend_div = document.querySelector('#colour-legend');
+        const control_panel_div = document.querySelector("#control_panel");
+
+        // Get bounding box of the legend
+        const rect = legend_div.getBoundingClientRect();
+
+        // Calculate initial grab offset (mouse position within the div)
+        const grabOffsetX = event.clientX - rect.left;
+        const grabOffsetY = event.clientY - rect.top;
+
+        // Store control panel width
+        let controlPanelOffset = control_panel_div.offsetWidth;
+        // Override offset if document is in fullscreen mode
+        if (document.fullscreen === true) {
+            controlPanelOffset = 0;
         }
-    }
+        
+        let isDown = true;
+
+        function move(e) {
+            if (!isDown) return;
+            e.preventDefault();
+
+            // Calculate new position, accounting for grab offset and control panel width
+            const newLeft = e.clientX - grabOffsetX - controlPanelOffset;
+            const newTop = e.clientY - grabOffsetY;
+
+            legend_div.style.left = newLeft + "px";
+            legend_div.style.top = newTop + "px";
+        }
+
+        function stopDrag() {
+            isDown = false;
+            document.removeEventListener('mousemove', move, true);
+            document.removeEventListener('mouseup', stopDrag, true);
+        }
+
+        // Attach listeners
+        document.addEventListener('mousemove', move, true);
+        document.addEventListener('mouseup', stopDrag, true);
+    };
+
+
 
     </script>
 </head>
