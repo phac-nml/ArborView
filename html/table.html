@@ -314,16 +314,16 @@
 
         function drawScale(svg, length, height, max_length, root){
             /**
-             * Draws a scale bar in a dendrogram or phylogenetic tree visualization,
-             * indicating tree distances or heights. Supports both ultrametric and non-ultrametric trees.
-             * The scale bar includes major and minor ticks, and dynamically adjusts to the tree layout.
+             * Draws an interactive scale bar for phylogenetic tree visualizations with configurable ticks and labels.
+             * Supports both ultrametric (time-based) and non-ultrametric (divergence-based) trees with automatic tick spacing.
+             * Includes a draggable UI element with toggle control and dynamic label formatting.
              *
              * @function drawScale
-             * @param {d3.Selection} svg - SVG element where the scale bar will be drawn.
-             * @param {number} length - Length of the scale bar in pixels.
-             * @param {number} height - Vertical position of the scale bar from the top of the SVG in pixels.
-             * @param {number} max_length - Maximum length of the tree in the same units as the Newick file (e.g., number of alleles).
-             * @param {d3.HierarchyNode} root - A D3 hierarchy node, typically created using `d3.hierarchy(data)`. 
+             * @param {d3.Selection} svg - D3 selection of the SVG container where the scale will be rendered
+             * @param {number} length - Pixel length of the scale bar (visual width)
+             * @param {number} height - Vertical position from top of SVG (in pixels)
+             * @param {number} max_length - Maximum tree distance in data units (e.g., substitutions/site)
+             * @param {d3.HierarchyNode} root - D3 hierarchy node containing tree data with max_length property
              *   Should include a `data.max_length` field representing the starting cumulative distance from the root,
              *   which is used in non-ultrametric trees to adjust the scale bar labels.
              *
@@ -334,10 +334,11 @@
              * drawScale(svg, 200, 30, 1.2, treeRootNode);
              *
              * @remarks
-             * - Automatically appends a toggle switch UI to enable/disable the scale bar.
-             * - Minor ticks are drawn at 0.1 unit intervals by default.
-             * - Major ticks are drawn in red with corresponding numerical labels.
-             * - For ultrametric trees, the scale bar is rendered in reverse (right to left).
+             * - Creates a draggable scale bar via mouse and keyboard arrow keys group via CSS class 'scale-bar'
+             * - Implements smart tick spacing using human-friendly intervals (1, 2, 5, 10...)
+             * - Handles both forward (root→tips) and reverse (tips→root) scaling directions for two tree types
+             * - Minor ticks drawn at 1/10th intervals of major ticks
+             * - Major ticks colored red and have numeric labels up to the DECIMAL_PLACES defaulting to 1
              
              * @notes
              * scale bar is slightly difficult to add, as the svg viewport dat only shows up AFTER rendering
@@ -379,6 +380,7 @@
            let scale = `M 0 -${height} H ${length}` //defines the length of the scale object
            let stroke_width = 5
            let bar_opacity = 0.4
+           const fontSize = 12; // Match your label font-size
            
 
            scaleBarGroup.append("path")
@@ -389,47 +391,44 @@
             .attr("fill-opacity", 1)
             .attr("class", "scale-bar")
 
-            //let test_inc =  max_length / 10 // 10 was chosen randomly as I mock something up
-            let increase_factor = length / max_length
-            
-            let n_minor_divisions = 0, num_major_ticks = 0; 
-            //factors=[1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]
-            factors=Array(10).fill(0).map((i,index)=>{return Math.pow(10,index)}); //generate array of factor from 1 to 1e10
-            factor_selected = 1; n_minor_divisions_step = 0.1;
-            //given a max length of the tree, understand the tree total length decimal point precision if it is less than 1.
-            //if less than zero find a factor that will covert it to integer space via multiplication (i.e for 0.53 multiply by 10 = 5.3)
-            //then identify the major and minor number of divisions valid for ultramertic trees
-            //from factors array find a scaling factor in the number space
-            for (var i=0; i<factors.length;i++){
-                //for decimal numbers
-                if(Math.trunc(max_length*factors[i]) > 0){
-                    num_major_ticks = Math.trunc(max_length*factors[i])
-                    n_minor_divisions = Math.round(max_length*factors[i]/n_minor_divisions_step) //using default step of 0.1
-                    factor_selected = factors[i]
-                    
-                    console.debug(length/num_major_ticks )
-                    // If only 1 major tick, try using the next higher factor
-                    if ( num_major_ticks === 1  && i + 1 < factors.length ) {
-                        factor_selected = factors[i + 1];
-                        num_major_ticks = Math.trunc(max_length * factor_selected);
-                        n_minor_divisions = Math.round(max_length * factor_selected / n_minor_divisions_step);
-                    }
-                    break
-    
-                }   
-               
+            // ===== CHANGE: Font Size to Average Width Mapping =====
+            // This table defines average character width multipliers for different font sizes in a typical sans-serif font (like Arial or Helvetica)
+            // E.g. Each character averages 0.62 × 12px = 7.44px wide
+            // We need to do approximate max label width calculation as DOM is not rendered at this stage preventing usage of bbox()
+            const FONT_METRICS = {
+                8:  0.52,  // avg width multiplier for 8px font
+                9:  0.55,
+                10: 0.58,
+                11: 0.60,
+                12: 0.62,  // default size
+                14: 0.65,
+                16: 0.68,
+                18: 0.70
+            };
+
+            /**
+             * Estimates the pixel width of text based on font size and average character width metrics.
+             * Uses predefined font metrics for accurate estimation without DOM measurement.
+             * 
+             * @function estimateTextWidth
+             * @param {string} text - The text string to measure
+             * @param {number} fontSize - Font size in pixels (must match FONT_METRICS keys for best accuracy)
+             * @returns {number} Estimated width in pixels
+             * 
+             **/
+            function estimateTextWidth(text, fontSize) {
+                const AVG_CHAR_WIDTH = FONT_METRICS[fontSize] || FONT_METRICS[12];
+                return text.length * AVG_CHAR_WIDTH * fontSize;
             }
-
-            console.debug("num_major_ticks=" + num_major_ticks +
-                ", minor_divisions=" + n_minor_divisions +
-                ", scale_bar=" + length + "px" +
-                ", factor_selected=" + factor_selected +
-                ", max_length=" + max_length +
-                ", length="+length+"px"+
-                ", num_major_ticks="+length/num_major_ticks+"px"
-                );
-
-            let minMajorTickSpacingPx = 20;              // Minimum spacing between major ticks in pixels
+            // Estimate maximum label width (using your font size 12px)
+            const maxLabel = max_length.toFixed(DECIMAL_PLACES);
+            const longestLabelWidth = estimateTextWidth(maxLabel, fontSize);
+            
+            
+            // Update min spacing to prevent label overlap (130% of longest label)
+            let minMajorTickSpacingPx = Math.max(longestLabelWidth, 25);// Minimum spacing between major ticks in pixels with 25 px as default min             
+            let n_minor_divisions = 0, num_major_ticks = 0; 
+            let factor_selected = 0;  
             let maxMajorTicks = Math.floor(length / minMajorTickSpacingPx);
 
             let niceSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]; // "Nice" human-friendly steps
@@ -513,13 +512,10 @@
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.filter((c,index) => index % 10 === 0);
                 
                 for(let i=0; i <= full_steps; i+=1 ){
-                    //use minor divisions minor tick units and covert it to a major tick unit plus the root start distance
-                    const px = major_ticks_coordinates_px[i]; 
-                    //let d = Number(max_length/n_minor_divisions*10*i + distance_root_start).toFixed(DECIMAL_PLACES)
-                    //let d = (i * step + distance_root_start).toFixed(DECIMAL_PLACES);
-                    //let d = minor_step*i*pixel_per_unit.toFixed(DECIMAL_PLACES)
+                    const px = major_ticks_coordinates_px[i];
                     console.debug(distance_root_start)
-                    let d = (i * step + distance_root_start).toFixed(DECIMAL_PLACES);
+                    let raw_dist = i * step + distance_root_start; //some trees might start from non-zero distance at root
+                    let d = raw_dist === 0 ? "0" : raw_dist.toFixed(DECIMAL_PLACES);  //do not apply decimal points correction to 0
 
                     console.debug(distance_root_start + i * minor_step)
                     //major divisions
@@ -541,14 +537,15 @@
                     .attr("fill-opacity", 1)
                     .attr("dy", -height - 5)
                     .text( d )
-                    .attr("font-size", 14)
+                    .attr("font-size", fontSize)
                     .attr("class", "scale-bar")
                 }
             }else{
                 //the tree is ultrametric showing a distance bar from leaf to the root that is from right to left (<--)
                 let major_ticks_coordinates_px = minor_ticks_coordinates_px.reverse().filter((c,index) => index % 10 === 0);
                 for(let i=0; i <= full_steps; i+=1){
-                    let d = (i * step).toFixed(DECIMAL_PLACES);
+                    let raw_dist = i * step;
+                    let d = raw_dist === 0 ? "0" : raw_dist.toFixed(DECIMAL_PLACES); //do not apply decimal points correction to 0
                  
                     //add major ticks in RED
                     scaleBarGroup.append("path")
@@ -567,7 +564,7 @@
                     .attr("fill-opacity", 1)
                     .attr("dy", -height - 5)
                     .text( d )
-                    .attr("font-size", 14)
+                    .attr("font-size", fontSize)
                     .attr("class", "scale-bar")
                 }
 
