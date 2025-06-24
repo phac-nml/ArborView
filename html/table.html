@@ -1707,12 +1707,16 @@
             param element: a html "g" element to update the colour of
             */        
                 let [parent, circle, text] = SelectedNodes.getNodeData(element.closest(SelectedNodes.#svg_parent));
-                
-                if(!SelectedNodes.nodes.has(text.textContent)){
-                    SelectedNodes.nodes.set(text.textContent, parent);
+
+                //SelectedNodes.nodes is a map where each key is sample_id
+                if(!SelectedNodes.nodes.has(parent.id)){
+                    //ensures that <g> node id is used instead of leaf node text as it is more reliable if node text label is changed
+                    //  {'SRR3736595' => g#SRR3736595.tree-node.leaf-node, 'SRR3736593' => g#SRR3736593.tree-node.leaf-node}
+                    SelectedNodes.nodes.set(parent.id, parent); 
                     SelectedNodes.setSelectedColours(text, circle);
-                }
-                console.debug(`${text.textContent} already exists in map.`)
+                }else{
+                    console.debug(`${parent.id} key already exists in SelectedNodes.nodes map.`)
+                }    
                 
             }
 
@@ -2414,6 +2418,7 @@
             let filtered = data_table.data().filter((value, idx) => {
                 return SelectedNodes.nodes.has(value[ID_FIELD]);
             });
+      
             data_table.clear();
             data_table.rows.add(filtered).draw();
             $("td").addClass("editable");
@@ -2533,7 +2538,6 @@
                     newLabel = `${nodeId}`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
-                    console.log(joinedFields)
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
                     newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
                 }
@@ -2589,9 +2593,6 @@
                    
                     const checkbox = label.querySelector('input[type="checkbox"]');
                     if (!checkbox) return;
-                    console.log(checkbox, event.target.tag, checkbox.checked )
-                    
-                    
                     
                     // If the actual target was the checkbox, let native behavior proceed
                     // Otherwise use manual checkbox turn on
@@ -3784,7 +3785,7 @@
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
                                       title="Clear filters applied to the metadata table."
-                                      onclick="resetMetadataFilters()">
+                                      >
                                       <i class="bi bi-filter-circle"></i>
                                       Clear filters
                                     </button>
