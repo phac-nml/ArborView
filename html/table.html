@@ -2210,6 +2210,7 @@
                 if(document.querySelector("#paginate_button_all") === null){
                     document.querySelector("#metadata_paginate").appendChild(html)
                 }
+
                 let maximize_button_html=document.createElement("i");
                 maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
                 maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
@@ -2252,6 +2253,27 @@
 
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
 
+            // Add Clear Filters button next to the search input
+            const clearBtnIcon = $('<i>')
+                .addClass('bi bi-filter-circle me-1'); // Bootstrap icon with some right margin
+
+            const clearBtn = $('<button>')
+                    .attr('id', 'reset-table-button')
+                    .attr('name','ResetTable')
+                    .attr('title', 'Clear filters applied to the metadata table')
+                    .attr('data-bs-toggle', 'tooltip')
+                    .attr('data-bs-placement','top')
+                    .addClass('btn btn-sm btn-danger ms-2') // styling with Bootstrap classes
+                    .append(clearBtnIcon)  
+                    .append('Clear filters')
+                    .on('click', function () {
+                        ResetTable()
+                        // Clear global filters in the search input box
+                        data_table.search('').columns().search('').draw(); 
+                    });
+
+            $('#metadata_filter').append(clearBtn);
+            
             // TODO initializing table from json object would minimize copies
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
@@ -3778,7 +3800,7 @@
                                     <!-- 2) Clear filters (new) -->
                                     <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->   
-                                    <button
+                                    <!--button
                                       id="reset-table-button"
                                       name="ResetTable"
                                       class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
@@ -3788,7 +3810,7 @@
                                       >
                                       <i class="bi bi-filter-circle"></i>
                                       Clear filters
-                                    </button>
+                                    </button-->
                                   
                                     <!-- 3) Clear selected nodes -->
                                     <button
