@@ -1725,8 +1725,7 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                let dropped = SelectedNodes.nodes.delete(text.textContent)
-
+                let dropped = SelectedNodes.nodes.delete(element.id)
                 console.debug("Dropping values:", text.textContent, dropped);
                 
             }
