@@ -12,6 +12,11 @@
             box-sizing: border-box;
         }
 
+        #ClusterInfo {
+          position: relative;
+          overflow: auto
+        }
+
 
         .row.no-wrap {
             flex-wrap: nowrap; /*prevents the TreeData div with the svg tree to wrap around*/
@@ -133,7 +138,7 @@
     <!--JQuery Beautiful Data Tables-->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-
+    
 
     <!--Bootstrap 5 library elements-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
@@ -2168,11 +2173,14 @@
             document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
 
-
+        
         let CreateDataTable = () => {
+            
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
-                //"paging": false,
+                //fixedHeader: true,
+                scrollCollapse: true,
+                "paging": true,
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
                 initComplete: function (settings, json) {
@@ -2250,6 +2258,7 @@
 
             });
 
+            
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
 
             // Add Clear Filters button next to the search input
@@ -2323,11 +2332,18 @@
             $("#metadata-selector-input").remove();
             $("#metadata-selector").remove();
             let headers = table_headers;
-            let table_head = "";
+            //let table_head = "";
             let table_body = [];
-            for(const item of headers){
-                table_head = table_head + `<th>${item}</th>\n`;
+            
+            let table_head = "<tr>";
+            for (const item of headers) {
+                table_head += `<th>${item}</th>\n`;
             }
+            table_head += "</tr>";
+
+            //for(const item of headers){
+            //    table_head = table_head + `<th>${item}</th>\n`;
+            //}
             for(const item of parsed_data){
                 table_body.push('<tr>\n');
                 for(const header of headers){
@@ -2340,6 +2356,14 @@
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             // ? A bit odd we are making the table with HTML then converting to jquery datatable...
             CreateDataTable();
+
+            //Add sticky headers 
+            document.querySelectorAll('#metadata thead th').forEach(th => {
+                th.style.position = 'sticky';
+                th.style.top = '0';
+                th.style.zIndex = '2'; // Make sure it's above table content
+                th.style.backgroundColor = 'white'; // Optional: avoid content showing through
+            });
             adjustSelectedNodesHeight();
         };
 
@@ -3424,11 +3448,14 @@
         }
 
         metadata_full_screen_mode = function(){
+            let clusterInfo = document.querySelector('#ClusterInfo');
             let metadata_panel = document.querySelector('#ClusterInfo>div')
             if (document.fullscreenElement === null){
                 METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = metadata_panel.style.height;
-                document.querySelector('#ClusterInfo').requestFullscreen()
+                clusterInfo.requestFullscreen();
+                document.body.style.overflow = 'visible';
                 metadata_panel.style.height = '100vh';
+       
             }else{
                 document.exitFullscreen();
                 console.log(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
@@ -3783,16 +3810,16 @@
                                     class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
                                     onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
                                 </div-->     
-                                <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
+                                <div class="d-flex flex-row align-items-center p-0 text-left m-0">
                                     <!-- 1) Filter data -->
                                     <button
                                       id="metadata-search-button"
                                       name="SearchMetadata"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1"
+                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1 m-0"
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
                                       title="Filter metadata for selected nodes">
-                                      <i class="bi bi-search icon-image"></i>
+                                      <i class="bi bi-search me-2 icon-image"></i>
                                       Filter data
                                     </button>
                                   
@@ -3815,20 +3842,20 @@
                                     <button
                                       id="clear-selected-nodes"
                                       name="ClearSelectedNodes"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
+                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1 ms-1"
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
                                       title="Clear all selected nodes."
                                       onclick="clear_selected_nodes()">
-                                      <i class="bi bi-x-square"></i>
-                                      Clear nodes
+                                      <i class="bi bi-x-square me-2"></i>
+                                      Deselect nodes
                                     </button>
-                                  </div>  
+                                </div>  
                     </div> 
             
                     <div data-toggle="tooltip" data-placement="top" 
                         title="Selected nodes on the tree will show up here." 
-                        class="col border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
+                        class="col mt-1 border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
                         id="SelectedNodes" style="height: 15vh;">
                         <div class="d-flex h-100 text-center text-uppercase text-center">
                             <small class="align-self-center w-100">Selected Nodes</small>
@@ -3867,9 +3894,9 @@
         </div>
         
         <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
-                <div class="col-12 p-0 overflow-auto" style="height:28.9vh">
+                <div class="col-12 p-0" style="height:28.9vh">
                     <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
-                    <table id="metadata" class="w-100 display overflow-scroll" >
+                    <table id="metadata" class="w-100 display nowrap overflow-scroll" >
                     </table>
                     </div>    
                 </div>            
