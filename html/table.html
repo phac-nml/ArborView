@@ -42,12 +42,23 @@
             filter: opacity(0.5);
             cursor: pointer;
         }
-
-       
+   
 
         .scale-bar {
             cursor: move;
             visibility: visible;
+        }
+
+        /*This creates flash effect when the user finishes editing a metadata cell.*/
+        .flash {
+            animation: flashHighlight 0.5s ease;
+          
+        }  
+        
+
+        @keyframes flashHighlight {
+            from { background-color: red; }
+            to   { background-color: transparent; }
         }
 
         @keyframes spin {
@@ -274,7 +285,7 @@
             // Deselect when clicking elsewhere
             d3.select("body").on("mousedown", function () {
                 isSelected = false;
-                targetGroup.node().blur(); // Remove focus
+                targetGroup.node().blur(); // Remove focus Act as if the user clicked away from the cell.
             });
 
             // Keyboard interaction only when selected
@@ -2178,13 +2189,36 @@
             
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
-                //fixedHeader: true,
                 scrollCollapse: true,
                 "paging": true,
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
                 initComplete: function (settings, json) {
                     console.log("DataTables has finished its initialization");
+                    //listen to Enter keys
+                    $('#metadata').on('keydown', 'td[contenteditable=true]', function (e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            
+                            $(this).addClass('flash');
+                            // Remove the class after the animation finishes
+                            setTimeout(() => {
+                                $(this).removeClass('flash');
+                                $(this).blur(); //Act as if the user clicked away from editable cell.*/
+                            }, 500); // duration matches the CSS flash animation
+                            
+                            
+                        }
+                    });
+
+                    //Add STICKY HEADERS to the table 
+                    document.querySelectorAll('#metadata thead th').forEach(th => {
+                        th.style.position = 'sticky';
+                        th.style.top = '0';
+                        th.style.zIndex = '2'; // Make sure it's above table content
+                        th.style.backgroundColor = 'white'; // Optional: avoid content showing through
+                    });
+                    
                     
                 },
                 columnDefs: [{
@@ -2306,9 +2340,10 @@
             const selectedNodes = document.querySelector('#SelectedNodes');
             if (!treeData || !menuButtons || !selectedNodes) return;
 
-            const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-8;
+            const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-12;
             // Optionally guard against too-small values:
             const minHeight = 100; 
+            console.log(availableHeight,minHeight)
             selectedNodes.style.height = `${Math.max(availableHeight, minHeight)}px`;
         }
 
@@ -2356,14 +2391,6 @@
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             // ? A bit odd we are making the table with HTML then converting to jquery datatable...
             CreateDataTable();
-
-            //Add sticky headers 
-            document.querySelectorAll('#metadata thead th').forEach(th => {
-                th.style.position = 'sticky';
-                th.style.top = '0';
-                th.style.zIndex = '2'; // Make sure it's above table content
-                th.style.backgroundColor = 'white'; // Optional: avoid content showing through
-            });
             adjustSelectedNodesHeight();
         };
 
