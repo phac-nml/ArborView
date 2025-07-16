@@ -2343,7 +2343,6 @@
             const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-12;
             // Optionally guard against too-small values:
             const minHeight = 100; 
-            console.log(availableHeight,minHeight)
             selectedNodes.style.height = `${Math.max(availableHeight, minHeight)}px`;
         }
 
@@ -2882,17 +2881,26 @@
                 });//forEach ends 
             }//if ends
 
-
+            //colour each leaf nodes with the selected colour
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
+            for (const nodeId of SelectedNodes.nodes) {
+                console.log(nodeId); // This will log each node ID in the Set
+            }
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
+                  
                     try{
                         let current_item = document.querySelector(`[id='${x}']`);
                         let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
                         if(SelectedNodes.nodes.has(x)){
                             circle.dataset.oldfill = colours[colour_idx];
                         }else{
+                            if (circle.style.fill !== "") {
+                                circle.dataset.oldfill = circle.style.fill;
+                            }else{
+                                circle.dataset.oldfill = SelectedNodes.getDefaultColour();
+                            }    
                             circle.style.fill = colours[colour_idx];
                         }
                         
@@ -3193,11 +3201,46 @@
         }
 
         legend_on_off = function(node){        
-            if(node.checked === false){
-                document.querySelector('#colour-legend').classList.add("d-none");
-            }else{
-                document.querySelector('#colour-legend').classList.remove("d-none");
+            const colourLegendElement = document.querySelector('#colour-legend');
+            const isLegendOn = node.checked;
+
+            function updateLeafNodeColors(isLegendOn) {
+                document.querySelectorAll('g.tree-node.leaf-node > circle').forEach(circleElement => {
+                    try {
+                        if (!isLegendOn) {
+                            // Logic for when the legend is OFF: set to default color
+                            if (circleElement.style.fill !== "") {
+                                circleElement.dataset.oldfill = circleElement.style.fill; // Store current fill
+                            }
+                            circleElement.style.fill = SelectedNodes.getDefaultColour(); // Apply #999
+                        } else {
+                            // Logic for when the legend is ON: restore or apply default
+                            if (circleElement.dataset.oldfill) {
+                                circleElement.style.fill = circleElement.dataset.oldfill; // Restore saved fill
+                                delete circleElement.dataset.oldfill; // Clean up
+                            } else {
+                                // If no oldfill was saved (e.g., it was initially an empty string),
+                                // apply the default leaf color.
+                                circleElement.style.fill = SelectedNodes.getDefaultColour();
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error processing leaf circle element:", circleElement.id || circleElement, error);
+                    }
+                });
             }
+
+            if(!isLegendOn){
+                colourLegendElement.classList.add("d-none");
+                // set leaf node colour to #999
+                // Iterate through all leaf nodes and color them #999
+                
+            }else{
+                colourLegendElement.classList.remove("d-none");
+                
+            }
+
+            updateLeafNodeColors(isLegendOn);
         }
 
         round_decimals = function(){
