@@ -131,6 +131,11 @@
             right: 10px;
         }
 
+        .fade-out-dropdown-menu {
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
 
 
     </style>
@@ -1926,10 +1931,11 @@
 
         let CreateDropDownDiv = (event) => {
             let offset_menu = 0;
+            let leaveTimeout //defines menu timeout logic that can be cancelled
             // Temporarily increase node size on collection
             let circle = event.target.parentNode.getElementsByTagName("circle")[0];
             let rad_size = circle.getAttribute("r");
-            let increased_size = rad_size * 3;
+            let increased_size = rad_size * 5;
             if(!RADIUS_INCREASED && MENU_CREATED){
                 circle.setAttribute("r", increased_size);
                 RADIUS_INCREASED = true;
@@ -1938,17 +1944,25 @@
             let drop_down_menu = document.createElement("div");
 
             drop_down_menu.classList.add("dropdown")
-
             drop_down_menu.style.position = "fixed";
-            drop_down_menu.style.left = event.pageX+'px';
-            drop_down_menu.style.top = event.pageY+'px';
+            
+          
+            document.body.appendChild(drop_down_menu); // Attach to measure dimensions
+          
+            // Now position at the center of the context menu after the left mouse click
+            drop_down_menu.style.left = `${event.pageX - 1}px`;
+            drop_down_menu.style.top = `${event.pageY - 69}px`;
+         
+            //drop_down_menu.style.left = event.pageX+'px';
+            //drop_down_menu.style.top = event.pageY+'px';
             drop_down_menu.style.borderStyle = "solid";
             drop_down_menu.style.borderWidth = "2px";
             drop_down_menu.style.borderRadius = "10pt"
-            drop_down_menu.style.backgroundColor = "#FAFCF9";
+            drop_down_menu.style.backgroundColor = "rgba(250, 252, 249, 0.9)" /* need to specify transparency only with rgba and not hex "#FAFCF9";*/
             drop_down_menu.setAttribute("id", "PopDownMenu");
 
             // Add event listeners to undo changes when leaving
+            // When user clicks on the menu itself it will be deleted
             drop_down_menu.addEventListener("click", (event) => {
                 drop_down_menu.remove();
                 circle.setAttribute("r", rad_size);
@@ -1956,19 +1970,33 @@
                 MENU_CREATED = false;
             });
 
+            //remove circle enlarged
             drop_down_menu.addEventListener("mouseleave", (event) => {
-                event.target.remove();
-                circle.setAttribute("r", rad_size);
-                RADIUS_INCREASED = false;
-                MENU_CREATED = false;
+                drop_down_menu.classList.add("fade-out-dropdown-menu"); // Optional: fade animation
+                
+                leaveTimeout = setTimeout(() => {
+                    drop_down_menu.remove();
+                    circle.setAttribute("r", rad_size);
+                    RADIUS_INCREASED = false;
+                    MENU_CREATED = false;
+                }, 1000); // Matches the CSS transition duration
             });
 
+            // If user moves the mouse back in, cancel the dropdown menu removal
+            drop_down_menu.addEventListener("mouseenter", (event) => {
+                clearTimeout(leaveTimeout);
+                drop_down_menu.classList.remove("fade-out-dropdown-menu");
+            });
+
+            //detects that mouse moved outside the menu and now is over the tree and never entered menu
+            /*
             document.getElementById("TreeSVG").addEventListener("mouseover", (event) => {
                 drop_down_menu.remove();
                 circle.setAttribute("r", rad_size);
                 RADIUS_INCREASED = false;
                 MENU_CREATED = false;
-            })
+            })*/
+            
 
             return drop_down_menu;
         }
