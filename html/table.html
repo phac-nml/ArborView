@@ -1809,7 +1809,7 @@
                         tree.error |= 4;
                         break;
                     }
-                    z.meta = str.substr(meta_beg, i - meta_beg + 1);
+                    z.meta = str.substr(meta_beg, i - meta_beg + 1).replace('[', '').replace(']', ''); //remove square bracket from metadata  e.g.(A:0.1,B:0.2)[metadata]C:0.3; based on NHX (New Hampshire Extended) format
                 } else if (c == ':') {
                     if (end == 0) end = i;
                     for (var j = ++i; i < str.length; ++i) {
