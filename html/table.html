@@ -2366,9 +2366,10 @@
             const treeData = document.querySelector('#TreeData');
             const menuButtons = document.querySelector('#tree_menu_buttons');
             const selectedNodes = document.querySelector('#SelectedNodes');
+            const metadataTable = document.querySelector('#ClusterInfo')
             if (!treeData || !menuButtons || !selectedNodes) return;
 
-            const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-12;
+            const availableHeight = Math.abs(treeData.offsetHeight - menuButtons.clientHeight-12);
             // Optionally guard against too-small values:
             const minHeight = 100; 
             selectedNodes.style.height = `${Math.max(availableHeight, minHeight)}px`;
@@ -3583,6 +3584,15 @@
              * Designed to enhance UI responsiveness and usability when toggling metadata visibility.
              *
              */
+            
+            const controlPanel = document.querySelector('#control_panel');
+            let ORIGINAL_CONTROL_PANEL_SIZE=null;
+            setTimeout(function() {
+                ORIGINAL_CONTROL_PANEL_SIZE = controlPanel.getBoundingClientRect()
+                },1000
+            );    
+            const clusterInfo = document.querySelector('#ClusterInfo');
+            const ORIGINAL_METADATA_SIZE  = clusterInfo.querySelector("div").style.height
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
@@ -3603,6 +3613,35 @@
                 document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
                 adjustSelectedNodesHeight()
             })
+
+            //allows to bring back into view the control left panel if it obstracted by the metadata table if one moves mouse into the control panel area
+            if (controlPanel && clusterInfo) {
+                controlPanel.addEventListener('mouseenter', () => {  
+                    const controlPanelRect = controlPanel.getBoundingClientRect();
+                    const metadataRect = clusterInfo.getBoundingClientRect();
+                    console.log(`controlPanelRect=${JSON.stringify(controlPanelRect)}\n
+                    metadataRect=${JSON.stringify(metadataRect)}\n
+                    ORIGINAL_CONTROL_PANEL_SIZE=${JSON.stringify(ORIGINAL_CONTROL_PANEL_SIZE)}`);
+
+
+                    // Check for overlap
+                    if (ORIGINAL_CONTROL_PANEL_SIZE.height !== null){
+                        const overlap = controlPanelRect.height < ORIGINAL_CONTROL_PANEL_SIZE.height;
+
+                        if (overlap) {
+                            console.log(`#ClusterInfo is overlapping with #control_panel ${controlPanelRect.height} vs ${ORIGINAL_CONTROL_PANEL_SIZE.height}.`);
+                            document.querySelector('#control_panel').style.height=`${ORIGINAL_CONTROL_PANEL_SIZE.height}px`;
+                            document.querySelector('#TreeData').style.height=`${ORIGINAL_CONTROL_PANEL_SIZE.height}px`
+                            document.querySelector('#ClusterInfo>div').style.height=ORIGINAL_METADATA_SIZE;
+                            adjustSelectedNodesHeight() 
+                        } else {
+                            console.log(`#ClusterInfo is NOT overlapping with #control_panel. ${controlPanelRect.height} vs ${ORIGINAL_CONTROL_PANEL_SIZE.height}.`);
+                        } 
+                    }    
+                });
+            }
+
+            
 
     
         });    
@@ -3699,7 +3738,7 @@
             }
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+                document.querySelector('#SelectedNodes').style.Height = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             }   
             
         }
