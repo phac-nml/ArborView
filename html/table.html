@@ -228,6 +228,8 @@
         var DECIMAL_PLACES = 1;
         const DISTANCE_LABEL_OFFSET = 5.2
 
+        let ORIGINAL_CONTROL_PANEL_HEIGHT=null; //The original dimensions of the left control panel that are needed to bring it back to original size
+
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TREE FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // These are messy due to the way in which they were created, and there has not been time
@@ -821,7 +823,16 @@
             return svg.node();
         };
 
-
+        /**
+         * Renders a D3.js dendrogram chart based on the provided hierarchical data.
+         * This function handles the layout, scaling, and rendering of the tree,
+         * including node and link creation.
+         *
+         * @param {object} data - The hierarchical data object representing the tree structure.
+         * This object is expected to be a PLAIN JavaScript object (not a D3 node object),
+         * containing properties like 'name', 'length', 'max_length', 'meta', and 'children'.
+         * @returns {SVGElement} The SVG DOM element containing the rendered dendrogram chart.
+         */
         const dendrogram_chart = (data) => {
                 
                 // Made with lots of help from: https://observablehq.com/d/6c52fee38fb28b2f
@@ -1121,6 +1132,7 @@
                 max_length = root.display_dist
             }
             //let display_width = parseInt(ele_style.width) - label_safety_factor
+            //draw a scale bar
             drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length, root)
 
             return svg.node();
@@ -2033,17 +2045,59 @@
             }
         };
 
-        // Tree specific code for this project implementation
+        const countNodes = (node) => {
+            if (!node) {
+                return 0;
+            }
+            let count = 1; // Count the current node
+            if (node.children && Array.isArray(node.children)) {
+                for (const child of node.children) {
+                    count += countNodes(child); // Recursively add counts from children
+                }
+            }
+            return count;
+        };
+
+
+        // Create a subtree from the inner node selected in a tree
         let CustomSubTree = (event, data) => {
+            console.log("Subtree is being rendered")
             $("#legend_toggle").bootstrapToggle('off')
             SelectedNodes.drawSelectedNodes();
             $('#colour-legend').empty()
             $('#colour-legend').addClass('d-none')
             $('#TreeSVG').remove()
             $("#scale-bar-menu").remove()
+        
+
             if(data !== null){
                 // Make copy of head node as data will be overwritten
-                let copy_head_node = Object.assign({}, data.data);
+                let copy_head_node=structuredClone(data.data)
+                const totalNodes = countNodes(copy_head_node)
+                
+                console.log(`New head node of the tree with ${totalNodes} nodes at distance ${copy_head_node.max_length} and ultrametric=${TREE_ULTRAMETRIC_P}`);
+                //if a tree is non-ultrametric then create a subtree with subtracted distances from the head node selected as root now
+                console.log(copy_head_node)
+                if (!TREE_ULTRAMETRIC_P){
+                    const distanceToSubtract = copy_head_node.max_length;
+                    const subtractDistance = (node, amount) => {
+                    if (node.max_length !== undefined && node.max_length !== null) {
+                        // Ensure the length does not go below zero after subtraction.
+                        node.max_length = Math.max(0, node.max_length - amount);
+                    }
+                    // Recursively apply to children if they exist
+                    if (node.children) {
+                        node.children.forEach(child => subtractDistance(child, amount));
+                    }
+                };
+
+                    // Apply the annotated distance subtraction to the copied head node and all its descendants.
+                    subtractDistance(copy_head_node, distanceToSubtract);
+                }
+                console.log(`Head node after subtraction ${copy_head_node.max_length}`);
+
+                console.log(copy_head_node)
+                //RENDER tree based on the selected layout function
                 let svg_chart = TREE_SWITCH.get(TREE_VAL)(copy_head_node);
                 svg_chart.style.paddingLeft = svg_chart.style.paddingLeft + TREE_OFFSET;
                 $("#TreeData").append(svg_chart);
@@ -2170,7 +2224,25 @@
             return MetaDataMap;
         }
 
-        
+        let cloneD3NodeData = (node) => {
+            if (!node) return null;
+
+            // Create a new object for the current node's raw data.
+            // This copies properties like 'name', 'length', and any other custom data.
+            let clonedData = { ...node.data }; 
+
+            // If the node has children (which are also D3 node objects),
+            // recursively clone their data to build the new hierarchy.
+            if (node.children) {
+                clonedData.children = node.children.map(childNode => cloneD3NodeData(childNode));
+            }
+
+            // The 'parent' property (and D3's internal 'x', 'y', 'depth', 'height' etc.)
+            // are properties of the D3 node object itself, not typically part of your
+            // raw 'data' object. By only copying 'node.data' and recursively handling
+            // 'node.children', we naturally avoid the circular 'parent' reference.
+            return clonedData;
+        };
 
         let drawTree = (newick_) => {
             $("#tree-splash").remove()
@@ -2184,8 +2256,10 @@
                 return false;
             }
             //Store the root for later access (used in updates, selections, etc.)
-            tree_root = tree.root; // Save the tree root to redraw the tree when needed
-
+            //Do that only ONCE during initial tree loading from Newick file
+            if(tree_root === null){
+                tree_root = tree.root; // Save the tree original tree root to redraw the tree when needed
+            }    
             
 
             // Retrieve the rendering function from TREE_SWITCH based on current selection
@@ -3585,14 +3659,7 @@
              *
              */
             
-            const controlPanel = document.querySelector('#control_panel');
-            let ORIGINAL_CONTROL_PANEL_SIZE=null;
-            setTimeout(function() {
-                ORIGINAL_CONTROL_PANEL_SIZE = controlPanel.getBoundingClientRect()
-                },1000
-            );    
-            const clusterInfo = document.querySelector('#ClusterInfo');
-            const ORIGINAL_METADATA_SIZE  = clusterInfo.querySelector("div").style.height
+            
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
@@ -3614,39 +3681,49 @@
                 adjustSelectedNodesHeight()
             })
 
-            //allows to bring back into view the control left panel if it obstracted by the metadata table if one moves mouse into the control panel area
-            if (controlPanel && clusterInfo) {
-                controlPanel.addEventListener('mouseenter', () => {  
-                    const controlPanelRect = controlPanel.getBoundingClientRect();
-                    const metadataRect = clusterInfo.getBoundingClientRect();
-                    console.log(`controlPanelRect=${JSON.stringify(controlPanelRect)}\n
-                    metadataRect=${JSON.stringify(metadataRect)}\n
-                    ORIGINAL_CONTROL_PANEL_SIZE=${JSON.stringify(ORIGINAL_CONTROL_PANEL_SIZE)}`);
-
-
-                    // Check for overlap
-                    if (ORIGINAL_CONTROL_PANEL_SIZE.height !== null){
-                        const overlap = controlPanelRect.height < ORIGINAL_CONTROL_PANEL_SIZE.height;
-
-                        if (overlap) {
-                            console.log(`#ClusterInfo is overlapping with #control_panel ${controlPanelRect.height} vs ${ORIGINAL_CONTROL_PANEL_SIZE.height}.`);
-                            document.querySelector('#control_panel').style.height=`${ORIGINAL_CONTROL_PANEL_SIZE.height}px`;
-                            document.querySelector('#TreeData').style.height=`${ORIGINAL_CONTROL_PANEL_SIZE.height}px`
-                            document.querySelector('#ClusterInfo>div').style.height=ORIGINAL_METADATA_SIZE;
-                            adjustSelectedNodesHeight() 
-                        } else {
-                            console.log(`#ClusterInfo is NOT overlapping with #control_panel. ${controlPanelRect.height} vs ${ORIGINAL_CONTROL_PANEL_SIZE.height}.`);
-                        } 
-                    }    
-                });
-            }
+            //allows to bring back into view the control left panel if it obstructed by the metadata table if one moves mouse into the control panel area
+            
 
             
 
     
         });    
 
+        window.addEventListener("load", function(){
 
+            const controlPanel = document.querySelector('#control_panel'); 
+            ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
+            const clusterInfo = document.querySelector('#ClusterInfo');
+            const ORIGINAL_METADATA_HIGHT  = clusterInfo.querySelector("div").style.height
+
+            if (controlPanel && clusterInfo) {
+                controlPanel.addEventListener('mouseenter', () => {  
+                    const controlPanelRect = controlPanel.getBoundingClientRect();
+                    const metadataRect = clusterInfo.getBoundingClientRect();
+                    /*console.debug(`controlPanelRect=${JSON.stringify(controlPanelRect)}\n
+                    metadataRect=${JSON.stringify(metadataRect)}\n
+                    ORIGINAL_CONTROL_PANEL_HIGHT=${JSON.stringify(ORIGINAL_CONTROL_PANEL_HEIGHT)}`);
+                    */
+
+                    // Check for overlap
+                
+                    const overlap = controlPanelRect.height < ORIGINAL_CONTROL_PANEL_HEIGHT;
+
+                    if (overlap) {
+                        console.log(`#ClusterInfo is overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
+                        document.querySelector('#control_panel').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`;
+                        document.querySelector('#TreeData').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`
+                        document.querySelector('#ClusterInfo>div').style.height=ORIGINAL_METADATA_HIGHT;
+                        adjustSelectedNodesHeight() 
+                    }else {
+                        console.debug(`#ClusterInfo is NOT overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
+                    } 
+                       
+                });
+            }
+            
+        
+        });
         // Call once DOM is ready
         /*
         document.addEventListener("DOMContentLoaded", () => {
@@ -3876,37 +3953,45 @@
                                     class="btn-sm btn-primary w-100 h-100 text-break me-1" name="RedrawTree" id="redraw-tree-button"><i class="bi bi-pencil-square"></i> Redraw Tree</button>
                                     <button data-toggle="tooltip" data-placement="top" title="Bring the tree back into focus" class="btn-sm btn-primary w-100 h-100" name="ResetTree" id="ResetTree"><i class="bi bi-eyeglasses"></i> Refocus tree</button>
                                 </div>
-                                <!--Zoom slider-->
-                                <div data-toggle="tooltip" data-placement="top" title="Zoom in or out on the tree" class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="zoom_slider_value">1</span>x
-                                    </div>    
-                                </div>  
-                                <!-- Decimal rounding -->
-                                <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="decimal_rounding" class="form-label"># of decimals</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="decimal-slider-value">1</span>
-                                    </div>    
-                                </div>  
+                                <div class="flex flex-col p-0">
+                                    <!--Zoom slider-->
+                                    <div data-toggle="tooltip" data-placement="top" title="Zoom in or out on the tree" 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="zoom_slider" 
+                                        class="form-label" style="width:30%">Zoom</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
+                                        </div>
+                                        <div class="fw-bold text-start" style="width:10%">
+                                            <span id="zoom_slider_value">1</span>x
+                                        </div>    
+                                    </div>  
+                                    <!-- Decimal rounding -->
+                                    <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="decimal_rounding" 
+                                        class="form-label" style="width:30%"># of decimals</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
+                                        </div>
+                                        <div class="fw-bold text-start" style="width:10%">
+                                            <span id="decimal-slider-value">1</span>
+                                        </div>    
+                                    </div>  
 
-                                <!--Slider for adjusting line thickness-->
-                                <div data-toggle="tooltip" data-placement="top" title="Adjust line thickness" class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Line Weight</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="line-thickness-value">2.0</span>
-                                    </div>    
-                                </div> 
+                                    <!--Slider for adjusting line thickness-->
+                                    <div data-toggle="tooltip" data-placement="top" title="Adjust line thickness" 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="zoom_slider" 
+                                        class="form-label" style="width:30%">Line Weight</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
+                                        </div>
+                                        <div class="fw-bold text-start" style="width:10%">
+                                            <span id="line-thickness-value">2.0</span>
+                                        </div>    
+                                    </div> 
+                                </div>
 
                                 <div id="dropdown_tree_types" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="tree_dropdown_menu"  class="btn btn-primary btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
