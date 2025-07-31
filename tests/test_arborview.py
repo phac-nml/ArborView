@@ -1,10 +1,10 @@
-import re, pytest, time
+import os, time
 from playwright.sync_api import Page, expect
 
 
 def test_load_newick_phylo_tree(page: Page) -> None:
-    page.goto("../html/table.html")
-
+    page.goto(f"file:///{os.path.abspath('html/table.html')}")
+    
     # we first wait for the file chooser dialog to appear
     # before clicking the button that triggers it.
     with page.expect_file_chooser() as fc_info:
