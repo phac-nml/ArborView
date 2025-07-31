@@ -32,11 +32,13 @@ jobs:
         run: |
           git checkout origin/main
           cp html/table.html deploy/main.html
+          cp html/favicon.ico deploy/favicon.ico
 
       - name: Copy table.html from dev branch
         run: |
           git checkout origin/dev
           cp html/table.html deploy/dev.html
+          cp html/favicon.ico deploy/favicon.ico
 
       - name: Prepare gh-pages branch
         run: |
