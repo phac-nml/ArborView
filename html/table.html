@@ -3670,20 +3670,48 @@
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
-                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
-                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+                let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
+                let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
+                let unitTree = unitMatchTree ? unitMatchTree[1] : null;
+                let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+            
+                // Calculate the equivalent pixel value from vh
+                if(unitMeta === "vh"){
+                    const viewportHeight = window.visualViewport.height-10;
+                    heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
+                    unitMeta="px"
+                }
+               
+                if(unitTree !== null){  
+                    document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
+                    document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
+                }else{
+                    document.querySelector('#TreeData').style.height=`${window.visualViewport.height-10}px`
+                    document.querySelector('#control_panel').style.height=`${window.visualViewport.height-10}px`
+                }
+                    //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
                 adjustSelectedNodesHeight()
             }) 
 
             document.querySelector('#ClusterInfo').addEventListener('show.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
-                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
-                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+
+                let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
+                let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
+                let unitTree = unitMatchTree ? unitMatchTree[1] : null;
+                let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+
+                if(unitMeta === "vh"){
+                    const viewportHeight = window.visualViewport.height;
+                    heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
+                    unitMeta="px"
+                }
+          
+                //let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
+                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+"px"
+                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+"px"
+                //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
                 adjustSelectedNodesHeight()
             })
 
