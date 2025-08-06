@@ -151,7 +151,8 @@
     <!-- Random colour library for creating some nice highlighted trees  https://github.com/davidmerfield/randomColor   -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.6.1/randomColor.min.js" integrity="sha512-vPeZ7JCboHcfpqSx5ZD+/jpEhS4JpXxfz9orSvAPPj0EKUVShU2tgy7XkU+oujBJKnWmu4hU7r9MMQNWPfXsYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <!--script src="https://d3js.org/d3.v6.min.js"></script--> <!--sometimes does not load so using this more reliable url-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/6.7.0/d3.min.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <!-- Below switching to tidy tree 0.5.1 as the dev broke 0.5.0 -->
 
@@ -2106,6 +2107,7 @@
                 //RENDER tree based on the selected layout function
                 let svg_chart = TREE_SWITCH.get(TREE_VAL)(copy_head_node);
                 svg_chart.style.paddingLeft = svg_chart.style.paddingLeft + TREE_OFFSET;
+                
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
                     // Maintain colour of already selected nodes
@@ -2284,8 +2286,10 @@
             const treeData = document.querySelector('#TreeData');
             treeData.style.height = `${treeDataHeight}px`;
             
-            renderedTree.style.paddingLeft = renderedTree.style.paddingLeft + TREE_OFFSET;
-            
+        
+            let renderedTreePadding = renderedTree.style.paddingLeft || 0 //If left padding property is not defined assign zero and add offset
+            renderedTree.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`;
+ 
             // Insert rendered svg tree into the DOM
             $("#TreeData").append(renderedTree);
             // Scroll to center horizontally
@@ -3035,6 +3039,7 @@
                 if(tree_root !== null){
                     chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
                     chart_.style.paddingLeft = chart_.style.paddingLeft + TREE_OFFSET;
+                    
                     $("#TreeData").append(chart_);
                     $(".leaf-node").each((i, elm) => {
                         let [parent, circle, text] = SelectedNodes.getNodeData(elm);
@@ -3673,14 +3678,14 @@
                 let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
                 let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
                 let unitTree = unitMatchTree ? unitMatchTree[1] : null;
-                let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+                /*let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
             
                 // Calculate the equivalent pixel value from vh
                 if(unitMeta === "vh"){
                     const viewportHeight = window.visualViewport.height-10;
                     heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
                     unitMeta="px"
-                }
+                }*/
                
                 if(unitTree !== null){  
                     document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
@@ -3700,13 +3705,13 @@
                 let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
                 let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
                 let unitTree = unitMatchTree ? unitMatchTree[1] : null;
-                let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+                //let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
 
-                if(unitMeta === "vh"){
+                /*if(unitMeta === "vh"){
                     const viewportHeight = window.visualViewport.height;
                     heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
                     unitMeta="px"
-                }
+                }*/
           
                 //let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
                 document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+"px"
@@ -3723,12 +3728,36 @@
     
         });    
 
+        //run this code when all DOM and elements have been loaded
         window.addEventListener("load", function(){
-
-            const controlPanel = document.querySelector('#control_panel'); 
-            ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
+            const controlPanel = document.querySelector('#control_panel');
             const clusterInfo = document.querySelector('#ClusterInfo');
+            const ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
+
+            function adjustClusterInfoPanelHeight(controlPanel, clusterInfo) {    
+                console.log(`Window height: ${window.innerHeight}px and upper panel size: ${ORIGINAL_CONTROL_PANEL_HEIGHT}px`);
+
+                // Calculate the desired height for the cluster info panel.
+                let newHeight = window.innerHeight - ORIGINAL_CONTROL_PANEL_HEIGHT;
+
+                // Define the minimum height as 10% of the viewport.
+                const minHeightPercentage = 0.10;
+                const tenPercentViewportHeight = window.innerHeight * minHeightPercentage;
+
+                // If the calculated height is less than the minimum, use the minimum height instead.
+                if (newHeight < tenPercentViewportHeight) {
+                    newHeight = tenPercentViewportHeight;
+                }
+
+                // Set the height of the cluster info panel's inner div.
+                clusterInfo.querySelector("div").style.height = `${newHeight}px`;
+            }
+
+            adjustClusterInfoPanelHeight(controlPanel, clusterInfo)
+
             const ORIGINAL_METADATA_HIGHT  = clusterInfo.querySelector("div").style.height
+            
+            
 
             if (controlPanel && clusterInfo) {
                 controlPanel.addEventListener('mouseenter', () => {  
@@ -3931,9 +3960,9 @@
     <body>
         <div class="container-fluid m-0">
             <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
-                <div id="control_panel" class="col-2 border border-primary px-1 overflow-visible position-relative">
+                <div id="control_panel" class="col-2 border border-primary px-1 position-relative overflow-hidden">
                     <div id="tree_menu_buttons" class="row m-0">
-                                <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1 mb-1">
+                                <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1">
                                     <button class="h-100 flex-grow-1 me-1 mb-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="tree-upload-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
@@ -3950,16 +3979,16 @@
                                 <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->                                
                                 
-                                <div class="d-flex flex-row align-items-center p-0 text-left">
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
+                                <div class="d-flex flex-row align-items-center p-0 text-left flex-wrap gap-1 mt-1 mb-1">
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top"  
                                         title="Copy selected node IDs to your clipboard to paste into another application and optionally generate a text file" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
-                                        <i class="bi bi-clipboard me-1"></i>IDs
+                                        <i class="bi bi-clipboard m-1"></i>IDs
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download m-1"></i> SVG
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to PNG." onclick="export_tree_to_png()" id="export-tree-to-png">
                                         <i class="bi bi-download m-1"></i> PNG
                                     </button>
@@ -3997,7 +4026,7 @@
                                             <input type="range" class="w-100 form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
                                         </div>
                                         <div class="fw-bold text-start" style="width:10%">
-                                            <span id="zoom_slider_value">1</span>x
+                                            <small id="zoom_slider_value">1</small><small>x</small>
                                         </div>    
                                     </div>  
                                     <!-- Decimal rounding -->
@@ -4009,7 +4038,7 @@
                                             <input type="range" class="w-100 form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
                                         </div>
                                         <div class="fw-bold text-start" style="width:10%">
-                                            <span id="decimal-slider-value">1</span>
+                                            <small id="decimal-slider-value">1</small>
                                         </div>    
                                     </div>  
 
@@ -4021,8 +4050,8 @@
                                         <div class="px-2" style="width:60%">
                                             <input type="range" class="w-100 form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
                                         </div>
-                                        <div class="fw-bold text-start" style="width:10%">
-                                            <span id="line-thickness-value">2.0</span>
+                                        <div class="fw-bold fs-6 text-start" style="width:10%">
+                                            <small id="line-thickness-value">2.0</small>
                                         </div>    
                                     </div> 
                                 </div>
@@ -4057,16 +4086,8 @@
                                         Add metadata to nodes</button>
                                 </div>
 
-                                
-                                <!--div class="d-flex flex-row align-items-center p-0 text-left">
-                                    <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
-                                    class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
-                                    <i class="bi bi-search icon-image"></i> Filter data</button>
-                                    <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
-                                    class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
-                                    onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
-                                </div-->     
-                                <div class="d-flex flex-row align-items-center p-0 text-left m-0">
+                                    
+                                <div class="d-flex flex-row align-items-center p-0 text-left m-0 flex-wrap gap-1">
                                     <!-- 1) Filter data -->
                                     <button
                                       id="metadata-search-button"
@@ -4078,30 +4099,14 @@
                                       <i class="bi bi-search me-2 icon-image"></i>
                                       Filter data
                                     </button>
-                                  
-                                    <!-- 2) Clear filters (new) -->
-                                    <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
-                                    title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->   
-                                    <!--button
-                                      id="reset-table-button"
-                                      name="ResetTable"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
-                                      data-bs-toggle="tooltip"
-                                      data-bs-placement="top"
-                                      title="Clear filters applied to the metadata table."
-                                      >
-                                      <i class="bi bi-filter-circle"></i>
-                                      Clear filters
-                                    </button-->
-                                  
-                                    <!-- 3) Clear selected nodes -->
+                               
                                     <button
                                       id="clear-selected-nodes"
                                       name="ClearSelectedNodes"
-                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1 ms-1"
+                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1"
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
-                                      title="Clear all selected nodes."
+                                      title="Clear/Deselect all selected nodes in the panel and tree."
                                       onclick="clear_selected_nodes()">
                                       <i class="bi bi-x-square me-2"></i>
                                       Deselect nodes
@@ -4141,7 +4146,7 @@
                 
         </div>
         
-        <div class="row m-0" style="height:5px;background-color: #0d6efd;">
+        <div class="row m-0" style="height:5px;background-color: #0d6efd; position: relative">
                 <a  href="#" data-bs-toggle="collapse" data-bs-target="#ClusterInfo"></a>
                 <div class="p-0" onmousedown="vertical_div_resize(event)" 
                     style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
@@ -4150,8 +4155,8 @@
         </div>
         
         <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
-                <div class="col-12 p-0" style="height:28.9vh">
-                    <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
+                <div class="col-12 p-0">
+                    <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center h-100" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
                     <table id="metadata" class="w-100 display nowrap overflow-scroll" >
                     </table>
                     </div>    
