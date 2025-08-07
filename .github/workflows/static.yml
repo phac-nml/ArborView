@@ -11,6 +11,28 @@ permissions:
   contents: write
 
 jobs:
+  playwright_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest-playwright
+
+      - name: Install Playwright browsers
+        run: playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: pytest
+        
   deploy:
     runs-on: ubuntu-latest
     steps:
@@ -32,11 +54,13 @@ jobs:
         run: |
           git checkout origin/main
           cp html/table.html deploy/main.html
+          cp html/favicon.ico deploy/favicon.ico
 
       - name: Copy table.html from dev branch
         run: |
           git checkout origin/dev
           cp html/table.html deploy/dev.html
+          cp html/favicon.ico deploy/favicon.ico
 
       - name: Prepare gh-pages branch
         run: |
@@ -44,7 +68,9 @@ jobs:
           git rm -rf . || true
           mkdir -p main dev
           cp deploy/main.html main/index.html
+          cp deploy/favicon.ico dev/favicon.ico
           cp deploy/dev.html dev/index.html
+          cp deploy/favicon.ico dev/favicon.ico
           touch .nojekyll
           git add .
           git commit -m "Deploy table.html from main and dev branches"

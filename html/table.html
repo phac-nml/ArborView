@@ -12,6 +12,11 @@
             box-sizing: border-box;
         }
 
+        #ClusterInfo {
+          position: relative;
+          overflow: auto
+        }
+
 
         .row.no-wrap {
             flex-wrap: nowrap; /*prevents the TreeData div with the svg tree to wrap around*/
@@ -37,12 +42,23 @@
             filter: opacity(0.5);
             cursor: pointer;
         }
-
-       
+   
 
         .scale-bar {
             cursor: move;
             visibility: visible;
+        }
+
+        /*This creates flash effect when the user finishes editing a metadata cell.*/
+        .flash {
+            animation: flashHighlight 0.5s ease;
+          
+        }  
+        
+
+        @keyframes flashHighlight {
+            from { background-color: red; }
+            to   { background-color: transparent; }
         }
 
         @keyframes spin {
@@ -115,16 +131,28 @@
             right: 10px;
         }
 
+        .fade-out-dropdown-menu {
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
 
 
     </style>
-    
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArborView</title> 
+
+    <!-- Link to your favicon.ico file -->
+    <link rel="icon" href="favicon.ico?v=1" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico?v=1" type="image/x-icon"> 
+
 
     <!-- Random colour library for creating some nice highlighted trees  https://github.com/davidmerfield/randomColor   -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.6.1/randomColor.min.js" integrity="sha512-vPeZ7JCboHcfpqSx5ZD+/jpEhS4JpXxfz9orSvAPPj0EKUVShU2tgy7XkU+oujBJKnWmu4hU7r9MMQNWPfXsYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <!--script src="https://d3js.org/d3.v6.min.js"></script--> <!--sometimes does not load so using this more reliable url-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/6.7.0/d3.min.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <!-- Below switching to tidy tree 0.5.1 as the dev broke 0.5.0 -->
 
@@ -133,7 +161,7 @@
     <!--JQuery Beautiful Data Tables-->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-
+    
 
     <!--Bootstrap 5 library elements-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
@@ -207,6 +235,8 @@
         var DECIMAL_PLACES = 1;
         const DISTANCE_LABEL_OFFSET = 5.2
 
+        let ORIGINAL_CONTROL_PANEL_HEIGHT=null; //The original dimensions of the left control panel that are needed to bring it back to original size
+
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TREE FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // These are messy due to the way in which they were created, and there has not been time
@@ -269,7 +299,7 @@
             // Deselect when clicking elsewhere
             d3.select("body").on("mousedown", function () {
                 isSelected = false;
-                targetGroup.node().blur(); // Remove focus
+                targetGroup.node().blur(); // Remove focus Act as if the user clicked away from the cell.
             });
 
             // Keyboard interaction only when selected
@@ -800,7 +830,16 @@
             return svg.node();
         };
 
-
+        /**
+         * Renders a D3.js dendrogram chart based on the provided hierarchical data.
+         * This function handles the layout, scaling, and rendering of the tree,
+         * including node and link creation.
+         *
+         * @param {object} data - The hierarchical data object representing the tree structure.
+         * This object is expected to be a PLAIN JavaScript object (not a D3 node object),
+         * containing properties like 'name', 'length', 'max_length', 'meta', and 'children'.
+         * @returns {SVGElement} The SVG DOM element containing the rendered dendrogram chart.
+         */
         const dendrogram_chart = (data) => {
                 
                 // Made with lots of help from: https://observablehq.com/d/6c52fee38fb28b2f
@@ -1100,6 +1139,7 @@
                 max_length = root.display_dist
             }
             //let display_width = parseInt(ele_style.width) - label_safety_factor
+            //draw a scale bar
             drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length, root)
 
             return svg.node();
@@ -1707,12 +1747,16 @@
             param element: a html "g" element to update the colour of
             */        
                 let [parent, circle, text] = SelectedNodes.getNodeData(element.closest(SelectedNodes.#svg_parent));
-                
-                if(!SelectedNodes.nodes.has(text.textContent)){
-                    SelectedNodes.nodes.set(text.textContent, parent);
+
+                //SelectedNodes.nodes is a map where each key is sample_id
+                if(!SelectedNodes.nodes.has(parent.id)){
+                    //ensures that <g> node id is used instead of leaf node text as it is more reliable if node text label is changed
+                    //  {'SRR3736595' => g#SRR3736595.tree-node.leaf-node, 'SRR3736593' => g#SRR3736593.tree-node.leaf-node}
+                    SelectedNodes.nodes.set(parent.id, parent); 
                     SelectedNodes.setSelectedColours(text, circle);
-                }
-                console.debug(`${text.textContent} already exists in map.`)
+                }else{
+                    console.debug(`${parent.id} key already exists in SelectedNodes.nodes map.`)
+                }    
                 
             }
 
@@ -1721,8 +1765,7 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                let dropped = SelectedNodes.nodes.delete(text.textContent)
-
+                let dropped = SelectedNodes.nodes.delete(element.id)
                 console.debug("Dropping values:", text.textContent, dropped);
                 
             }
@@ -1785,7 +1828,7 @@
                         tree.error |= 4;
                         break;
                     }
-                    z.meta = str.substr(meta_beg, i - meta_beg + 1);
+                    z.meta = str.substr(meta_beg, i - meta_beg + 1).replace('[', '').replace(']', ''); //remove square bracket from metadata  e.g.(A:0.1,B:0.2)[metadata]C:0.3; based on NHX (New Hampshire Extended) format
                 } else if (c == ':') {
                     if (end == 0) end = i;
                     for (var j = ++i; i < str.length; ++i) {
@@ -1907,10 +1950,11 @@
 
         let CreateDropDownDiv = (event) => {
             let offset_menu = 0;
+            let leaveTimeout //defines menu timeout logic that can be cancelled
             // Temporarily increase node size on collection
             let circle = event.target.parentNode.getElementsByTagName("circle")[0];
             let rad_size = circle.getAttribute("r");
-            let increased_size = rad_size * 3;
+            let increased_size = rad_size * 5;
             if(!RADIUS_INCREASED && MENU_CREATED){
                 circle.setAttribute("r", increased_size);
                 RADIUS_INCREASED = true;
@@ -1919,17 +1963,25 @@
             let drop_down_menu = document.createElement("div");
 
             drop_down_menu.classList.add("dropdown")
-
             drop_down_menu.style.position = "fixed";
-            drop_down_menu.style.left = event.pageX+'px';
-            drop_down_menu.style.top = event.pageY+'px';
+            
+          
+            document.body.appendChild(drop_down_menu); // Attach to measure dimensions
+          
+            // Now position at the center of the context menu after the left mouse click
+            drop_down_menu.style.left = `${event.pageX - 1}px`;
+            drop_down_menu.style.top = `${event.pageY - 69}px`;
+         
+            //drop_down_menu.style.left = event.pageX+'px';
+            //drop_down_menu.style.top = event.pageY+'px';
             drop_down_menu.style.borderStyle = "solid";
             drop_down_menu.style.borderWidth = "2px";
             drop_down_menu.style.borderRadius = "10pt"
-            drop_down_menu.style.backgroundColor = "#FAFCF9";
+            drop_down_menu.style.backgroundColor = "rgba(250, 252, 249, 0.9)" /* need to specify transparency only with rgba and not hex "#FAFCF9";*/
             drop_down_menu.setAttribute("id", "PopDownMenu");
 
             // Add event listeners to undo changes when leaving
+            // When user clicks on the menu itself it will be deleted
             drop_down_menu.addEventListener("click", (event) => {
                 drop_down_menu.remove();
                 circle.setAttribute("r", rad_size);
@@ -1937,19 +1989,33 @@
                 MENU_CREATED = false;
             });
 
+            //remove circle enlarged
             drop_down_menu.addEventListener("mouseleave", (event) => {
-                event.target.remove();
-                circle.setAttribute("r", rad_size);
-                RADIUS_INCREASED = false;
-                MENU_CREATED = false;
+                drop_down_menu.classList.add("fade-out-dropdown-menu"); // Optional: fade animation
+                
+                leaveTimeout = setTimeout(() => {
+                    drop_down_menu.remove();
+                    circle.setAttribute("r", rad_size);
+                    RADIUS_INCREASED = false;
+                    MENU_CREATED = false;
+                }, 1000); // Matches the CSS transition duration
             });
 
+            // If user moves the mouse back in, cancel the dropdown menu removal
+            drop_down_menu.addEventListener("mouseenter", (event) => {
+                clearTimeout(leaveTimeout);
+                drop_down_menu.classList.remove("fade-out-dropdown-menu");
+            });
+
+            //detects that mouse moved outside the menu and now is over the tree and never entered menu
+            /*
             document.getElementById("TreeSVG").addEventListener("mouseover", (event) => {
                 drop_down_menu.remove();
                 circle.setAttribute("r", rad_size);
                 RADIUS_INCREASED = false;
                 MENU_CREATED = false;
-            })
+            })*/
+            
 
             return drop_down_menu;
         }
@@ -1986,19 +2052,62 @@
             }
         };
 
-        // Tree specific code for this project implementation
+        const countNodes = (node) => {
+            if (!node) {
+                return 0;
+            }
+            let count = 1; // Count the current node
+            if (node.children && Array.isArray(node.children)) {
+                for (const child of node.children) {
+                    count += countNodes(child); // Recursively add counts from children
+                }
+            }
+            return count;
+        };
+
+
+        // Create a subtree from the inner node selected in a tree
         let CustomSubTree = (event, data) => {
+            console.log("Subtree is being rendered")
             $("#legend_toggle").bootstrapToggle('off')
             SelectedNodes.drawSelectedNodes();
             $('#colour-legend').empty()
             $('#colour-legend').addClass('d-none')
             $('#TreeSVG').remove()
             $("#scale-bar-menu").remove()
+        
+
             if(data !== null){
                 // Make copy of head node as data will be overwritten
-                let copy_head_node = Object.assign({}, data.data);
+                let copy_head_node=structuredClone(data.data)
+                const totalNodes = countNodes(copy_head_node)
+                
+                console.log(`New head node of the tree with ${totalNodes} nodes at distance ${copy_head_node.max_length} and ultrametric=${TREE_ULTRAMETRIC_P}`);
+                //if a tree is non-ultrametric then create a subtree with subtracted distances from the head node selected as root now
+                console.log(copy_head_node)
+                if (!TREE_ULTRAMETRIC_P){
+                    const distanceToSubtract = copy_head_node.max_length;
+                    const subtractDistance = (node, amount) => {
+                    if (node.max_length !== undefined && node.max_length !== null) {
+                        // Ensure the length does not go below zero after subtraction.
+                        node.max_length = Math.max(0, node.max_length - amount);
+                    }
+                    // Recursively apply to children if they exist
+                    if (node.children) {
+                        node.children.forEach(child => subtractDistance(child, amount));
+                    }
+                };
+
+                    // Apply the annotated distance subtraction to the copied head node and all its descendants.
+                    subtractDistance(copy_head_node, distanceToSubtract);
+                }
+                console.log(`Head node after subtraction ${copy_head_node.max_length}`);
+
+                console.log(copy_head_node)
+                //RENDER tree based on the selected layout function
                 let svg_chart = TREE_SWITCH.get(TREE_VAL)(copy_head_node);
                 svg_chart.style.paddingLeft = svg_chart.style.paddingLeft + TREE_OFFSET;
+                
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
                     // Maintain colour of already selected nodes
@@ -2123,7 +2232,25 @@
             return MetaDataMap;
         }
 
-        
+        let cloneD3NodeData = (node) => {
+            if (!node) return null;
+
+            // Create a new object for the current node's raw data.
+            // This copies properties like 'name', 'length', and any other custom data.
+            let clonedData = { ...node.data }; 
+
+            // If the node has children (which are also D3 node objects),
+            // recursively clone their data to build the new hierarchy.
+            if (node.children) {
+                clonedData.children = node.children.map(childNode => cloneD3NodeData(childNode));
+            }
+
+            // The 'parent' property (and D3's internal 'x', 'y', 'depth', 'height' etc.)
+            // are properties of the D3 node object itself, not typically part of your
+            // raw 'data' object. By only copying 'node.data' and recursively handling
+            // 'node.children', we naturally avoid the circular 'parent' reference.
+            return clonedData;
+        };
 
         let drawTree = (newick_) => {
             $("#tree-splash").remove()
@@ -2137,8 +2264,10 @@
                 return false;
             }
             //Store the root for later access (used in updates, selections, etc.)
-            tree_root = tree.root; // Save the tree root to redraw the tree when needed
-
+            //Do that only ONCE during initial tree loading from Newick file
+            if(tree_root === null){
+                tree_root = tree.root; // Save the tree original tree root to redraw the tree when needed
+            }    
             
 
             // Retrieve the rendering function from TREE_SWITCH based on current selection
@@ -2157,23 +2286,51 @@
             const treeData = document.querySelector('#TreeData');
             treeData.style.height = `${treeDataHeight}px`;
             
-            renderedTree.style.paddingLeft = renderedTree.style.paddingLeft + TREE_OFFSET;
-            
+        
+            let renderedTreePadding = renderedTree.style.paddingLeft || 0 //If left padding property is not defined assign zero and add offset
+            renderedTree.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`;
+ 
             // Insert rendered svg tree into the DOM
             $("#TreeData").append(renderedTree);
             // Scroll to center horizontally
             document.querySelector('#TreeData').scrollTo(document.querySelector('#TreeData').scrollWidth/2,0)
         };
 
-
+        
         let CreateDataTable = () => {
+            
             data_table = $('#metadata').DataTable({
                 //stateSave: true,
-                //"paging": false,
+                scrollCollapse: true,
+                "paging": true,
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
                 initComplete: function (settings, json) {
                     console.log("DataTables has finished its initialization");
+                    //listen to Enter keys
+                    $('#metadata').on('keydown', 'td[contenteditable=true]', function (e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            
+                            $(this).addClass('flash');
+                            // Remove the class after the animation finishes
+                            setTimeout(() => {
+                                $(this).removeClass('flash');
+                                $(this).blur(); //Act as if the user clicked away from editable cell.*/
+                            }, 500); // duration matches the CSS flash animation
+                            
+                            
+                        }
+                    });
+
+                    //Add STICKY HEADERS to the table 
+                    document.querySelectorAll('#metadata thead th').forEach(th => {
+                        th.style.position = 'sticky';
+                        th.style.top = '0';
+                        th.style.zIndex = '2'; // Make sure it's above table content
+                        th.style.backgroundColor = 'white'; // Optional: avoid content showing through
+                    });
+                    
                     
                 },
                 columnDefs: [{
@@ -2206,6 +2363,7 @@
                 if(document.querySelector("#paginate_button_all") === null){
                     document.querySelector("#metadata_paginate").appendChild(html)
                 }
+
                 let maximize_button_html=document.createElement("i");
                 maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
                 maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
@@ -2246,8 +2404,30 @@
 
             });
 
+            
             $('#metadata_filter input').attr("id", "search-bar").attr("class", "table table-striped"); // Give search bar ID to squash warnings
 
+            // Add Clear Filters button next to the search input
+            const clearBtnIcon = $('<i>')
+                .addClass('bi bi-filter-circle me-1'); // Bootstrap icon with some right margin
+
+            const clearBtn = $('<button>')
+                    .attr('id', 'reset-table-button')
+                    .attr('name','ResetTable')
+                    .attr('title', 'Clear filters applied to the metadata table')
+                    .attr('data-bs-toggle', 'tooltip')
+                    .attr('data-bs-placement','top')
+                    .addClass('btn btn-sm btn-danger ms-2') // styling with Bootstrap classes
+                    .append(clearBtnIcon)  
+                    .append('Clear filters')
+                    .on('click', function () {
+                        ResetTable()
+                        // Clear global filters in the search input box
+                        data_table.search('').columns().search('').draw(); 
+                    });
+
+            $('#metadata_filter').append(clearBtn);
+            
             // TODO initializing table from json object would minimize copies
             // Saving data as a map, to allow for updating of metadata
             ORIGINAL_DATA = new Map();
@@ -2270,9 +2450,10 @@
             const treeData = document.querySelector('#TreeData');
             const menuButtons = document.querySelector('#tree_menu_buttons');
             const selectedNodes = document.querySelector('#SelectedNodes');
+            const metadataTable = document.querySelector('#ClusterInfo')
             if (!treeData || !menuButtons || !selectedNodes) return;
 
-            const availableHeight = treeData.offsetHeight - menuButtons.clientHeight-8;
+            const availableHeight = Math.abs(treeData.offsetHeight - menuButtons.clientHeight-12);
             // Optionally guard against too-small values:
             const minHeight = 100; 
             selectedNodes.style.height = `${Math.max(availableHeight, minHeight)}px`;
@@ -2298,11 +2479,18 @@
             $("#metadata-selector-input").remove();
             $("#metadata-selector").remove();
             let headers = table_headers;
-            let table_head = "";
+            //let table_head = "";
             let table_body = [];
-            for(const item of headers){
-                table_head = table_head + `<th>${item}</th>\n`;
+            
+            let table_head = "<tr>";
+            for (const item of headers) {
+                table_head += `<th>${item}</th>\n`;
             }
+            table_head += "</tr>";
+
+            //for(const item of headers){
+            //    table_head = table_head + `<th>${item}</th>\n`;
+            //}
             for(const item of parsed_data){
                 table_body.push('<tr>\n');
                 for(const header of headers){
@@ -2414,6 +2602,7 @@
             let filtered = data_table.data().filter((value, idx) => {
                 return SelectedNodes.nodes.has(value[ID_FIELD]);
             });
+      
             data_table.clear();
             data_table.rows.add(filtered).draw();
             $("td").addClass("editable");
@@ -2533,7 +2722,6 @@
                     newLabel = `${nodeId}`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
-                    console.log(joinedFields)
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
                     newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
                 }
@@ -2589,9 +2777,6 @@
                    
                     const checkbox = label.querySelector('input[type="checkbox"]');
                     if (!checkbox) return;
-                    console.log(checkbox, event.target.tag, checkbox.checked )
-                    
-                    
                     
                     // If the actual target was the checkbox, let native behavior proceed
                     // Otherwise use manual checkbox turn on
@@ -2809,17 +2994,26 @@
                 });//forEach ends 
             }//if ends
 
-
+            //colour each leaf nodes with the selected colour
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
+            for (const nodeId of SelectedNodes.nodes) {
+                console.log(nodeId); // This will log each node ID in the Set
+            }
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
+                  
                     try{
                         let current_item = document.querySelector(`[id='${x}']`);
                         let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
                         if(SelectedNodes.nodes.has(x)){
                             circle.dataset.oldfill = colours[colour_idx];
                         }else{
+                            if (circle.style.fill !== "") {
+                                circle.dataset.oldfill = circle.style.fill;
+                            }else{
+                                circle.dataset.oldfill = SelectedNodes.getDefaultColour();
+                            }    
                             circle.style.fill = colours[colour_idx];
                         }
                         
@@ -2845,6 +3039,7 @@
                 if(tree_root !== null){
                     chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
                     chart_.style.paddingLeft = chart_.style.paddingLeft + TREE_OFFSET;
+                    
                     $("#TreeData").append(chart_);
                     $(".leaf-node").each((i, elm) => {
                         let [parent, circle, text] = SelectedNodes.getNodeData(elm);
@@ -3120,11 +3315,46 @@
         }
 
         legend_on_off = function(node){        
-            if(node.checked === false){
-                document.querySelector('#colour-legend').classList.add("d-none");
-            }else{
-                document.querySelector('#colour-legend').classList.remove("d-none");
+            const colourLegendElement = document.querySelector('#colour-legend');
+            const isLegendOn = node.checked;
+
+            function updateLeafNodeColors(isLegendOn) {
+                document.querySelectorAll('g.tree-node.leaf-node > circle').forEach(circleElement => {
+                    try {
+                        if (!isLegendOn) {
+                            // Logic for when the legend is OFF: set to default color
+                            if (circleElement.style.fill !== "") {
+                                circleElement.dataset.oldfill = circleElement.style.fill; // Store current fill
+                            }
+                            circleElement.style.fill = SelectedNodes.getDefaultColour(); // Apply #999
+                        } else {
+                            // Logic for when the legend is ON: restore or apply default
+                            if (circleElement.dataset.oldfill) {
+                                circleElement.style.fill = circleElement.dataset.oldfill; // Restore saved fill
+                                delete circleElement.dataset.oldfill; // Clean up
+                            } else {
+                                // If no oldfill was saved (e.g., it was initially an empty string),
+                                // apply the default leaf color.
+                                circleElement.style.fill = SelectedNodes.getDefaultColour();
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error processing leaf circle element:", circleElement.id || circleElement, error);
+                    }
+                });
             }
+
+            if(!isLegendOn){
+                colourLegendElement.classList.add("d-none");
+                // set leaf node colour to #999
+                // Iterate through all leaf nodes and color them #999
+                
+            }else{
+                colourLegendElement.classList.remove("d-none");
+                
+            }
+
+            updateLeafNodeColors(isLegendOn);
         }
 
         round_decimals = function(){
@@ -3402,11 +3632,14 @@
         }
 
         metadata_full_screen_mode = function(){
+            let clusterInfo = document.querySelector('#ClusterInfo');
             let metadata_panel = document.querySelector('#ClusterInfo>div')
             if (document.fullscreenElement === null){
                 METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = metadata_panel.style.height;
-                document.querySelector('#ClusterInfo').requestFullscreen()
+                clusterInfo.requestFullscreen();
+                document.body.style.overflow = 'visible';
                 metadata_panel.style.height = '100vh';
+       
             }else{
                 document.exitFullscreen();
                 console.log(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
@@ -3436,31 +3669,124 @@
              * Designed to enhance UI responsiveness and usability when toggling metadata visibility.
              *
              */
+            
+            
 
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
-                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
-                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+unit
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+                let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
+                let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
+                let unitTree = unitMatchTree ? unitMatchTree[1] : null;
+                /*let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+            
+                // Calculate the equivalent pixel value from vh
+                if(unitMeta === "vh"){
+                    const viewportHeight = window.visualViewport.height-10;
+                    heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
+                    unitMeta="px"
+                }*/
+               
+                if(unitTree !== null){  
+                    document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
+                    document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
+                }else{
+                    document.querySelector('#TreeData').style.height=`${window.visualViewport.height-10}px`
+                    document.querySelector('#control_panel').style.height=`${window.visualViewport.height-10}px`
+                }
+                    //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
                 adjustSelectedNodesHeight()
             }) 
 
             document.querySelector('#ClusterInfo').addEventListener('show.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
-                let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
-                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
-                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+unit
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+
+                let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
+                let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
+                let unitTree = unitMatchTree ? unitMatchTree[1] : null;
+                //let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
+
+                /*if(unitMeta === "vh"){
+                    const viewportHeight = window.visualViewport.height;
+                    heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
+                    unitMeta="px"
+                }*/
+          
+                //let unit = heightTreeDataDiv.match(/.?(\w{1,2})$/)[1]
+                document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+"px"
+                document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) - parseFloat(heightMetaDiv)+"px"
+                //document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
                 adjustSelectedNodesHeight()
             })
+
+            //allows to bring back into view the control left panel if it obstructed by the metadata table if one moves mouse into the control panel area
+            
+
+            
 
     
         });    
 
+        //run this code when all DOM and elements have been loaded
+        window.addEventListener("load", function(){
+            const controlPanel = document.querySelector('#control_panel');
+            const clusterInfo = document.querySelector('#ClusterInfo');
+            const ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
 
+            function adjustClusterInfoPanelHeight(controlPanel, clusterInfo) {    
+                console.log(`Window height: ${window.innerHeight}px and upper panel size: ${ORIGINAL_CONTROL_PANEL_HEIGHT}px`);
+
+                // Calculate the desired height for the cluster info panel.
+                let newHeight = window.innerHeight - ORIGINAL_CONTROL_PANEL_HEIGHT;
+
+                // Define the minimum height as 10% of the viewport.
+                const minHeightPercentage = 0.10;
+                const tenPercentViewportHeight = window.innerHeight * minHeightPercentage;
+
+                // If the calculated height is less than the minimum, use the minimum height instead.
+                if (newHeight < tenPercentViewportHeight) {
+                    newHeight = tenPercentViewportHeight;
+                }
+
+                // Set the height of the cluster info panel's inner div.
+                clusterInfo.querySelector("div").style.height = `${newHeight}px`;
+            }
+
+            adjustClusterInfoPanelHeight(controlPanel, clusterInfo)
+
+            const ORIGINAL_METADATA_HIGHT  = clusterInfo.querySelector("div").style.height
+            
+            
+
+            if (controlPanel && clusterInfo) {
+                controlPanel.addEventListener('mouseenter', () => {  
+                    const controlPanelRect = controlPanel.getBoundingClientRect();
+                    const metadataRect = clusterInfo.getBoundingClientRect();
+                    /*console.debug(`controlPanelRect=${JSON.stringify(controlPanelRect)}\n
+                    metadataRect=${JSON.stringify(metadataRect)}\n
+                    ORIGINAL_CONTROL_PANEL_HIGHT=${JSON.stringify(ORIGINAL_CONTROL_PANEL_HEIGHT)}`);
+                    */
+
+                    // Check for overlap
+                
+                    const overlap = controlPanelRect.height < ORIGINAL_CONTROL_PANEL_HEIGHT;
+
+                    if (overlap) {
+                        console.log(`#ClusterInfo is overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
+                        document.querySelector('#control_panel').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`;
+                        document.querySelector('#TreeData').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`
+                        document.querySelector('#ClusterInfo>div').style.height=ORIGINAL_METADATA_HIGHT;
+                        adjustSelectedNodesHeight() 
+                    }else {
+                        console.debug(`#ClusterInfo is NOT overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
+                    } 
+                       
+                });
+            }
+            
+        
+        });
         // Call once DOM is ready
         /*
         document.addEventListener("DOMContentLoaded", () => {
@@ -3552,7 +3878,7 @@
             }
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
-                document.querySelector('#SelectedNodes').style.maxHeight = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+                document.querySelector('#SelectedNodes').style.Height = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
             }   
             
         }
@@ -3634,9 +3960,9 @@
     <body>
         <div class="container-fluid m-0">
             <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
-                <div id="control_panel" class="col-2 border border-primary px-1 overflow-visible position-relative">
+                <div id="control_panel" class="col-2 border border-primary px-1 position-relative overflow-hidden">
                     <div id="tree_menu_buttons" class="row m-0">
-                                <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1 mb-1">
+                                <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1">
                                     <button class="h-100 flex-grow-1 me-1 mb-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Select a newick file" onclick="document.getElementById('tree-selector').click();" name="newick" id="tree-upload-button">
                                         <i class="bi bi-upload me-1"></i>Newick <i class="bi bi-tree ml-1"></i>
@@ -3653,16 +3979,16 @@
                                 <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
                                     title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->                                
                                 
-                                <div class="d-flex flex-row align-items-center p-0 text-left">
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top"  
+                                <div class="d-flex flex-row align-items-center p-0 text-left flex-wrap gap-1 mt-1 mb-1">
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top"  
                                         title="Copy selected node IDs to your clipboard to paste into another application and optionally generate a text file" onclick="copy_ids_to_clipboard()" name="CopyIDs" id="copy-ids-button">
-                                        <i class="bi bi-clipboard me-1"></i>IDs
+                                        <i class="bi bi-clipboard m-1"></i>IDs
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break me-1 mb-1" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to SVG." onclick="export_tree_to_svg()" id="export-tree-to-svg">
                                         <i class="bi bi-download m-1"></i> SVG
                                     </button>
-                                    <button class="flex-grow-1 btn-sm btn-primary text-break mb-1" data-toggle="tooltip" data-placement="top" 
+                                    <button class="flex-grow-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
                                         title="Export the tree to PNG." onclick="export_tree_to_png()" id="export-tree-to-png">
                                         <i class="bi bi-download m-1"></i> PNG
                                     </button>
@@ -3690,37 +4016,45 @@
                                     class="btn-sm btn-primary w-100 h-100 text-break me-1" name="RedrawTree" id="redraw-tree-button"><i class="bi bi-pencil-square"></i> Redraw Tree</button>
                                     <button data-toggle="tooltip" data-placement="top" title="Bring the tree back into focus" class="btn-sm btn-primary w-100 h-100" name="ResetTree" id="ResetTree"><i class="bi bi-eyeglasses"></i> Refocus tree</button>
                                 </div>
-                                <!--Zoom slider-->
-                                <div data-toggle="tooltip" data-placement="top" title="Zoom in or out on the tree" class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Zoom</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="zoom_slider_value">1</span>x
-                                    </div>    
-                                </div>  
-                                <!-- Decimal rounding -->
-                                <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="decimal_rounding" class="form-label"># of decimals</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="decimal-slider-value">1</span>
-                                    </div>    
-                                </div>  
+                                <div class="flex flex-col p-0">
+                                    <!--Zoom slider-->
+                                    <div data-toggle="tooltip" data-placement="top" title="Zoom in or out on the tree" 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="zoom_slider" 
+                                        class="form-label" style="width:30%">Zoom</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="zoom_slider" onchange="zoom_tree()" value="1" min="0.5" max="5" step="0.5">
+                                        </div>
+                                        <div class="fw-bold text-start" style="width:10%">
+                                            <small id="zoom_slider_value">1</small><small>x</small>
+                                        </div>    
+                                    </div>  
+                                    <!-- Decimal rounding -->
+                                    <div data-toggle="tooltip" data-placement="top" title="Specify the number of decimals to display." 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="decimal_rounding" 
+                                        class="form-label" style="width:30%"># of decimals</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="decimal-slider" onchange="round_decimals()" value=1 min="0" max="10" step="1">
+                                        </div>
+                                        <div class="fw-bold text-start" style="width:10%">
+                                            <small id="decimal-slider-value">1</small>
+                                        </div>    
+                                    </div>  
 
-                                <!--Slider for adjusting line thickness-->
-                                <div data-toggle="tooltip" data-placement="top" title="Adjust line thickness" class="d-flex flex-wrap align-items-center p-1">
-                                    <small class="flex-grow-1" for="zoom_slider" class="form-label">Line Weight</small>
-                                    <div class="flex-grow-1 w-50">
-                                        <input type="range" class="form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
-                                    </div>
-                                    <div class="flex-grow-1 fw-bold text-center">
-                                        <span id="line-thickness-value">2.0</span>
-                                    </div>    
-                                </div> 
+                                    <!--Slider for adjusting line thickness-->
+                                    <div data-toggle="tooltip" data-placement="top" title="Adjust line thickness" 
+                                    class="d-flex align-items-center justify-content-between p-1">
+                                        <small class="text-start text-break" for="zoom_slider" 
+                                        class="form-label" style="width:30%">Line Weight</small>
+                                        <div class="px-2" style="width:60%">
+                                            <input type="range" class="w-100 form-range align-middle"  id="line-thickness" onchange="lineThickness(this)" value="2.0" min="0.5" max="10.0" step="0.5">
+                                        </div>
+                                        <div class="fw-bold fs-6 text-start" style="width:10%">
+                                            <small id="line-thickness-value">2.0</small>
+                                        </div>    
+                                    </div> 
+                                </div>
 
                                 <div id="dropdown_tree_types" onclick="dropdownmenufix()" class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="tree_dropdown_menu"  class="btn btn-primary btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" data-placement="top" title="List of fields to colour nodes by.">
@@ -3752,61 +4086,37 @@
                                         Add metadata to nodes</button>
                                 </div>
 
-                                
-                                <!--div class="d-flex flex-row align-items-center p-0 text-left">
-                                    <button data-toggle="tooltip" data-placement="top" title="Filter metadata for selected nodes" 
-                                    class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1" name="SearchMetadata" id="metadata-search-button">
-                                    <i class="bi bi-search icon-image"></i> Filter data</button>
-                                    <button data-toggle="tooltip" data-placement="top" title="Clear all selected nodes." 
-                                    class="flex-grow-1  btn-sm btn-primary text-break w-100 h-100 mb-1" name="ClearSelectedNodes" 
-                                    onclick="clear_selected_nodes()" id="clear-selected-nodes"><i class="bi bi-x-square"></i> Clear Nodes</button>
-                                </div-->     
-                                <div class="d-flex flex-row align-items-center p-0 text-left mt-1">
+                                    
+                                <div class="d-flex flex-row align-items-center p-0 text-left m-0 flex-wrap gap-1">
                                     <!-- 1) Filter data -->
                                     <button
                                       id="metadata-search-button"
                                       name="SearchMetadata"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 me-1"
+                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1 m-0"
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
                                       title="Filter metadata for selected nodes">
-                                      <i class="bi bi-search icon-image"></i>
+                                      <i class="bi bi-search me-2 icon-image"></i>
                                       Filter data
                                     </button>
-                                  
-                                    <!-- 2) Clear filters (new) -->
-                                    <!--button type="button" class="btn-sm btn-primary w-100 text-break mb-1 mt-1" data-toggle="tooltip" data-placement="top" 
-                                    title="Clear filters applied to the metadata table." name="ResetTable" id="reset-table-button">Clear filters</button-->   
-                                    <button
-                                      id="reset-table-button"
-                                      name="ResetTable"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
-                                      data-bs-toggle="tooltip"
-                                      data-bs-placement="top"
-                                      title="Clear filters applied to the metadata table."
-                                      onclick="resetMetadataFilters()">
-                                      <i class="bi bi-filter-circle"></i>
-                                      Clear filters
-                                    </button>
-                                  
-                                    <!-- 3) Clear selected nodes -->
+                               
                                     <button
                                       id="clear-selected-nodes"
                                       name="ClearSelectedNodes"
-                                      class="flex-grow-1 btn-sm btn-primary text-break w-100 h-100 mb-1 ms-1"
+                                      class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center flex-grow-1"
                                       data-bs-toggle="tooltip"
                                       data-bs-placement="top"
-                                      title="Clear all selected nodes."
+                                      title="Clear/Deselect all selected nodes in the panel and tree."
                                       onclick="clear_selected_nodes()">
-                                      <i class="bi bi-x-square"></i>
-                                      Clear nodes
+                                      <i class="bi bi-x-square me-2"></i>
+                                      Deselect nodes
                                     </button>
-                                  </div>  
+                                </div>  
                     </div> 
             
                     <div data-toggle="tooltip" data-placement="top" 
                         title="Selected nodes on the tree will show up here." 
-                        class="col border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
+                        class="col mt-1 border border-primary p-1 w-100 Tree inline-block-child scrollbar-window" 
                         id="SelectedNodes" style="height: 15vh;">
                         <div class="d-flex h-100 text-center text-uppercase text-center">
                             <small class="align-self-center w-100">Selected Nodes</small>
@@ -3836,7 +4146,7 @@
                 
         </div>
         
-        <div class="row m-0" style="height:5px;background-color: #0d6efd;">
+        <div class="row m-0" style="height:5px;background-color: #0d6efd; position: relative">
                 <a  href="#" data-bs-toggle="collapse" data-bs-target="#ClusterInfo"></a>
                 <div class="p-0" onmousedown="vertical_div_resize(event)" 
                     style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
@@ -3845,9 +4155,9 @@
         </div>
         
         <div id="ClusterInfo" class="row bg-white collapse show border border-primary w-100 m-0">
-                <div class="col-12 p-0 overflow-auto" style="height:28.9vh">
-                    <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center" style="height:25vh" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
-                    <table id="metadata" class="w-100 display overflow-scroll" >
+                <div class="col-12 p-0">
+                    <div id="table-splash" class="fs-2 d-flex justify-content-center align-items-center h-100" ><i class="bi bi-file-spreadsheet"></i> Your metadata will go here when loaded!</div>
+                    <table id="metadata" class="w-100 display nowrap overflow-scroll" >
                     </table>
                     </div>    
                 </div>            
