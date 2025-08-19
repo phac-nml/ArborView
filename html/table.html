@@ -2750,7 +2750,6 @@
          * and logs the selected field and its checked status.
          * **/
         function initializeMetadataFieldListeners() {
-            console.log("initializeMetadataFieldListeners")
             const container = document.querySelector('#dropdown_append_metadata2nodes');
         
             if (!container) {
@@ -3735,8 +3734,6 @@
             const ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
 
             function adjustClusterInfoPanelHeight(controlPanel, clusterInfo) {    
-                console.log(`Window height: ${window.innerHeight}px and upper panel size: ${ORIGINAL_CONTROL_PANEL_HEIGHT}px`);
-
                 // Calculate the desired height for the cluster info panel.
                 let newHeight = window.innerHeight - ORIGINAL_CONTROL_PANEL_HEIGHT;
 
@@ -3773,14 +3770,11 @@
                     const overlap = controlPanelRect.height < ORIGINAL_CONTROL_PANEL_HEIGHT;
 
                     if (overlap) {
-                        console.log(`#ClusterInfo is overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
                         document.querySelector('#control_panel').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`;
                         document.querySelector('#TreeData').style.height=`${ORIGINAL_CONTROL_PANEL_HEIGHT}px`
                         document.querySelector('#ClusterInfo>div').style.height=ORIGINAL_METADATA_HIGHT;
                         adjustSelectedNodesHeight() 
-                    }else {
-                        console.debug(`#ClusterInfo is NOT overlapping with #control_panel ${controlPanelRect.height}px vs #ClusterInfo ${ORIGINAL_CONTROL_PANEL_HEIGHT}px.`);
-                    } 
+                    }
                        
                 });
             }
