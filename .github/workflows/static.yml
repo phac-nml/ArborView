@@ -68,7 +68,7 @@ jobs:
           git rm -rf . || true
           mkdir -p main dev
           cp deploy/main.html main/index.html
-          cp deploy/favicon.ico dev/favicon.ico
+          cp deploy/favicon.ico main/favicon.ico
           cp deploy/dev.html dev/index.html
           cp deploy/favicon.ico dev/favicon.ico
           touch .nojekyll
