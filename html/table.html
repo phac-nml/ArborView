@@ -893,7 +893,7 @@
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width) //makes sure all tree nodes are within view
-                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`) 
+                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;overflow: visible;`) 
 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");    
                 
