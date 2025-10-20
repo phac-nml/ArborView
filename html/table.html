@@ -1037,7 +1037,7 @@
                     nodeEnter.append("text")
                         .text((d) => {
                                 if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
-                                    return Number((d.display_dist).toFixed(DECIMAL_PLACES))
+                                    return Number((d.display_dist).toFixed(DECIMAL_PLACES));
                                 }
                             })
                         .attr("class", "branch-length")
