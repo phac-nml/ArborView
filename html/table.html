@@ -2804,7 +2804,7 @@
                     // Extract all metadata already loaded as a map
                     const metadataJoinedMap = extractAllMetadataJoined(checkedFields);
                     
-        
+                    console.debug(metadataJoinedMap) 
                     // Append metadata to tree leaf nodes if available
                     if (metadataJoinedMap.size !== 0) {
                         updateLeafNodeLabels(metadataJoinedMap)
