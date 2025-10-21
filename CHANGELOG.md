@@ -10,7 +10,7 @@
 - Changed the `IDs` button hoverover tip message to reflect the new copy leaf node identifiers to the clipboard functionality [PR 11](https://github.com/phac-nml/ArborView/pull/11)
 - Tree layout selection is now a drop down menu and not a slider. [PR 2](https://github.com/phac-nml/ArborView/pull/2)
 - Text selection cursor symbol changes from hand to a pipe symbol (`|`) when mouse over the text in both the webapp tree and SVG exported image. [PR 8](https://github.com/phac-nml/ArborView/pull/8)
-- TreeSVG overflow is now visible preventing cutoff labels, fixing ENHC0010243 [PR 18](https://github.com/phac-nml/ArborView/pull/18)
+- TreeSVG overflow is now visible preventing cutoff labels, fixing ENHC0010243 [PR 18](https://github.com/phac-nml/ArborView/pull/19)
   
 ### `Added`
 
@@ -20,3 +20,7 @@
 - Cladeogram tree layout. [PR 2](https://github.com/phac-nml/ArborView/pull/2)
 - Added slider for adjusting line thickness. [PR 5](https://github.com/phac-nml/ArborView/pull/5)
 - Added copy tree nodes to the clipboard [PR 11](https://github.com/phac-nml/ArborView/pull/11)
+
+### `Fixed`
+
+- Stopped tree from "wandering" after redraws, due to incorrect setting of left padding. [PR 19](https://github.com/phac-nml/ArborView/pull/19)
