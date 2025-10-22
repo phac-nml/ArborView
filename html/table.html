@@ -752,6 +752,7 @@
                                                 }
                                             }
                                         }
+                                      updateLeafLabelsDisplay();
                                     }
                                 });
                             }
@@ -761,6 +762,7 @@
                         .attr("r", d => !d.data.leaf ? INNER_NODE_SIZE : LEAF_NODE_SIZE) // size 6 for leaf nodes and 4 for inner nodes
                         .attr("fill", d => !d.data.leaf ? "#555" : "#999")               
                         .attr("stroke-width", 10);
+            
                     
                     // Add branch length to all inner nodes
                     nodeEnter.append("text")
@@ -1038,6 +1040,7 @@
                                                 }
                                             }
                                         }
+                                      updateLeafLabelsDisplay();
                                     }
                                 });
                             }
@@ -1354,6 +1357,7 @@
                                             }
                                         }
                                     }
+                                  updateLeafLabelsDisplay();
                                 }
                             });
                         }
@@ -1574,6 +1578,7 @@
                                                 }
                                             }
                                         }
+                                        updateLeafLabelsDisplay();
                                     }
                                 });
                             }
@@ -1748,7 +1753,6 @@
                 let child_nodes = element.childNodes;
                 let circle = child_nodes[SelectedNodes.#circle_pos];
                 let text = child_nodes[SelectedNodes.#name_pos];
-                console.log(text);
                 return [element, circle, text]; // element is g tag
             }
 
@@ -1777,7 +1781,6 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                console.log(element.id, elm)
                 let dropped = SelectedNodes.nodes.delete(elm.id)
                 console.debug("Dropping values:", text.textContent, dropped);
                 
@@ -2133,6 +2136,7 @@
                     }
                 });
             }
+            updateLeafLabelsDisplay();
         };
 
         // Helper function to recurse through child nodes
@@ -2255,34 +2259,18 @@
                                       });
               labelsUpdate.push([key, selectedValues]);
             })
-            console.log(maxLabelLengths);
+
+
             for(const item of labelsUpdate){
-              //MetaDataMap.set(item[0], item[1].join(" | "))
-              //let idPadding = maxIDLength - item[0].length;
               MetaDataMap.set(item[0], item[1].map(
               (ele, i) => {
+                // For each selected index, we can get the maxLabelLength
                 let maxLabelLength = maxLabelLengths[selected_indexes[i]];
-                //let padding_length = maxLabelLength - ele.length; // Should never be negative
-                //console.assert(padding_length >= 0);
-                //console.log(maxLabelLength, ele, ele.length, padding_length);
-                //return ele.padEnd(maxLabelLength, " ");
+                // The padEnd function will pad a given value to be certain length
                 return ele.padEnd(maxLabelLength, " ");
               }).join(" | "));
             }
 
-            // Iterate through the full original data
-            //for (const [sampleID, row] of ORIGINAL_DATA.entries()) {
-            //    if (!row || !Array.isArray(row)) {
-            //        console.warn(`Invalid row for sampleID ${sampleID}`);
-            //        continue;
-            //    }
-
-            //    // Get selected metadata fields
-            //    const selectedValues = selected_indexes.map(i => String(row[i] || "NA").trim());
-            //    const joinedFields =  selectedValues.join(" | ");    
-
-            //    MetaDataMap.set(sampleID, joinedFields);
-            //}
 
             return MetaDataMap;
         }
@@ -2440,17 +2428,17 @@
                         $('#metadata_length select').val(-1); //change "Show X entires" selector to ALL value
                         
                         $('#paginate_button_all').text("First 10")
-                        console.log(this.textContent)
+                        console.debug(this.textContent)
                         
                     }else{
-                        console.log("Paginate ON")
-                        console.log($('#paginate_button_all').text())
+                        console.debug("Paginate ON")
+                        console.debug($('#paginate_button_all').text())
                         data_table.context[0]._iDisplayLength=10;
                         $('#metadata_length select').val(10); //change "Show X entires" selector to ALL value
                         //
                         data_table.draw();
                         $('#paginate_button_all').text("ALL records");
-                        console.log(this.textContent)
+                        console.debug(this.textContent)
                         
                     }    
                 
@@ -2777,9 +2765,9 @@
                     newLabel = `${nodeId}`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
-                    //const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
+                    const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
                     //const hasValue = typeof joinedFields === "string" && joinedFields !== "";
-                    //newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
+                    newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
                     //newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
                     newLabel =  `${nodeId} | ${joinedFields}` 
                 }
@@ -2794,11 +2782,24 @@
             
             const newWidth = treeContainer.node().getBBox().width
 
-            // Parse the existing viewBox
-            const viewBoxAttr = svg.attr("viewBox")
-            const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
-            // Update the width of the svg element
-            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
+            /**@remarks
+            The `setTimeout` function is required as this function executes
+            before the svg is rendered in the main window resulting in no viewBox
+            this results in the viewBox width not being increased resulting in cut off
+            labels. the timeout allows for this function to execute when the svg actually exists.
+
+            Perhaps it makes sense to use async functions here.
+            */
+
+            setTimeout( () => {
+                // Parse the existing viewBox
+                const viewBoxAttr = svg.attr("viewBox")
+                const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
+                // Update the width of the svg element
+                svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
+              },
+              100
+            )
         }
 
         /**
@@ -2861,8 +2862,6 @@
                     
                     // Extract all metadata already loaded as a map
                     const metadataJoinedMap = extractAllMetadataJoined(checkedFields);
-                    
-                    console.debug(metadataJoinedMap) 
                     // Append metadata to tree leaf nodes if available
                     if (metadataJoinedMap.size !== 0) {
                         updateLeafNodeLabels(metadataJoinedMap)
@@ -3085,6 +3084,18 @@
             CreateNodeLegend(colour_legend, col_index, break_down_values);    
 
         };
+        
+
+        let updateLeafLabelsDisplay = () => {
+          const checkedBoxes = document.querySelectorAll('#dropdown_append_metadata2nodes .dropdown-menu input[type="checkbox"]:checked');
+          const metadataMap = extractAllMetadataJoined([...checkedBoxes].map(i => i.value)) 
+          if (metadataMap.size !== 0) {
+            updateLeafNodeLabels(metadataMap)
+          }else{
+            console.warn("The metadata table map is empty.");
+            updateLeafNodeLabels(metadataMap)
+          }
+        }
 
         let redrawTree = () => {
 
@@ -3092,6 +3103,7 @@
                 $('#colour-legend').addClass('d-none')
                 $('#TreeSVG').remove();
                 $("#scale-bar-menu").remove()
+                
                 let chart_ = null;
                 if(tree_root !== null){
                     chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
@@ -3107,6 +3119,7 @@
                     };
                 });
                     reset_zoom_slider()
+                    updateLeafLabelsDisplay();
                     return true;
                 }
                 console.error("No tree to redraw");
@@ -3732,7 +3745,7 @@
        
             }else{
                 document.exitFullscreen();
-                console.log(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
+                console.debug(METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH);
                 metadata_panel.style.height = METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH;
             }            
         }
@@ -3913,9 +3926,7 @@
                         }).then( (result) => {
                             if (result.isConfirmed) {
                                 let success_msg = `Copied ${text2copyArray.length} sample IDs to the clipboard`
-                                if(DEBUG){
-                                    console.log(text2copy);
-                                }
+                                console.debug(text2copy);
                                 let file = new File(["\ufeff"+text2copy], 'selectedNodes.txt', {type: "text/plain:charset=UTF-8"})
                                 //create a ObjectURL in order to download the created file
                                 url = window.URL.createObjectURL(file);
