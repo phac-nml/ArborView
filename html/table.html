@@ -47,6 +47,7 @@
         .scale-bar {
             cursor: move;
             visibility: visible;
+            font-family: monospace, monospace;
         }
 
         /*This creates flash effect when the user finishes editing a metadata cell.*/
@@ -134,6 +135,16 @@
         .fade-out-dropdown-menu {
             opacity: 0;
             transition: opacity 2s ease;
+        }
+        
+        .leaf-node {
+          font-family: monospace, monospace;
+          white-space: pre;
+        }
+
+        .inner-node {
+          font-family: monospace, monospace;
+          white-space: pre;
         }
 
 
@@ -1736,6 +1747,7 @@
                 let child_nodes = element.childNodes;
                 let circle = child_nodes[SelectedNodes.#circle_pos];
                 let text = child_nodes[SelectedNodes.#name_pos];
+                console.log(text);
                 return [element, circle, text]; // element is g tag
             }
 
@@ -1747,7 +1759,6 @@
             param element: a html "g" element to update the colour of
             */        
                 let [parent, circle, text] = SelectedNodes.getNodeData(element.closest(SelectedNodes.#svg_parent));
-
                 //SelectedNodes.nodes is a map where each key is sample_id
                 if(!SelectedNodes.nodes.has(parent.id)){
                     //ensures that <g> node id is used instead of leaf node text as it is more reliable if node text label is changed
@@ -1765,7 +1776,8 @@
                 let elm = element.closest(SelectedNodes.#svg_parent)
                 let [parent, circle, text] = SelectedNodes.getNodeData(elm);
                 SelectedNodes.deSelectedColours(text, circle);
-                let dropped = SelectedNodes.nodes.delete(element.id)
+                console.log(element.id, elm)
+                let dropped = SelectedNodes.nodes.delete(elm.id)
                 console.debug("Dropping values:", text.textContent, dropped);
                 
             }
@@ -2214,20 +2226,60 @@
                 console.warn("No selected metadata field indexes specified.");
                 return MetaDataMap;
             }
+            
+            // Track the lenght of the largest element in the table
+            const maxLabelLengths = new Array(TABLE_HEADERS.length).fill(0); 
+            let maxIDLength = 0;
+            
+            /*
+              labelsUpdate will contain an array of the key and their updted
+              labels to display. The array will not be processed into it's string view 
+              until it is time to update the map as the max length is required to calculate 
+              the required padding for each element
+            */
+            const labelsUpdate = new Array();
+            ORIGINAL_DATA.forEach((row, key, table) => { 
+              if (!row || !Array.isArray(row)) {
+                    console.warn(`Invalid row for sampleID ${sampleID}`);
+                    return; // Return functions as continue in a for each loop
+              }
+              maxIDLength = Math.max(key.length, maxIDLength);
+              const selectedValues = selected_indexes.map((i) => {
+                                        let row_label = String(row[i] || "NA").trim(); 
+                                        let labelLength = row_label.length;
+                                        maxLabelLengths[i] = Math.max(maxLabelLengths[i], labelLength);
+                                        return row_label;
+                                      });
+              labelsUpdate.push([key, selectedValues]);
+            })
+            console.log(maxLabelLengths);
+            for(const item of labelsUpdate){
+              //MetaDataMap.set(item[0], item[1].join(" | "))
+              //let idPadding = maxIDLength - item[0].length;
+              MetaDataMap.set(item[0], item[1].map(
+              (ele, i) => {
+                let maxLabelLength = maxLabelLengths[selected_indexes[i]];
+                //let padding_length = maxLabelLength - ele.length; // Should never be negative
+                //console.assert(padding_length >= 0);
+                //console.log(maxLabelLength, ele, ele.length, padding_length);
+                //return ele.padEnd(maxLabelLength, " ");
+                return ele.padEnd(maxLabelLength, " ");
+              }).join(" | "));
+            }
 
             // Iterate through the full original data
-            for (const [sampleID, row] of ORIGINAL_DATA.entries()) {
-                if (!row || !Array.isArray(row)) {
-                    console.warn(`Invalid row for sampleID ${sampleID}`);
-                    continue;
-                }
+            //for (const [sampleID, row] of ORIGINAL_DATA.entries()) {
+            //    if (!row || !Array.isArray(row)) {
+            //        console.warn(`Invalid row for sampleID ${sampleID}`);
+            //        continue;
+            //    }
 
-                // Get selected metadata fields
-                const selectedValues = selected_indexes.map(i => String(row[i] || "NA").trim());
-                const joinedFields =  selectedValues.join(" | ");    
+            //    // Get selected metadata fields
+            //    const selectedValues = selected_indexes.map(i => String(row[i] || "NA").trim());
+            //    const joinedFields =  selectedValues.join(" | ");    
 
-                MetaDataMap.set(sampleID, joinedFields);
-            }
+            //    MetaDataMap.set(sampleID, joinedFields);
+            //}
 
             return MetaDataMap;
         }
@@ -2722,8 +2774,11 @@
                     newLabel = `${nodeId}`;
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
-                    const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
-                    newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
+                    //const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
+                    //const hasValue = typeof joinedFields === "string" && joinedFields !== "";
+                    //newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
+                    //newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
+                    newLabel =  `${nodeId} | ${joinedFields}` 
                 }
                 g.selectAll("text")
                     .filter(function () {
