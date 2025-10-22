@@ -16,7 +16,15 @@
           position: relative;
           overflow: auto
         }
+        
+        .tree-svg {
+          height: auto;
+          font 10px sans-serif;
+          user-select: auto;
+          overflow: visible;
+          margin-left: 1em; 
 
+    }
 
         .row.no-wrap {
             flex-wrap: nowrap; /*prevents the TreeData div with the svg tree to wrap around*/
@@ -228,6 +236,7 @@
         */
         var TREE_ULTRAMETRIC_P = false; 
 
+        var LABEL_SAFETY_FACTOR = 200
         var collapse_subtree = false; // can think of another way to signal state without our larger refactor 
         var focused_element = null; // Focused element to have its colour reset
         var RADIUS_INCREASED = false;
@@ -616,8 +625,7 @@
                 const marginBottom = 30; // updated for viewing
                 const marginLeft = 40;
 
-                const label_safety_factor = 300; 
-                const inner_radius = width - label_safety_factor;
+                const inner_radius = width - LABEL_SAFETY_FACTOR;
 
 
                 function maxLength(d) {
@@ -664,7 +672,7 @@
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width) //makes sure all tree nodes are within view
-                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`)
+                    .attr("class", "tree-svg")
                 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}"); 
 
@@ -857,14 +865,12 @@
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
                 const width = parseInt(ele_style.width)-TREE_OFFSET;
-                //var width = window.innerWidth;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 30; // updated for viewing
                 const marginLeft = 40;
 
-                let label_safety_factor = 300; 
-                const inner_radius = width - label_safety_factor;
+                const inner_radius = width - LABEL_SAFETY_FACTOR;
 
                 function setDistance(d, y0, k) {
                     // From the tree of life code
@@ -883,13 +889,11 @@
 
                 const leaves_in_tree = root.leaves();
                 const pixels_per_label = 15;
-                                
                 const dx = 20;
                 const root_node_height = dx * 0.5;
-                //const dy = (width - marginRight - marginLeft) / (1 + root.height);
                 const dy = inner_radius / root.height;
-                // Test Scale drawing
 
+                // Test Scale drawing
                 tree = d3.cluster()
                             .nodeSize([dx, dy])
                             .separation( (a, b) => { return 1;}) // Can pass in a custom function to alter distance between labels, 1 means all labels are spaced the same distance
@@ -904,7 +908,7 @@
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
                     .attr("width", width) //makes sure all tree nodes are within view
-                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`) 
+                    .attr("class", "tree-svg")
 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");    
                 
@@ -929,7 +933,7 @@
 
                 let below_root = 0; 
                 function update(event, source) {
-                    console.log("Performing tree update")
+                    console.debug("Performing tree update")
                     // Recalculate tree lengths on collapse
                     let max_length = maxLength(root)
                     setDistance(root, root.data.d = 0, (inner_radius / max_length)) // Third value is a scaling factor
@@ -1048,7 +1052,7 @@
                     nodeEnter.append("text")
                         .text((d) => {
                                 if(!d.data.leaf || !TREE_ULTRAMETRIC_P){
-                                    return Number((d.display_dist).toFixed(DECIMAL_PLACES))
+                                    return Number((d.display_dist).toFixed(DECIMAL_PLACES));
                                 }
                             })
                         .attr("class", "branch-length")
@@ -1220,9 +1224,7 @@
             const svg = d3.create("svg")
                 .attr("id", "TreeSVG")
                 .attr("viewBox", [0, 0, width, height])
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`);
+                .attr("class", "tree-svg")
             
             svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");  
 
@@ -1492,8 +1494,7 @@
                     .attr("id", "TreeSVG")
                     .attr("width", width + 20) //makes sure all tree nodes are within view
                     .attr("height", dx)
-                    .attr("style", `height: auto; font: 10px sans-serif; user-select: auto;`)
-
+                    .attr("class", "tree-svg")
                 
                 svg.append("defs").append("style").attr("type", "text/css").text("svg text {cursor: text}");   
 
@@ -2080,7 +2081,7 @@
 
         // Create a subtree from the inner node selected in a tree
         let CustomSubTree = (event, data) => {
-            console.log("Subtree is being rendered")
+            console.debug("Subtree is being rendered")
             $("#legend_toggle").bootstrapToggle('off')
             SelectedNodes.drawSelectedNodes();
             $('#colour-legend').empty()
@@ -2094,9 +2095,9 @@
                 let copy_head_node=structuredClone(data.data)
                 const totalNodes = countNodes(copy_head_node)
                 
-                console.log(`New head node of the tree with ${totalNodes} nodes at distance ${copy_head_node.max_length} and ultrametric=${TREE_ULTRAMETRIC_P}`);
+                console.debug(`New head node of the tree with ${totalNodes} nodes at distance ${copy_head_node.max_length} and ultrametric=${TREE_ULTRAMETRIC_P}`);
                 //if a tree is non-ultrametric then create a subtree with subtracted distances from the head node selected as root now
-                console.log(copy_head_node)
+                console.debug(copy_head_node)
                 if (!TREE_ULTRAMETRIC_P){
                     const distanceToSubtract = copy_head_node.max_length;
                     const subtractDistance = (node, amount) => {
@@ -2113,13 +2114,15 @@
                     // Apply the annotated distance subtraction to the copied head node and all its descendants.
                     subtractDistance(copy_head_node, distanceToSubtract);
                 }
-                console.log(`Head node after subtraction ${copy_head_node.max_length}`);
+                console.debug(`Head node after subtraction ${copy_head_node.max_length}`);
 
-                console.log(copy_head_node)
+                console.debug(copy_head_node)
                 //RENDER tree based on the selected layout function
                 let svg_chart = TREE_SWITCH.get(TREE_VAL)(copy_head_node);
-                svg_chart.style.paddingLeft = svg_chart.style.paddingLeft + TREE_OFFSET;
                 
+                let renderedTreePadding = svg_chart.style.paddingLeft || 0
+                svg_chart.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
+
                 $("#TreeData").append(svg_chart);
                 $(".leaf-node").each((i, elm) => {
                     // Maintain colour of already selected nodes
@@ -3092,7 +3095,8 @@
                 let chart_ = null;
                 if(tree_root !== null){
                     chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
-                    chart_.style.paddingLeft = chart_.style.paddingLeft + TREE_OFFSET;
+                    let renderedTreePadding = chart_.style.paddingLeft || 0
+                    chart_.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
                     
                     $("#TreeData").append(chart_);
                     $(".leaf-node").each((i, elm) => {
@@ -3630,7 +3634,8 @@
                 if(text_nodes_leafs.length === 2){
                     text_nodes_leafs[0].remove()
                 }
-            })  
+            })
+            svg.querySelector("#TreeSVG").style.overflow = "visible"
             const blob = serialize2svg(svg)[0];
             downloadLink.href = window.URL.createObjectURL(blob);
             downloadLink.click(); //Trigger a click on the element
@@ -3639,39 +3644,70 @@
 
         /*Adapted from https://gist.github.com/tatsuyasusukida/1261585e3422da5645a1cbb9cf8813d6 and https://zooper.pages.dev/articles/how-to-convert-a-svg-to-png-using-canvas*/
         export_tree_to_png = function(){
-            let svg =  document.getElementById("TreeSVG")
-            let svg_width = svg.getBoundingClientRect().width;
-            let svg_height = svg.getBoundingClientRect().height;
-            //extract SVG element
-            const svgData = new XMLSerializer().serializeToString(svg);
-
-            //create canvas to the size of the SVG
-            let canvas = document.createElement('canvas')
-            canvas.width = svg_width+svg_width*0.05;
-            canvas.height = svg_height+svg_width*0.15;
             
-            //create SVG image element
-            let img = new Image();
-            img.src = "data:image/svg+xml;base64," + btoa(svgData);
+          let svg =  document.getElementById("TreeSVG").cloneNode(true); 
 
-            img.onload = function () { //must be inside this image onload event function due to async image load nature
-                //render SVG image onto canvas element
-                let ctx = canvas.getContext('2d');
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-                //create PNG image from the canvas
-                let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'octet/stream');
-                //create download link
-                let downloadLink = document.createElement("a");
-                downloadLink.download = 'tree_snapshot.png';
-                downloadLink.href = pngUrl;
-                downloadLink.click();
-                downloadLink.remove();
-            }
+          let {x, y, width, height} = svg.viewBox.baseVal;
+          let svg_width = width;
+          let svg_height = height;
+          let modified_width =  svg_width + (svg_width * 0.15);
+          let modified_height =  svg_height + (svg_height * 0.15);
+          
+          // Change the width of the svg element allowing for more of the viewbox to show up
+          svg.setAttribute("width", modified_width)
+          
+          /* 
+            Create a temporary svg expanding increasing the size of the final 
+            canvas the elelment is rendered in. Having this seperate wrapper
+            also allows for seperate modifications of the PNG before export allowing
+            for translationst to be performed.
+          */
+          let wrapping_svg = d3.select("body")
+            .append("svg")
+            .attr("id", "temporary_svg")
+            .attr("height", modified_height)
+            .attr("width", modified_width)
+            .append('g')
+            .attr("id", "translation_element")
+            .attr("height", modified_height)
+            .attr("width", modified_width)
+            .append(() => {
+              return svg
+            })
 
+          
+          //extract SVG element
+          const svgData = new XMLSerializer().serializeToString(document.getElementById("temporary_svg"));
 
-            
+          //create canvas to the size of the SVG
+          let canvas = document.createElement('canvas')
+          canvas.width = modified_width;
+          canvas.height = modified_height;
+          
+          //create SVG image element
+          let img = new Image();
+          img.src = "data:image/svg+xml;base64," + btoa(svgData);
+
+          img.onload = function () { //must be inside this image onload event function due to async image load nature
+              //render SVG image onto canvas element
+              let ctx = canvas.getContext('2d');
+              ctx.fillStyle = "white";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              ctx.drawImage(img, 0,  0, modified_width, modified_height);
+
+              //create PNG image from the canvas
+              let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'octet/stream');
+              //create download link
+              let downloadLink = document.createElement("a");
+              downloadLink.download = 'tree_snapshot.png';
+              downloadLink.href = pngUrl;
+              downloadLink.click();
+              downloadLink.remove();
+          }
+          
+          // Remove temporary elements
+          document.getElementById("temporary_svg").remove();
 
 
         }    
