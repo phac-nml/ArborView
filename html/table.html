@@ -253,8 +253,9 @@
         const INNER_NODE_SIZE = 4;
         const LEAF_NODE_SIZE = 6;
         var DECIMAL_PLACES = 1;
-        const DISTANCE_LABEL_OFFSET = 5.2
-
+        const DISTANCE_LABEL_OFFSET = 5.2;
+        
+        var LABEL_TRUNCATE_SIZE = 50; // When a given text label exceed the length of this value it is truncated
         let ORIGINAL_CONTROL_PANEL_HEIGHT=null; //The original dimensions of the left control panel that are needed to bring it back to original size
 
 
@@ -905,7 +906,7 @@
                     // https://www.w3.org/TR/SVG/paths.html#PathElement for path movements meanings
                     return `M${d.source.distance},${d.source.x} L${d.source.distance},${d.target.x} L${d.target.distance},${d.target.x}`
                 };
-                
+
                 // Create the SVG container, a layer for the links and a layer for the nodes.
                 const svg = d3.create("svg")
                     .attr("id", "TreeSVG")
@@ -1088,6 +1089,7 @@
                         .text(d => {
                             // If meta is a string or name is defined for the node
                             return d.data.meta ? d.data.name ? `${d.data.name} | ${d.data.meta}` : d.data.meta : d.data.name
+                            
                         })
                         .clone(true).lower()
                         .attr("stroke", "white");
@@ -2253,6 +2255,12 @@
               maxIDLength = Math.max(key.length, maxIDLength);
               const selectedValues = selected_indexes.map((i) => {
                                         let row_label = String(row[i] || "NA").trim(); 
+                                        /** @remarks
+                                          fromCodePoint retrieves the the horizontal unicode elipse so that the charactar is rendered nicely.
+                                        */
+                                        row_label = row_label.length > LABEL_TRUNCATE_SIZE ? 
+                                          `${row_label.slice(0, LABEL_TRUNCATE_SIZE)}${String.fromCodePoint(0x2026)}` 
+                                          : row_label
                                         let labelLength = row_label.length;
                                         maxLabelLengths[i] = Math.max(maxLabelLengths[i], labelLength);
                                         return row_label;
@@ -2766,10 +2774,12 @@
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
-                    //const hasValue = typeof joinedFields === "string" && joinedFields !== "";
-                    newLabel = hasValue ? `${nodeId} | ${joinedFields.trim()}` : nodeId;
-                    //newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
-                    newLabel =  `${nodeId} | ${joinedFields}` 
+                    /** @remarks
+                      Removed the .trim() on joinedFields as the whitespace is required for padding.
+                      trimEnd()  would work, but if we had more options for justifying text in 
+                      the future in may create some problems.
+                    */
+                    newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
                 }
                 g.selectAll("text")
                     .filter(function () {
@@ -2779,8 +2789,7 @@
                     .text(newLabel);
             });
 
-            
-            const newWidth = treeContainer.node().getBBox().width
+ 
 
             /**@remarks
             The `setTimeout` function is required as this function executes
@@ -2790,16 +2799,12 @@
 
             Perhaps it makes sense to use async functions here.
             */
-
-            setTimeout( () => {
-                // Parse the existing viewBox
-                const viewBoxAttr = svg.attr("viewBox")
-                const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
-                // Update the width of the svg element
-                svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
-              },
-              100
-            )
+            const newWidth = treeContainer.node().getBBox().width
+            const viewBoxAttr = svg.attr("viewBox")
+            const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
+            // Update the width of the svg element
+            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
+            svg.style.overflow = "scroll";
         }
 
         /**
@@ -3087,6 +3092,7 @@
         
 
         let updateLeafLabelsDisplay = () => {
+          // Perhaps need to reset viewbox here
           const checkedBoxes = document.querySelectorAll('#dropdown_append_metadata2nodes .dropdown-menu input[type="checkbox"]:checked');
           const metadataMap = extractAllMetadataJoined([...checkedBoxes].map(i => i.value)) 
           if (metadataMap.size !== 0) {
@@ -3096,39 +3102,58 @@
             updateLeafNodeLabels(metadataMap)
           }
         }
+          
 
-        let redrawTree = () => {
+        let redrawTree = async () => {
 
-                $('#colour-legend').empty()
-                $('#colour-legend').addClass('d-none')
-                $('#TreeSVG').remove();
-                $("#scale-bar-menu").remove()
+
+
+          $('#colour-legend').empty()
+          $('#colour-legend').addClass('d-none')
+          $("#scale-bar-menu").remove()
+          $('#TreeSVG').remove();
+
+          let tree_drawn = () => {
+            let chart_ = null;
+            if(tree_root !== null){
+                chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
+                let renderedTreePadding = chart_.style.paddingLeft || 0
+                chart_.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
                 
-                let chart_ = null;
-                if(tree_root !== null){
-                    chart_ = TREE_SWITCH.get(TREE_VAL)(tree_root);
-                    let renderedTreePadding = chart_.style.paddingLeft || 0
-                    chart_.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
-                    
-                    $("#TreeData").append(chart_);
-                    $(".leaf-node").each((i, elm) => {
-                        let [parent, circle, text] = SelectedNodes.getNodeData(elm);
-                        if(SelectedNodes.nodes.has(text.textContent)){
-                            SelectedNodes.nodes.set(text.textContent, parent); // reset dom position
-                            SelectedNodes.setSelectedColours(text, circle);
-                    };
-                });
-                    reset_zoom_slider()
-                    updateLeafLabelsDisplay();
-                    return true;
-                }
-                console.error("No tree to redraw");
+                $("#TreeData").append(chart_);
+                $(".leaf-node").each((i, elm) => {
+                    let [parent, circle, text] = SelectedNodes.getNodeData(elm);
+                    if(SelectedNodes.nodes.has(text.textContent)){
+                        SelectedNodes.nodes.set(text.textContent, parent); // reset dom position
+                        SelectedNodes.setSelectedColours(text, circle);
+                };
+                  });
+            }else{
+              console.error("No tree to redraw");
+            }
+          }
+          tree_drawn();
+          reset_zoom_slider();
+          
+          let max_wait = 1000
+          let current_wait = 0;
+
+          while(!document.getElementById("TreeSVG").hasAttribute("viewBox") && current_wait < max_wait){
+            console.log(document.getElementById("TreeSVG").hasAttribute("viewBox"), current_wait);
+            await new Promise(resolve => setTimeout(resolve, 10));
+            current_wait++;
+          }
+          console.log(d3.select("#TreeSVG").attr("viewBox"));
+          updateLeafLabelsDisplay();
+
         }
 
         $(() => {
 
 
-            $("#redraw-tree-button").on("click", () => { redrawTree() });
+            $("#redraw-tree-button").on("click", () => { 
+              redrawTree(); 
+            });
 
             initialize_tree_menu();
             lineThickness();
@@ -3328,19 +3353,21 @@
         });
 
         zoom_tree = function(){
-
+            
             const zoom_times = parseFloat(document.querySelector('#zoom_slider').value)
             const tree_data_elm = document.querySelector('#TreeData')
             const tree_svg = document.querySelector('#TreeSVG')
             document.querySelector('#zoom_slider_value').textContent =  zoom_times 
-        
             const new_width = ORIGINAL_WIDTH_SVG  * zoom_times //use global value as getBBox() at high zooms gives wrong values
             const prev_width = parseFloat(document.querySelector('#TreeSVG').style.width)
 
             //Previous x and y scroll positions before applying a zoom
             const prev_x_scroll_pos = tree_data_elm.scrollLeft
             const prev_y_scroll_pos = tree_data_elm.scrollTop
-            document.querySelector('#TreeSVG').style.width = new_width ; //modify width of SVG tree
+
+            //document.querySelector('#TreeSVG').style.width = new_width ; //modify width of SVG tree
+            // svg width was not being properly set on firfox
+            document.querySelector('#TreeSVG').setAttribute("width", `${new_width}`); //modify width of SVG tree
 
             //store new translated x and y coordinates after zooming 
             let zoom_x_translated = 0 
