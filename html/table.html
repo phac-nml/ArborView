@@ -2747,12 +2747,12 @@
          * ]);
          * updateLeafNodeLabels(MetaDataMap);
          */
-         function updateLeafNodeLabels(MetaDataMap) {
+          function updateLeafNodeLabels(MetaDataMap) {
 
             const svg = d3.select("#TreeSVG")
             const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
             const svgAttrWidth = svg.attr("width")
-            
+
             if (treeContainer.empty()) {
                 console.warn("Main tree container group not found.");
                 return;
@@ -2791,20 +2791,29 @@
 
  
 
-            /**@remarks
-            The `setTimeout` function is required as this function executes
-            before the svg is rendered in the main window resulting in no viewBox
-            this results in the viewBox width not being increased resulting in cut off
-            labels. the timeout allows for this function to execute when the svg actually exists.
+          /**@remarks
+          The `setTimeout` function is required as this function executes
+          before the svg is rendered in the main window resulting in no viewBox
+          this results in the viewBox width not being increased resulting in cut off
+          labels. the timeout allows for this function to execute when the svg actually exists.
 
-            Perhaps it makes sense to use async functions here.
-            */
+          Perhaps it makes sense to use async functions here.
+
+          Update tried using observerMutation, async sleep and many other thigns,
+          but nothing worked. It seems the optimizations by the javascript compiler resutl 
+          int different order of execution of these variables resulting in the 
+          window not properly being re-run
+          */
+
+            
+          setTimeout( () => {
             const newWidth = treeContainer.node().getBBox().width
             const viewBoxAttr = svg.attr("viewBox")
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
             svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
+          }, 200);
         }
 
         /**
@@ -3104,7 +3113,7 @@
         }
           
 
-        let redrawTree = async () => {
+        let redrawTree = () => {
 
 
 
@@ -3135,15 +3144,7 @@
           tree_drawn();
           reset_zoom_slider();
           
-          let max_wait = 1000
-          let current_wait = 0;
 
-          while(!document.getElementById("TreeSVG").hasAttribute("viewBox") && current_wait < max_wait){
-            console.log(document.getElementById("TreeSVG").hasAttribute("viewBox"), current_wait);
-            await new Promise(resolve => setTimeout(resolve, 10));
-            current_wait++;
-          }
-          console.log(d3.select("#TreeSVG").attr("viewBox"));
           updateLeafLabelsDisplay();
 
         }
