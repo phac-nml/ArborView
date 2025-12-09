@@ -1679,7 +1679,7 @@
         class SelectedNodes {
             static nodes = new Map();
             static #circle_pos = 1;
-            static #name_pos = 3;
+            static #name_pos = 0;
             static #circle_size_selected = LEAF_NODE_SIZE * 1.5;
             static #circle_size_default = LEAF_NODE_SIZE;
             static #default_color = "#999";
@@ -3563,7 +3563,7 @@
                 let leaves = svg.querySelectorAll(".leaf-node")
                 leaves.forEach((ele) => {
                     let [element, circle, text] = SelectedNodes.getNodeData(ele)
-                    let input_text = text.textContent
+                    let input_text = text.textContent;
                     if(ORIGINAL_DATA.has(input_text) && input_text){
                         let row = ORIGINAL_DATA.get(input_text)
                         let new_label = `${input_text}\t${row.slice(1, -1).join('\t')}`
@@ -3597,6 +3597,7 @@
             let downloadLink = document.createElement("a");
             downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
                 (date.getMonth()+1)+'-'+date.getFullYear()+'_'+date.getHours()+'h.svg';
+
             let svg =  document.getElementById("TreeData").cloneNode(true)
             //remove duplicated leaf nodes text duplication for more accurate searches
             svg.querySelectorAll('g .tree-node').forEach(node => {
@@ -3605,8 +3606,15 @@
                     text_nodes_leafs[0].remove()
                 }
             })
-            svg.querySelector("#TreeSVG").style.overflow = "visible"
-            const blob = serialize2svg(svg)[0];
+
+            const tree_svg = svg.querySelector("#TreeSVG");
+            const [minX, minY, width, height] = tree_svg.getAttribute("viewBox").split(/[\s,]+/).map(Number);
+            svg.style.height = `${height*1.15}px`
+            svg.style.width = `${width*1.05}px`
+          
+            svg.style.overflow = "visible";
+          
+          const blob = serialize2svg(svg)[0];
             downloadLink.href = window.URL.createObjectURL(blob);
             downloadLink.click(); //Trigger a click on the element
             downloadLink.remove();               
@@ -3614,7 +3622,7 @@
 
         /*Adapted from https://gist.github.com/tatsuyasusukida/1261585e3422da5645a1cbb9cf8813d6 and https://zooper.pages.dev/articles/how-to-convert-a-svg-to-png-using-canvas*/
         export_tree_to_png = function(){
-            let svg =  document.getElementById("TreeSVG");
+            let svg =  document.getElementById("TreeSVG").cloneNode(true);
             let remove_svg = false;
             if(ORIGINAL_DATA){
                 // SVG value needs to be in DOM to be rendered in the canvas, 
@@ -3629,7 +3637,7 @@
                 remove_svg = true;
                 leaves.forEach((ele) => {
                     let [element, circle, text] = SelectedNodes.getNodeData(ele)
-                    let input_text = text.textContent
+                    let input_text = text.textContent;
                     if(ORIGINAL_DATA.has(input_text) && input_text){
                         let row = ORIGINAL_DATA.get(input_text)
                         // End is not included in the slice, as it is simply a bool added on the program to track changed values
@@ -3642,9 +3650,11 @@
                     }
                 })
             }
-
-            let svg_width = svg.getBoundingClientRect().width;
-            let svg_height = svg.getBoundingClientRect().height;
+          // Get the view box required for setting the correct output size
+            const viewbox = svg.getAttribute("viewBox");
+            const [minX, minY, width, height] = viewbox.split(/[\s,]+/).map(Number);
+            let svg_width = width;
+            let svg_height = height;
 
             //extract SVG element
             const svgData = new XMLSerializer().serializeToString(svg);
