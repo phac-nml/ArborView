@@ -2815,8 +2815,7 @@
             const viewBoxAttr = svg.attr("viewBox")
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
-            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
-          svg.style.overflow = "visible";})
+            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)})
           //  setTimeout( () => {
           //  const newWidth = treeContainer.node().getBBox().width
           //  const viewBoxAttr = svg.attr("viewBox")
