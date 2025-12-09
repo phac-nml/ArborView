@@ -1,0 +1,21 @@
+sample_id	species	host	country	epi_type	isolation_source
+A	Shigella boydii	Human	Australia	clinical	patient
+B	Shigella boydii	Human	Australia	clinical	patient
+C	Eschrichia coli	Human	Belgium	environmental	animal
+D	Eschrichia coli	Human	Belgium	environmental	animal
+E	Eschrichia coli	Human	Belgium	environmental	animal
+F	Eschrichia coli	Human	Belgium	environmental	animal
+G	Eschrichia coli	Human	Belgium	environmental	animal
+H	Eschrichia coli	Human	Belgium	environmental	animal
+I	Eschrichia coli	Human	Belgium	environmental	animal
+J	Eschrichia coli	Human	Belgium	environmental	animal
+K	Eschrichia coli	Human	Canada	clinical	body fluid
+L	Eschrichia coli	Human	Canada	clinical	body fluid
+M	Eschrichia coli	Human	Canada	clinical	body fluid
+N	Eschrichia coli	Human	Canada	clinical	body fluid
+O	Eschrichia coli	Human	Canada	clinical	body fluid
+P	Eschrichia coli	Human	Canada	clinical	body fluid
+Q	Eschrichia coli	Human	Canada	clinical	body fluid
+R	Eschrichia coli	Human	USA	clinical	blood
+S	Eschrichia coli	Human	Canada	clinical	body fluid
+T	Eschrichia coli	Human	Canada	clinical	body fluid

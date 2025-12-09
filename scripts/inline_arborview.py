@@ -34,7 +34,7 @@ def read_html(file):
 def strip_trailing_lf(text: str):
     """
     Test if newline character exists in text, an removes it if it does.
-    This should handle CRLF line endings as well, 
+    This should handle CRLF line endings as well,
     """
     if text.endswith("\n"):
         return text.rstrip()
@@ -80,9 +80,9 @@ def read_nwk(file):
     data = None
     with open(file, 'rb') as context_data:
         data = context_data.read().replace(b"\r\n", b"\\n").replace(b"\n", b"\\n").decode("utf-8").replace('"', "'")
-    
+
     return strip_trailing_lf(data)
-    
+
 
 if __name__ == "__main__":
     output_file_name = "ArborView_static.html"
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-d", "--metadata", help="Path to a tsv file containing contextual data relevant to your newick formatted file.")
     parser.add_argument("-n", "--newick", help="Path to your newick formatted file.")
-    parser.add_argument("-o", "--output", help="An optional argument of what to name your outputted file. Make sure your output directory exists", 
+    parser.add_argument("-o", "--output", help="An optional argument of what to name your outputted file. Make sure your output directory exists",
                         default=f"{OUTPUT_DIRECTORY}/{output_file_name}", required=False)
     parser.add_argument("-t", "--template", help=f"Path to the ArborView HTML", default=HTML_file)
     args = parser.parse_args()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     if args.template != HTML_file:
         HTML_file = args.template
 
-    logging.info(f"Reading template file {HTML_file}")    
+    logging.info(f"Reading template file {HTML_file}")
     lines = read_html(HTML_file)
 
     #logging.info(f"Updating tree and table information.")
