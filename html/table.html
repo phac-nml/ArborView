@@ -147,13 +147,19 @@
         
         .leaf-node {
           font-family: monospace, monospace;
-          white-space: pre;
+          white-space-collapse: preserve;
         }
 
         .inner-node {
           font-family: monospace, monospace;
-          white-space: pre;
+          white-space-collapse: preserve;
         }
+        
+        .leaf-node-label {
+
+          font-family: monospace, monospace;
+          white-space-collapse: preserve;
+      }
 
 
 
@@ -2241,7 +2247,7 @@
             let maxIDLength = 0;
             
             /*
-              labelsUpdate will contain an array of the key and their updted
+              labelsUpdate will contain an array of the key and their updated
               labels to display. The array will not be processed into it's string view 
               until it is time to update the map as the max length is required to calculate 
               the required padding for each element
@@ -2747,7 +2753,7 @@
          * ]);
          * updateLeafNodeLabels(MetaDataMap);
          */
-         async function updateLeafNodeLabels(MetaDataMap) {
+         function updateLeafNodeLabels(MetaDataMap) {
 
             const svg = d3.select("#TreeSVG")
             const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
@@ -2786,7 +2792,7 @@
                         // Only update text elements that start with the nodeId
                         return d3.select(this).text().startsWith(nodeId);
                     })
-                    .text(newLabel);
+                    .text(newLabel).attr("class", "leaf-node-label");
             });
 
  
@@ -2798,32 +2804,21 @@
             labels. the timeout allows for this function to execute when the svg actually exists.
 
             Perhaps it makes sense to use async functions here.
+
+            Async did not fix the problem, adding a simple 0.5 second timeout seems to resolve
+            the issue.
             */
 
             
-          svg.call(async () => {
 
-            let max_wait = 1000
-            let current_wait = 0;
-
-            while(!document.getElementById("TreeSVG").hasAttribute("viewBox") && current_wait < max_wait){
-              console.log(document.getElementById("TreeSVG").hasAttribute("viewBox"), current_wait);
-              await new Promise(resolve => setTimeout(resolve, 200));
-              current_wait++;
-            }
-            const newWidth = treeContainer.node().getBBox().width
-            const viewBoxAttr = svg.attr("viewBox")
-            const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
-            // Update the width of the svg element
-            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)})
-          //  setTimeout( () => {
-          //  const newWidth = treeContainer.node().getBBox().width
-          //  const viewBoxAttr = svg.attr("viewBox")
-          //  const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
-          //  // Update the width of the svg element
-          //  svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
-          //  svg.style.overflow = "scroll";
-          //  }, 500);
+          setTimeout( () => {
+          const newWidth = treeContainer.node().getBBox().width
+          const viewBoxAttr = svg.attr("viewBox")
+          const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
+          // Update the width of the svg element
+          svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
+          svg.style.overflow = "scroll";
+          }, 500);
         }
 
         /**
