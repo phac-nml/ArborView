@@ -2799,33 +2799,29 @@
  
 
             /**@remarks
-            The `setTimeout` function is required as this function executes
-            before the svg is rendered in the main window resulting in no viewBox
-            this results in the viewBox width not being increased resulting in cut off
-            labels. the timeout allows for this function to execute when the svg actually exists.
-
-            Perhaps it makes sense to use async functions here.
-
-            Async did not fix the problem, adding a simple 0.5 second timeout seems to resolve
-            the issue.
-
-            Notes by Kirill 2024-06-12:
             Previously, a `setTimeout` was used to wait for the browser to finish rendering labels. 
             Without this wait, `getBBox()` would return "stale" old dimensions before the leaf nodes text was 
             updated to wider dimensions, causing the labels to be clipped.
 
-            We now use a 0-duration D3 transition via `.on("end", ...)` event listener. 
+            Specifically, the `setTimeout` function was required as this function executes
+            before the svg is rendered in the main window resulting in no viewBox
+            this results in the viewBox width not being increased resulting in cut off
+            labels. the timeout allows for this function to execute when the svg actually exists.
+
+            Async did not fix the problem, adding a simple 0.5 second timeout seems to resolve
+            the issue as a temporary fix.
+
+            We now use a 0-duration D3 transition via `.on("end", ...)` event listener https://d3js.org/d3-transition/control-flow#transition_end. 
             1. The "transition" waits until our D3 code gets rendered by the browser layout engine.
             2. The "end" event fires only after the browser has finished calculating the new sizes and positions of the text.
             
             This ensures we always get the accurate width for the viewBox without the artificial 
             lag and also making sure it will work even on weaker hardware where 500ms might not be long enough
-            
             */
 
             
 
-          //setTimeout( () => {
+         
           svg.transition().duration(0).on("end", () => {
             const newWidth = treeContainer.node().getBBox().width
             const viewBoxAttr = svg.attr("viewBox")
@@ -2833,7 +2829,6 @@
             // Update the width of the svg element
             svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
-          //}, 500);
           });
         }
 
