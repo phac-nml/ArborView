@@ -997,11 +997,15 @@
 
                     ORIGINAL_WIDTH_SVG=width
                     const height = right.x - left.x + marginTop + marginBottom;
-                    const transition = svg.transition()
+                    const transition = svg.transition("tree-layout")
                         .duration(duration)
                         .attr("height", height)
                         .attr("viewBox", [0, left.x - marginTop, width, height])
-                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
+                        .on("end", () => {
+                            // This tells the rest of the app "The tree is done rendering!"
+                            svg.dispatch("layout-complete");
+                        });
 
                     // Update the nodes…
                     const node = gNode.selectAll("g:not(#scale-bar-group)")
@@ -1166,7 +1170,13 @@
             }
             //let display_width = parseInt(ele_style.width) - label_safety_factor
             //draw a scale bar
+            
             drawScale(gNode, inner_radius, (dx * leaves_in_tree.length) - (below_root*dx)-5, max_length, root)
+
+            svg.on("layout-complete", () => {
+                console.debug("Layout rendering is complete now and can update the leaf nodes")
+                updateLeafLabelsDisplay(); 
+            });
 
             return svg.node();
         };
@@ -2754,14 +2764,14 @@
          * updateLeafNodeLabels(MetaDataMap);
          */
          function updateLeafNodeLabels(MetaDataMap) {
+            console.debug(`[updateLeafNodeLabels] Updating leaf node labels with metadata map size: ${MetaDataMap.size}`);
             
 
             const svg = d3.select("#TreeSVG")
             const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
             const svgAttrWidth = svg.attr("width")
+            const oldWidth = treeContainer.node().getBBox().width
 
-            // DEBUG 1: Initial Check
-            console.debug("SVG exists in DOM:", !svg.empty());
             
             if (treeContainer.empty()) {
                 console.warn("Main tree container group not found.");
@@ -2775,7 +2785,9 @@
 
             //update leaf nodes update labels
             const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
+
             
+                    
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
@@ -2822,19 +2834,31 @@
             lag and also making sure it will work even on weaker hardware where 500ms might not be long enough
             */
 
-     
+          //const labelTransition = svg.selectAll("g.leaf-node-label")
+          //  .transition("label-update")
+          //  .duration(0);  
           
           //setTimeout( () => {
-          svg.transition("viewbox-update").duration(0).on("end", () => {
+          //svg.transition("viewbox-update").duration(250).on("end", () => {
+          //labelTransition.end().then(() =>  {  
             const newWidth = treeContainer.node().getBBox().width
             const viewBoxAttr = svg.attr("viewBox")
+            if (!viewBoxAttr) {
+                console.warn("viewBox not yet initialized by chart function.");
+                return; 
+            }
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
             svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
-            console.debug(`[SVG Resize] Expanding viewBox to accommodate new labels. Content width: ${Math.round(newWidth)}px`);
-          });
+            console.debug(
+                `SVG ViewBox Update Old: ${oldWidth}px → New: ${newWidth}px`,
+            );
+
+          //});
           //}, 500);
+
+          
         }
 
         /**
