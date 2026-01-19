@@ -1196,7 +1196,7 @@
             const width = parseInt(ele_style.width)-TREE_OFFSET;
             const height = width;
             const outerRadius = width / 2; 
-            const innerRadius = outerRadius - 170;
+            const innerRadius = outerRadius;
             const decimal_places = 4;
             const sc_to_radians = Math.PI / 180;
 
@@ -1712,10 +1712,11 @@
 
         }
 
+        const RADIAL_DENDROGRAM = "Radial Dendrogram"
         const TREE_SWITCH = new Map([
             ["Dendrogram", dendrogram_chart], 
             ["TidyTree", tidytree_chart], 
-            ["Radial Dendrogram", dendrogram_circle], 
+            [RADIAL_DENDROGRAM, dendrogram_circle], 
             ["Cladeogram", cladeogram_chart]]); // key value pairs map to switch between tree views
 
 
@@ -2874,7 +2875,9 @@
             }
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
-            svg.attr("width", newWidth).attr("height", newHeight).attr("viewBox", `${minX} ${minY} ${newWidth} ${newHeight}`)
+            svg.attr("width", newWidth)
+               .attr("height", newHeight)
+               .attr("viewBox", `${minX} ${minY} ${newWidth} ${newHeight}`)
             svg.style.overflow = "scroll";
             console.debug(
                 `SVG ViewBox Update Old: ${oldWidth}px → New: ${newWidth}px`,
