@@ -2298,13 +2298,18 @@
 
 
             for(const item of labelsUpdate){
-              MetaDataMap.set(item[0], item[1].map(
-              (ele, i) => {
+              let padded_id = item[0].padEnd(maxIDLength, " ");
+              let labels = [padded_id];
+
+              labels.push(...item[1].map((ele, i) => {
                 // For each selected index, we can get the maxLabelLength
                 let maxLabelLength = maxLabelLengths[selected_indexes[i]];
                 // The padEnd function will pad a given value to be certain length
                 return ele.padEnd(maxLabelLength, " ");
-              }).join(" | "));
+              }));
+              
+              
+              MetaDataMap.set(item[0], labels.join("|"))
             }
 
 
@@ -2385,7 +2390,7 @@
                 "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
                 className: ".editable",
                 initComplete: function (settings, json) {
-                    console.log("DataTables has finished its initialization");
+                    console.debug("DataTables has finished its initialization");
                     //listen to Enter keys
                     $('#metadata').on('keydown', 'td[contenteditable=true]', function (e) {
                         if (e.key === 'Enter') {
@@ -2457,7 +2462,7 @@
                 .on('click', function(){
             
                     if(data_table.context[0]._iDisplayLength !== -1){
-                        console.log("Paginate OFF")
+                        console.debug("Paginate OFF")
                         
                         data_table.context[0]._iDisplayLength=-1; //remove pagination
                         data_table.draw();
@@ -2813,7 +2818,7 @@
                       trimEnd()  would work, but if we had more options for justifying text in 
                       the future in may create some problems.
                     */
-                    newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
+                    newLabel = hasValue ? `${joinedFields}` : nodeId;
                 }
                 g.selectAll("text")
                     .filter(function () {
@@ -2846,14 +2851,8 @@
             lag and also making sure it will work even on weaker hardware where 500ms might not be long enough
             */
 
-          //const labelTransition = svg.selectAll("g.leaf-node-label")
-          //  .transition("label-update")
-          //  .duration(0);  
-          
-          //setTimeout( () => {
-          //svg.transition("viewbox-update").duration(250).on("end", () => {
-          //labelTransition.end().then(() =>  {  
             const newWidth = treeContainer.node().getBBox().width
+            const newHeight = treeContainer.node().getBBox().height
             const viewBoxAttr = svg.attr("viewBox")
             if (!viewBoxAttr) {
                 console.warn("viewBox not yet initialized by chart function.");
@@ -2861,21 +2860,19 @@
             }
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
-            svg.attr("width", newWidth).attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
+            svg.attr("width", newWidth).attr("height", newHeight).attr("viewBox", `${minX} ${minY} ${newWidth} ${newHeight}`)
             svg.style.overflow = "scroll";
             console.debug(
                 `SVG ViewBox Update Old: ${oldWidth}px → New: ${newWidth}px`,
             );
 
-          //});
-          //}, 500);
 
           
         }
 
         /**
          * Attaches event listeners to all metadata checkboxes in the 
-         * "Add metadata to nodes" dropdown menu. This function listens 
+         * "Add metadata to nodes" dropdown menu. This function listens
          * for `change` events (i.e. when checkboxes are selected or deselected) 
          * and logs the selected field and its checked status.
          * **/
@@ -3125,7 +3122,7 @@
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
             for (const nodeId of SelectedNodes.nodes) {
-                console.log(nodeId); // This will log each node ID in the Set
+                console.debug(nodeId); // This will log each node ID in the Set
             }
             for(const item in break_down_values){
                 break_down_values[item].forEach((x, i) => {
@@ -3242,7 +3239,7 @@
                 let reader = new FileReader();
                 let newick_file = event.target.files[0];
                 reader.readAsText(newick_file, "UTF-8");
-                console.log(`Successfully loaded ${newick_file.name}`)
+                console.debug(`Successfully loaded ${newick_file.name}`)
                 reader.onload = (evt) => {
                     newick = evt.target.result;
                     drawTree(newick);
