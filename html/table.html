@@ -2801,9 +2801,14 @@
 
             //update leaf nodes update labels
             const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
+            console.log("Full Metadata Map:", MetaDataMap);
 
-            
-                    
+            const selectedFields = Array.from(document.querySelectorAll('#dropdown_append_metadata2nodes .metadata-field-checkbox:checked'))
+                .map(cb => cb.value);
+
+            console.log("User selected these fields:", selectedFields);
+                        
+            let missingMetadataNodes = new Set();
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
@@ -2812,12 +2817,14 @@
                 } else {
                     const joinedFields = MetaDataMap.get(nodeId);
                     const hasValue = typeof joinedFields === "string" && joinedFields.trim() !== "";
+                    if (!hasValue) missingMetadataNodes.add(nodeId);
                     /** @remarks
                       Removed the .trim() on joinedFields as the whitespace is required for padding.
                       trimEnd()  would work, but if we had more options for justifying text in 
                       the future in may create some problems.
                     */
                     newLabel = hasValue ? `${nodeId} | ${joinedFields}` : nodeId;
+                    console.debug(`[updateLeafNodeLabels] Updated label for node ${nodeId}: ${newLabel}`);
                 }
                 g.selectAll("text")
                     .filter(function () {
@@ -2826,6 +2833,9 @@
                     })
                     .text(newLabel).attr("class", "leaf-node-label");
             });
+            if (missingMetadataNodes.size > 0) {
+                console.warn(`Metadata missing for ${missingMetadataNodes.size} nodes:`, Array.from(missingMetadataNodes));
+            }
 
  
 
