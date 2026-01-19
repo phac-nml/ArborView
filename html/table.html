@@ -715,11 +715,14 @@
 
                     ORIGINAL_WIDTH_SVG=width
                     const height = right.x - left.x + marginTop + marginBottom;
-                    const transition = svg.transition()
+                    const transition = svg.transition("tree-layout")
                         .duration(duration)
                         .attr("height", height)
                         .attr("viewBox", [0, left.x - marginTop, width, height])
-                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
+                        .on("end", () => {
+                            svg.dispatch("layout-complete");// This tells the rest of the app "The tree is done rendering!"
+                        });
 
                     // Update the nodes…
                     const node = gNode.selectAll("g:not(#scale-bar-group)")
@@ -1003,8 +1006,7 @@
                         .attr("viewBox", [0, left.x - marginTop, width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
                         .on("end", () => {
-                            // This tells the rest of the app "The tree is done rendering!"
-                            svg.dispatch("layout-complete");
+                            svg.dispatch("layout-complete");// This tells the rest of the app "The tree is done rendering!"
                         });
 
                     // Update the nodes…
@@ -1328,11 +1330,14 @@
                 });
 
                 ORIGINAL_WIDTH_SVG=width
-                const transition = svg.transition()
+                const transition = svg.transition("tree-layout")
                     .duration(duration)
                     .attr("height", height)
                     .attr("viewBox", [0, 0, width, height])
-                    .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+                    .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
+                    .on("end", () => {
+                            svg.dispatch("layout-complete");// This tells the rest of the app "The tree is done rendering!"
+                        });
 
                 const node = gNode.selectAll("g:not(#scale-bar-group)")
                     .data(nodes, d => d.id);
@@ -1551,11 +1556,14 @@
 
                     ORIGINAL_WIDTH_SVG=width
                     const height = right.x - left.x + marginTop + marginBottom;
-                    const transition = svg.transition()
+                    const transition = svg.transition("tree-layout")
                         .duration(duration)
                         .attr("height", height)
                         .attr("viewBox", [0, left.x - marginTop, width, height])
-                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+                        .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
+                        .on("end", () => {
+                            svg.dispatch("layout-complete");// This event tells the rest of the app "The tree is done rendering!"
+                        });
 
                     // Update the nodes…
                     const node = gNode.selectAll("g:not(#scale-bar-group)")
@@ -3175,8 +3183,10 @@
                 chart_.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
                 
                 $("#TreeData").append(chart_);
+                // This is the listener the layout-complete event (i.e. when the tree is fully rendered)
+                // d3.select(chart_) converts the DOM element into a D3 selection to access D3 methods like .on() event listener
                 d3.select(chart_).on("layout-complete", () => {
-                    console.log("Tree rendering finished: Updating labels and resizing.");
+                    console.debug("Tree rendering finished, now can do updating node labels and viewbox resizing.");
                     updateLeafLabelsDisplay(); 
                 });
                 $(".leaf-node").each((i, elm) => {
