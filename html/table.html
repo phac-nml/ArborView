@@ -2153,6 +2153,10 @@
                 console.debug(copy_head_node)
                 //RENDER tree based on the selected layout function
                 let svg_chart = TREE_SWITCH.get(TREE_VAL)(copy_head_node);
+
+                d3.select(svg_chart).on("layout-complete", () => {
+                    updateLeafLabelsDisplay(); 
+                });
                 
                 let renderedTreePadding = svg_chart.style.paddingLeft || 0
                 svg_chart.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
@@ -2167,7 +2171,10 @@
                     }
                 });
             }
-            updateLeafLabelsDisplay();
+    
+            //updateLeafLabelsDisplay();
+
+            
         };
 
         // Helper function to recurse through child nodes
@@ -2234,7 +2241,6 @@
                 chart_.style.paddingLeft = chart_.style.paddingLeft + TREE_OFFSET;
                 $("#TreeData").append(chart_);
                 d3.select(chart_).on("layout-complete", () => {
-                  console.debug("Tree rendering now complete updating node labels.");
                   updateLeafLabelsDisplay(); 
                 });
                 $(".leaf-node").each((i, elm) => {
@@ -2786,9 +2792,7 @@
          * updateLeafNodeLabels(MetaDataMap);
          */
          function updateLeafNodeLabels(MetaDataMap) {
-            console.debug(`[updateLeafNodeLabels] Updating leaf node labels with metadata map size: ${MetaDataMap.size}`);
             
-
             const svg = d3.select("#TreeSVG")
             const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
             const svgAttrWidth = svg.attr("width")
@@ -2807,12 +2811,11 @@
 
             //update leaf nodes update labels
             const isEmpty = !MetaDataMap || MetaDataMap.size === 0;
-            console.log("Full Metadata Map:", MetaDataMap);
 
             const selectedFields = Array.from(document.querySelectorAll('#dropdown_append_metadata2nodes .metadata-field-checkbox:checked'))
                 .map(cb => cb.value);
 
-            console.log("User selected these fields:", selectedFields);
+            console.debug("User selected these fields:", selectedFields);
                         
             let missingMetadataNodes = new Set();
             svg.selectAll("g.leaf-node").each(function () {
@@ -2830,7 +2833,6 @@
                       the future in may create some problems.
                     */
                     newLabel = hasValue ? `${joinedFields}` : nodeId;
-                    console.debug(`[updateLeafNodeLabels] Updated label for node ${nodeId}: ${newLabel}`);
                 }
                 g.selectAll("text")
                     .filter(function () {
@@ -2845,26 +2847,6 @@
 
  
 
-            /**@remarks
-            Previously, a `setTimeout` was used to wait for the browser to finish rendering labels. 
-            Without this wait, `getBBox()` would return "stale" old dimensions before the leaf nodes text was 
-            updated to wider dimensions, causing the labels to be clipped.
-
-            Specifically, the `setTimeout` function was required as this function executes
-            before the svg is rendered in the main window resulting in no viewBox
-            this results in the viewBox width not being increased resulting in cut off
-            labels. the timeout allows for this function to execute when the svg actually exists.
-
-            Async did not fix the problem, adding a simple 0.5 second timeout seems to resolve
-            the issue as a temporary fix.
-
-            We now use a 0-duration D3 NAMED transition via `.on("end", ...)` event listener https://d3js.org/d3-transition/control-flow#transition_end. 
-            1. The named "transition" waits until our D3 code gets rendered by the browser layout engine.
-            2. Then the "end" event fires only after the browser has finished calculating the new sizes and positions of the text.
-            
-            This ensures we always get the accurate width for the viewBox without the artificial 
-            lag and also making sure it will work even on weaker hardware where 500ms might not be long enough
-            */
 
             const newWidth = treeContainer.node().getBBox().width
             const newHeight = treeContainer.node().getBBox().height
@@ -2879,9 +2861,7 @@
                .attr("height", newHeight)
                .attr("viewBox", `${minX} ${minY} ${newWidth} ${newHeight}`)
             svg.style.overflow = "scroll";
-            console.debug(
-                `SVG ViewBox Update Old: ${oldWidth}px → New: ${newWidth}px`,
-            );
+        
 
 
           
@@ -3185,7 +3165,6 @@
         
 
         let updateLeafLabelsDisplay = () => {
-          // Perhaps need to reset viewbox here
           const checkedBoxes = document.querySelectorAll('#dropdown_append_metadata2nodes .dropdown-menu input[type="checkbox"]:checked');
           const metadataMap = extractAllMetadataJoined([...checkedBoxes].map(i => i.value)) 
           if (metadataMap.size !== 0) {
@@ -3198,6 +3177,7 @@
           
 
         let redrawTree = () => {
+            
 
 
 
@@ -3216,8 +3196,27 @@
                 $("#TreeData").append(chart_);
                 // This is the listener the layout-complete event (i.e. when the tree is fully rendered)
                 // d3.select(chart_) converts the DOM element into a D3 selection to access D3 methods like .on() event listener
+                
                 d3.select(chart_).on("layout-complete", () => {
-                    console.debug("Tree rendering finished, now can do updating node labels and viewbox resizing.");
+                    /**@remarks
+                    Previously, a `setTimeout` of 500 ms was used inside the updateLeafLabelsDisplay() to wait for the browser to finish rendering labels. 
+                    Without this wait, `getBBox()` would return "stale" old dimensions before the leaf nodes text was 
+                    updated to wider dimensions, causing the labels to be clipped.
+
+                    Specifically, the `setTimeout` function was required as this function executes
+                    before the svg is rendered in the main window resulting in no viewBox
+                    this results in the viewBox width not being increased resulting in cut off
+                    labels. the timeout allows for this function to execute when the svg actually exists.
+
+                    We now use a 0-duration D3 named transition ("tree-layout") to solve this more reliably:
+
+                    1) The named transition ensures our code hooks directly into the D3 rendering events.
+
+                    2) The "layout-complete" event fires only after the browser has finished calculating the new physical sizes 
+                    and positions of the SVG Tree element.
+                    This ensures we always get the accurate width for the viewBox and eliminates artificial lag for 
+                    fast computers and prevents errors on slower hardware where 500ms might not have been enough time to finish rendering.
+                    */
                     updateLeafLabelsDisplay(); 
                 });
                 $(".leaf-node").each((i, elm) => {
