@@ -6,6 +6,10 @@
             display: inline-block;
         }
 
+        #control_panel {
+            overflow: visible;
+        }
+
         #TreeData {
             white-space: nowrap; /*prevents line wrapping inside*/
             overflow-x: auto;
@@ -2991,10 +2995,23 @@
                 if (oldMenu) container.removeChild(oldMenu);
 
                 const button = container.querySelector('button');
+                const rect = button.getBoundingClientRect();
+
+                const distanceToTop = rect.top; //Distance from the top of the button to the top of the screen
+                const distanceToBottom = window.innerHeight - rect.bottom;//Distance from the bottom of the button to the bottom of the screen
+                const dynamicMaxHeight = Math.max(distanceToTop, distanceToBottom) - 20;
+
+                if (distanceToTop > distanceToBottom) {
+                    container.classList.add('dropup');
+                } else {
+                    container.classList.remove('dropup');
+                }
+
+
                 const dropdown = document.createElement('div');
                 dropdown.className = 'dropdown-menu';
                 dropdown.style.overflow = 'visible';
-                //dropdown.style.maxHeight = '300px';
+                dropdown.style.maxHeight = `${dynamicMaxHeight}px`;
                 dropdown.style.overflow = 'auto';
                 dropdown.style.whiteSpace = 'nowrap';
                 dropdown.style.marginLeft = '4px';
@@ -4146,7 +4163,7 @@
     <body>
         <div class="container-fluid m-0">
             <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
-                <div id="control_panel" class="col-2 border border-primary px-1 position-relative overflow-hidden">
+                <div id="control_panel" class="col-2 border border-primary px-1 position-relative">
                     <div id="tree_menu_buttons" class="row m-0">
                                 <div class="d-flex flex-row align-items-stretch p-0 text-left mt-1">
                                     <button class="h-100 flex-grow-1 me-1 mb-1 btn-sm btn-primary text-break" data-toggle="tooltip" data-placement="top" 
@@ -4268,7 +4285,7 @@
                                 </div>
                                 <div id="dropdown_append_metadata2nodes"  class="d-flex flex-wrap p-0 dropdown mb-1">
                                     <button id="metadata_fields_dropdown_button" class="btn btn-danger btn-sm dropdown-toggle w-100 text-wrap" type="button" data-toggle="tooltip" 
-                                    data-placement="top" data-bs-auto-close="false" title="List of fields to colour nodes by">
+                                    data-placement="top" data-bs-auto-close="outside" title="List of fields to colour nodes by">
                                         Add metadata to nodes</button>
                                 </div>
 
