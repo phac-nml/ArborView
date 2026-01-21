@@ -223,6 +223,7 @@
         const DATA = __DEADFOOD__;
         const DEBUG = false;
         const TREE_OFFSET = 100;
+        const TREE_LEFT_MARGIN_VIEWBOX_OFFSET = 30; //Space to accommodate near the root inner node labels
         var METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
         var NEWICK = null;
         var tree_root = null;
@@ -628,7 +629,7 @@
                 SHOW_BRANCH_LENGTHS = false;
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
-                const width = parseInt(ele_style.width)-TREE_OFFSET;
+                const width = parseInt(ele_style.width)-TREE_OFFSET+TREE_LEFT_MARGIN_VIEWBOX_OFFSET;
     
                 //var width = window.innerWidth;
                 const marginTop = 40;
@@ -722,7 +723,8 @@
                     const transition = svg.transition("tree-layout")
                         .duration(duration)
                         .attr("height", height)
-                        .attr("viewBox", [0, left.x - marginTop, width, height])
+                        .attr("viewBox", [-TREE_LEFT_MARGIN_VIEWBOX_OFFSET, left.x - marginTop, 
+                                            width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
                         .on("end", () => {
                             svg.dispatch("layout-complete");// This tells the rest of the app "The tree is done rendering!"
@@ -880,7 +882,7 @@
                 // Made with lots of help from: https://observablehq.com/d/6c52fee38fb28b2f
                 var ele = document.getElementById("TreeData");
                 var ele_style = window.getComputedStyle(ele);
-                const width = parseInt(ele_style.width)-TREE_OFFSET;
+                const width = parseInt(ele_style.width)-TREE_OFFSET+TREE_LEFT_MARGIN_VIEWBOX_OFFSET;
                 const marginTop = 40;
                 const marginRight = 10;
                 const marginBottom = 30; // updated for viewing
@@ -1007,7 +1009,8 @@
                     const transition = svg.transition("tree-layout")
                         .duration(duration)
                         .attr("height", height)
-                        .attr("viewBox", [0, left.x - marginTop, width, height])
+                        .attr("viewBox", [-TREE_LEFT_MARGIN_VIEWBOX_OFFSET, left.x - marginTop, 
+                                            width, height])
                         .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"))
                         .on("end", () => {
                             svg.dispatch("layout-complete");// This tells the rest of the app "The tree is done rendering!"
@@ -3441,14 +3444,27 @@
 
         });
 
+
+        
         zoom_tree = function(){
             
             const zoom_times = parseFloat(document.querySelector('#zoom_slider').value)
             const tree_data_elm = document.querySelector('#TreeData')
             const tree_svg = document.querySelector('#TreeSVG')
             document.querySelector('#zoom_slider_value').textContent =  zoom_times 
-            const new_width = ORIGINAL_WIDTH_SVG  * zoom_times //use global value as getBBox() at high zooms gives wrong values
-            const prev_width = parseFloat(document.querySelector('#TreeSVG').style.width)
+
+            // Define the base coordinate width (unzoomed) including your offset
+            const base_coordinate_width = ORIGINAL_WIDTH_SVG + TREE_LEFT_MARGIN_VIEWBOX_OFFSET + 20;
+            const current_vb = tree_svg.viewBox.baseVal; //current viewBox values
+            const base_coordinate_height = current_vb.height; //the unzoomed height of the tree.
+
+            //Calculate new physical dimensions of width and height as both must be scaled for zoom to work
+            const new_width = base_coordinate_width * zoom_times 
+            const new_height = base_coordinate_height * zoom_times
+
+            //Get the previous physical width before zooming
+            const prev_width = parseFloat(document.querySelector('#TreeSVG').style.width) || base_coordinate_width;
+            const prev_height = parseFloat(document.querySelector('#TreeSVG').style.height) || base_coordinate_height;
 
             //Previous x and y scroll positions before applying a zoom
             const prev_x_scroll_pos = tree_data_elm.scrollLeft
@@ -3457,31 +3473,27 @@
             //document.querySelector('#TreeSVG').style.width = new_width ; //modify width of SVG tree
             // svg width was not being properly set on firfox
             document.querySelector('#TreeSVG').setAttribute("width", `${new_width}`); //modify width of SVG tree
+            document.querySelector('#TreeSVG').setAttribute("height", `${new_height}`); //modify height of SVG tree
 
-            //store new translated x and y coordinates after zooming 
-            let zoom_x_translated = 0 
-            let zoom_y_translated = 0
-            const scaleChange = new_width/prev_width //sometimes the specified zoom factor is not exact, use this value instead
-            
-            //keeping zoom centered on an element
-            if(new_width > prev_width){
-                //get previous scroll position which is the left most x-coordinate position of a view
-                //translate that coordiante to a new zoomed state
-                //add 1/4 view field length scaled to a new zoomed state coordinate
-                zoom_x_translated =  prev_x_scroll_pos*scaleChange + (tree_data_elm.clientWidth/4)*(scaleChange)
-                zoom_y_translated =  prev_y_scroll_pos*scaleChange + (tree_data_elm.clientHeight/4)*(scaleChange)
-            
-            }else{
-                //Zooming out 
-                //Scale current scroll position (previous scroll + 1/4 view field distance) to a new coordinate zoomed out state
-                //Substract the 1/4 offeset/margin that is already in the needed zoomed out state (no adjustments)
-                zoom_x_translated =  prev_x_scroll_pos*scaleChange - (tree_data_elm.clientWidth/4)
-                zoom_y_translated =  prev_y_scroll_pos*scaleChange - (tree_data_elm.clientHeight/4)
-            
-            }
-            document.querySelector('#TreeData').scrollTo(zoom_x_translated,zoom_y_translated)
+            // This is what makes the tree actually look bigger inside the new width/height
+            tree_svg.setAttribute("viewBox", `${-TREE_LEFT_MARGIN_VIEWBOX_OFFSET} ${current_vb.y} ${base_coordinate_width} ${base_coordinate_height}`);
+
+
+            // Calculate the scale change factor for width and height
+            const scaleChangeX = new_width / prev_width;
+            const scaleChangeY = new_height / prev_height; 
+
+            // Focus on the center of the current view for a smoother experience
+            // Formula: (Current center point * scale) - half of the window
+            const view_w = tree_data_elm.clientWidth;
+            const view_h = tree_data_elm.clientHeight;
+
+            let zoom_x_translated = (prev_x_scroll_pos + view_w / 2) * scaleChangeX - (view_w / 2);
+            let zoom_y_translated = (prev_y_scroll_pos + view_h / 2) * scaleChangeY - (view_h / 2);
+            document.querySelector('#TreeData').scrollTo(zoom_x_translated, zoom_y_translated);
+
         }
-
+        
         scroll_into_view_treenode = function(id){
             let selectedNode = document.querySelector(`[id='${id}']`)
             if(selectedNode !== null){
