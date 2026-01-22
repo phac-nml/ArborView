@@ -225,6 +225,7 @@
         const TREE_OFFSET = 100;
         const TREE_LEFT_MARGIN_VIEWBOX_OFFSET = 30; //Space to accommodate near the root inner node labels
         var METDATA_TABLE_NON_FULL_SCREEEN_HEIGTH = null; //before changing to full screen mode save the current size of the metadata table
+        var LAST_METADATA_COLUMN_SELECTED = null;   //last metadata column selected for legend rendering. useful for subtree legend generation
         var NEWICK = null;
         var tree_root = null;
         var METADATA = null;
@@ -2119,6 +2120,8 @@
         // Create a subtree from the inner node selected in a tree
         let CustomSubTree = (event, data) => {
             console.debug("Subtree is being rendered")
+            const isLegendActive = !$('#colour-legend').hasClass('d-none');
+            console.debug("Legend is active:", isLegendActive);
             $("#legend_toggle").bootstrapToggle('off')
             SelectedNodes.drawSelectedNodes();
             $('#colour-legend').empty()
@@ -2165,6 +2168,12 @@
                 svg_chart.style.paddingLeft = `${renderedTreePadding + TREE_OFFSET}px`
 
                 $("#TreeData").append(svg_chart);
+                
+                if (isLegendActive && LAST_METADATA_COLUMN_SELECTED !== null) {
+                    // Regenerate the legend for the subtree using last selected field
+                    colour_by_element(LAST_METADATA_COLUMN_SELECTED);
+                }
+
                 $(".leaf-node").each((i, elm) => {
                     // Maintain colour of already selected nodes
                     let [parent, circle, text] = SelectedNodes.getNodeData(elm);
@@ -2296,7 +2305,7 @@
               }
               maxIDLength = Math.max(key.length, maxIDLength);
               const selectedValues = selected_indexes.map((i) => {
-                                        let row_label = String(row[i] || "NA").trim(); 
+                                        let row_label = String(row[i] ?? "").trim();  // ?? preserves '0', empty strings, and false. It only replaces null/undefined.
                                         /** @remarks
                                           fromCodePoint retrieves the the horizontal unicode elipse so that the charactar is rendered nicely.
                                         */
@@ -2629,16 +2638,17 @@
             let node_leg = $("#colour-legend")
             node_leg.empty()
             node_leg.append(`<div id="drag_legend_button" onmousedown="dragDivByMouse(event)" class="w-100" style="height:5px; background-color:blue; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); cursor: all-scroll;"></div>`)
-
-            for(const item of array_tuples){ //[field_value, hex_colour]
+            
+            for(const item of array_tuples.filter(tuple => tuple[0] !== '')){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
                 let field_value=item[0]
-                if(field_value === ''){field_value="Not defined"}
+                let count = (value2samples[field_value] || []).length;
+                //if(field_value === ''){field_value="Not defined"}
                 row_legend_node.append(`
                 <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLegendItemColour(this)" 
                 style="width: 20px; height:20px; padding: 1px; border: 1px solid black"></input>\n
                 <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
-                style="padding-left:5px">${field_value}</small>`)
+                style="padding-left:5px">${field_value} (${count})</small>`)
                 node_leg.append(row_legend_node)
             }
             document.querySelector('#colour-legend').classList.remove("d-none");
@@ -2824,6 +2834,7 @@
             svg.selectAll("g.leaf-node").each(function () {
                 const g = d3.select(this);
                 const nodeId = this.id;
+                
                 if (isEmpty) {
                     newLabel = `${nodeId}`;
                 } else {
@@ -2835,6 +2846,7 @@
                       trimEnd()  would work, but if we had more options for justifying text in 
                       the future in may create some problems.
                     */
+                    
                     newLabel = hasValue ? `${joinedFields}` : nodeId;
                 }
                 g.selectAll("text")
@@ -3053,6 +3065,7 @@
         
         
         let colour_by_element = (ele) => {
+            LAST_METADATA_COLUMN_SELECTED = ele;
             // Create a legend for the column selected
             if(tree_root === null){
                 // TODO add pop up
@@ -3061,6 +3074,7 @@
             }
 
             let col_index = ele.id;
+            
             $("#legend_toggle").bootstrapToggle('on')
 
             let unq_data = new Set();
@@ -3069,7 +3083,7 @@
             })
 
 
-            // Need to create groupings of the each set of ID's belonging to each value grouping
+            // Need to create GLOBAL TREE groupings of the each set of ID's belonging to each value grouping
             let break_down_values = Array.from(unq_data);
             break_down_values.sort()
             
@@ -3134,35 +3148,45 @@
             //colour each leaf nodes with the selected colour
             let colour_idx = 0;
             colour_legend.length = 0; // clear out old data, so new legend created each time
+            
             for (const nodeId of SelectedNodes.nodes) {
                 console.debug(nodeId); // This will log each node ID in the Set
             }
+            // This local object will hold only the nodes currently in the DOM
+            // Relevant when generating the legend for subtrees 
+            let visible_breakdown = [];
             for(const item in break_down_values){
+                let nodes_found_for_this_category = []; //checks if node exists in DOM now
+                if (item === "" || item === null) continue; //Skip empty field values (leaves them uncoloured/hidden from legend)
+
                 break_down_values[item].forEach((x, i) => {
-                  
-                    try{
-                        let current_item = document.querySelector(`[id='${x}']`);
-                        let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
-                        if(SelectedNodes.nodes.has(x)){
-                            circle.dataset.oldfill = colours[colour_idx];
-                        }else{
-                            if (circle.style.fill !== "") {
-                                circle.dataset.oldfill = circle.style.fill;
-                            }else{
-                                circle.dataset.oldfill = SelectedNodes.getDefaultColour();
-                            }    
+                    
+                    //check if the node exists in the DOM (e.g. subtree case)
+                    if(document.getElementById(x)){
+                    
+                        try{
+                            let current_item = document.querySelector(`[id='${x}']`);
+                            let [elem, circle, text] = SelectedNodes.getNodeData(current_item);
+                            nodes_found_for_this_category.push(x);
+                            circle.dataset.oldfill = circle.style.fill || SelectedNodes.getDefaultColour();
                             circle.style.fill = colours[colour_idx];
+                                
+                        }catch(error){
+                                console.error("Could not find node ", x, " in DOM");
+                                console.error(error); 
                         }
-                        
-                    }catch(error){
-                        console.error("Could not find ", x, " In DOM");
-                        console.error(error); 
                     }
                 });
-                colour_legend.push([item, colours[colour_idx]])
-                colour_idx++;
+
+       
+                if (nodes_found_for_this_category.length > 0) {
+                    colour_legend.push([item, colours[colour_idx]])
+                    visible_breakdown[item] = nodes_found_for_this_category;
+                    colour_idx++;
+                }
             }
-            CreateNodeLegend(colour_legend, col_index, break_down_values);    
+         
+            CreateNodeLegend(colour_legend, col_index, visible_breakdown);    
 
         };
         
@@ -3478,7 +3502,6 @@
             // This is what makes the tree actually look bigger inside the new width/height
             tree_svg.setAttribute("viewBox", `${-TREE_LEFT_MARGIN_VIEWBOX_OFFSET} ${current_vb.y} ${base_coordinate_width} ${base_coordinate_height}`);
 
-
             // Calculate the scale change factor for width and height
             const scaleChangeX = new_width / prev_width;
             const scaleChangeY = new_height / prev_height; 
@@ -3492,7 +3515,7 @@
             const maxPossibleX = new_width - view_w;
             const maxPossibleY = new_height - view_h;
 
-            // Calculate the "Ideal" scroll target.
+            // Calculate the theoretical scroll target that does not care if the result is possible given screen dims
             let targetX = (prev_x_scroll_pos + view_w / 2) * scaleChangeX - (view_w / 2);
             let targetY = (prev_y_scroll_pos + view_h / 2) * scaleChangeY - (view_h / 2);
 
@@ -3500,7 +3523,7 @@
             zoom_x_translated = Math.round(Math.max(0, Math.min(targetX, maxPossibleX)));
             zoom_y_translated = Math.round(Math.max(0, Math.min(targetY, maxPossibleY)));
                     
-            //Apply the final, safe coordinates preventing dancing x-axis effect on zoom out
+            //Apply the final, safe coordinates preventing x-axis sliding effect on zoom out
             document.querySelector('#TreeData').scrollTo(zoom_x_translated, zoom_y_translated);
 
 
