@@ -3488,9 +3488,21 @@
             const view_w = tree_data_elm.clientWidth;
             const view_h = tree_data_elm.clientHeight;
 
-            let zoom_x_translated = (prev_x_scroll_pos + view_w / 2) * scaleChangeX - (view_w / 2);
-            let zoom_y_translated = (prev_y_scroll_pos + view_h / 2) * scaleChangeY - (view_h / 2);
+            // Calculate the physical "Boundaries" of the new scaled content.
+            const maxPossibleX = new_width - view_w;
+            const maxPossibleY = new_height - view_h;
+
+            // Calculate the "Ideal" scroll target.
+            let targetX = (prev_x_scroll_pos + view_w / 2) * scaleChangeX - (view_w / 2);
+            let targetY = (prev_y_scroll_pos + view_h / 2) * scaleChangeY - (view_h / 2);
+
+            // This prevents the browser from fighting your scrollTo command
+            zoom_x_translated = Math.round(Math.max(0, Math.min(targetX, maxPossibleX)));
+            zoom_y_translated = Math.round(Math.max(0, Math.min(targetY, maxPossibleY)));
+                    
+            //Apply the final, safe coordinates preventing dancing x-axis effect on zoom out
             document.querySelector('#TreeData').scrollTo(zoom_x_translated, zoom_y_translated);
+
 
         }
         
@@ -3588,9 +3600,14 @@
 
 
         scroll_legend_into_view = function(node,full_screen_btn, node_TreeData){
+            console.log("Left value recalculated in scroll_legend_into_view()");    
+            
             if(node !== null){
-                node.style.left=`${node_TreeData.scrollLeft}px`
-                node.style.top=`${node_TreeData.scrollTop}px`
+                const x = Math.round(node_TreeData.scrollLeft);
+                const y = Math.round(node_TreeData.scrollTop);
+
+                node.style.left=`${x}px`
+                node.style.top=`${y}px`
                 full_screen_btn.style.right = `-${node_TreeData.scrollLeft}px`
                 full_screen_btn.style.top = `${node_TreeData.scrollTop}px`
 
