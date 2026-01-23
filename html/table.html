@@ -2864,7 +2864,8 @@
 
 
             const newWidth = treeContainer.node().getBBox().width
-            const newHeight = treeContainer.node().getBBox().height
+            const newHeight = treeContainer.node().getBBox().height+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
+        
             const viewBoxAttr = svg.attr("viewBox")
             if (!viewBoxAttr) {
                 console.warn("viewBox not yet initialized by chart function.");
