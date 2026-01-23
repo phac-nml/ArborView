@@ -2874,8 +2874,8 @@
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
             svg.attr("width", newWidth)
-               .attr("height", newHeight)
-               .attr("viewBox", `${minX} ${minY} ${newWidth} ${newHeight}`)
+               .attr("height", height)
+               .attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
         
 
