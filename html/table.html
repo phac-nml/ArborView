@@ -2637,17 +2637,25 @@
 
             let node_leg = $("#colour-legend")
             node_leg.empty()
-            node_leg.append(`<div id="drag_legend_button" onmousedown="dragDivByMouse(event)" class="w-100" style="height:5px; background-color:blue; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); cursor: all-scroll;"></div>`)
+            //Add the drag handle
+            node_leg.append(`<div id="drag_legend_button" onmousedown="dragDivByMouse(event)" class="w-100" style="height:8px; background-color:blue; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); cursor: all-scroll;"></div>`)
             
+                        
+
+            const columnName = TABLE_HEADERS[column_index] || `Unlabeled (column #${Number(column_index)+1})` //in case no column name is provided
+            node_leg.append(`<div class="p-2 border-bottom bg-light text-center">
+                                <strong>${columnName}</strong>
+                            </div>`);
+
             for(const item of array_tuples.filter(tuple => tuple[0] !== '')){ //[field_value, hex_colour]
                 let row_legend_node = $(`<div class="d-flex p-1 border-bottom flex-nowrap align-items-center legend-element"></div>`)
                 let field_value=item[0]
                 let count = (value2samples[field_value] || []).length;
-                //if(field_value === ''){field_value="Not defined"}
+                //if(field_value === ''){field_value="Not defined"}  
                 row_legend_node.append(`
                 <input type="color" value="${item[1]}" data-sampleID="${value2samples[item[0]].join(',')}"  onchange="changeLegendItemColour(this)" 
                 style="width: 20px; height:20px; padding: 1px; border: 1px solid black"></input>\n
-                <small onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
+                <small data-fieldvalue="${field_value}" onclick="select_deselect_nodes_by_field_value(this, ${column_index})" 
                 style="padding-left:5px">${field_value} (${count})</small>`)
                 node_leg.append(row_legend_node)
             }
@@ -2864,7 +2872,7 @@
 
 
             const newWidth = treeContainer.node().getBBox().width
-            const newHeight = treeContainer.node().getBBox().height+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
+            //const newHeight = treeContainer.node().getBBox().height+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
         
             const viewBoxAttr = svg.attr("viewBox")
             if (!viewBoxAttr) {
@@ -3649,7 +3657,7 @@
 
             //find indices of filtered data in a metadata table
             let indexes = data_table.rows( (idx, data, node) => {
-                if(data[column_index] === `${legend_node.textContent}` ){
+                if(data[column_index] === `${legend_node.getAttribute('data-fieldvalue')}` ){
                     return true
                 }else{
                     return false
