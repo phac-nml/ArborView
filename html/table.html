@@ -235,8 +235,8 @@
         var ORIGINAL_DATA = null;
         var ORIGINAL_VIEW_BOX = null;
         var ORIGINAL_WIDTH_SVG = 0;  
-        var LAST_MOVE_X = 0;
-        var LAST_MOVE_Y = 0;
+        var LAST_SCROLL_X = 0; // Store last scroll x-position making legend position updates smarter
+        var LAST_SCROLL_Y = 0; // Store last scroll y-position  making legend position updates smarter
         var SHOW_BRANCH_LENGTHS = true;
         var SHOW_METADATA_IN_NAME = false;
         var LINE_THICKNESS = 2.0;  
@@ -2816,6 +2816,7 @@
             
             const svg = d3.select("#TreeSVG")
             const treeContainer = svg.select('g[cursor="pointer"][pointer-events="all"]')
+            const treeDataContainer = document.querySelector('#TreeData');
             const svgAttrWidth = svg.attr("width")
             const oldWidth = treeContainer.node().getBBox().width
 
@@ -2871,7 +2872,7 @@
  
 
 
-            const newWidth = treeContainer.node().getBBox().width+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
+            const newWidth = treeContainer.node().getBBox().width+50 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
             //const newHeight = treeContainer.node().getBBox().height+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
         
             const viewBoxAttr = svg.attr("viewBox")
@@ -2881,11 +2882,18 @@
             }
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
+            //treeDataContainer.scrollLeft = newWidth;
+            console.log("The scroll left BEFORE is set to:", treeDataContainer.scrollLeft);
+
             svg.attr("width", newWidth)
                .attr("height", height)
                .attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
 
+            const maxScrollLeft = newWidth - treeDataContainer.clientWidth;
+            treeDataContainer.scrollLeft = maxScrollLeft; //scroll to the right margin
+
+            console.log("The scroll left AFTER is set to:", treeDataContainer.scrollLeft);
           
         }
 
@@ -3633,8 +3641,16 @@
             console.log("Left value recalculated in scroll_legend_into_view()");    
             
             if(node !== null){
-                const x = Math.round(node_TreeData.scrollLeft);
-                const y = Math.round(node_TreeData.scrollTop);
+                const x = Math.round(node_TreeData.scrollLeft+10);
+                const y = Math.round(node_TreeData.scrollTop+10);
+
+                // Skip if the movement is less than 5px (small)
+                if (Math.abs(x - LAST_SCROLL_X) < 5 && Math.abs(y - LAST_SCROLL_Y) < 2) {
+                    return;
+                }
+
+                LAST_SCROLL_X = x;
+                LAST_SCROLL_Y = y;
              
                 node.style.left=`${x}px`
                 node.style.top=`${y}px`
@@ -4184,6 +4200,12 @@
     dragDivByMouse = function(event) {
         const legend_div = document.querySelector('#colour-legend');
         const control_panel_div = document.querySelector("#control_panel");
+        const treeDataContainer = document.querySelector('#TreeData');
+
+        //Current SVG TreeData scroll positions to adjust for scrolling during drag
+        const scrollY = treeDataContainer.scrollTop;
+        const scrollX = treeDataContainer.scrollLeft;
+        
 
         // Get bounding box of the legend
         const rect = legend_div.getBoundingClientRect();
@@ -4191,6 +4213,9 @@
         // Calculate initial grab offset (mouse position within the div)
         const grabOffsetX = event.clientX - rect.left;
         const grabOffsetY = event.clientY - rect.top;
+
+
+        const tree = document.querySelector('#TreeData');
 
         // Store control panel width
         let controlPanelOffset = control_panel_div.offsetWidth;
@@ -4206,8 +4231,8 @@
             e.preventDefault();
 
             // Calculate new position, accounting for grab offset and control panel width
-            const newLeft = e.clientX - grabOffsetX - controlPanelOffset;
-            const newTop = e.clientY - grabOffsetY;
+            const newLeft = e.clientX - grabOffsetX - controlPanelOffset + scrollX;
+            const newTop = e.clientY - grabOffsetY + scrollY;
 
             legend_div.style.left = newLeft + "px";
             legend_div.style.top = newTop + "px";
