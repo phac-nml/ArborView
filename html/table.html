@@ -2871,7 +2871,7 @@
  
 
 
-            const newWidth = treeContainer.node().getBBox().width
+            const newWidth = treeContainer.node().getBBox().width+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
             //const newHeight = treeContainer.node().getBBox().height+20 // add some padding as calculates the coordinates of the paths and shapes, but it does not include the width of the strokes
         
             const viewBoxAttr = svg.attr("viewBox")
@@ -2885,8 +2885,6 @@
                .attr("height", height)
                .attr("viewBox", `${minX} ${minY} ${newWidth} ${height}`)
             svg.style.overflow = "scroll";
-        
-
 
           
         }
@@ -3637,7 +3635,7 @@
             if(node !== null){
                 const x = Math.round(node_TreeData.scrollLeft);
                 const y = Math.round(node_TreeData.scrollTop);
-
+             
                 node.style.left=`${x}px`
                 node.style.top=`${y}px`
                 full_screen_btn.style.right = `-${node_TreeData.scrollLeft}px`
