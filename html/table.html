@@ -2,6 +2,15 @@
 <html>
 <head>
     <style>
+        body {
+            max-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents body scrollbars */
+            display: flex;
+            flex-direction: column;
+        }
+        
         .inline-block-child {
             display: inline-block;
         }
@@ -20,6 +29,12 @@
           position: relative;
           overflow: auto
         }
+
+        
+        #resizer-bar {
+            flex: 0 0 5px !important;
+            min-height: 5px;
+        }
         
         .tree-svg {
           height: auto;
@@ -28,7 +43,7 @@
           overflow: visible;
           margin-left: 1em; 
 
-    }
+        }
 
         .row.no-wrap {
             flex-wrap: nowrap; /*prevents the TreeData div with the svg tree to wrap around*/
@@ -2557,7 +2572,8 @@
             const treeData = document.querySelector('#TreeData');
             const menuButtons = document.querySelector('#tree_menu_buttons');
             const selectedNodes = document.querySelector('#SelectedNodes');
-            const metadataTable = document.querySelector('#ClusterInfo')
+            const metadataTable = document.querySelector('#ClusterInfo');
+
             if (!treeData || !menuButtons || !selectedNodes) return;
 
             const availableHeight = Math.abs(treeData.offsetHeight - menuButtons.clientHeight-12);
@@ -2883,7 +2899,6 @@
             const [minX, minY, width, height] = viewBoxAttr.split(/[\s,]+/).map(Number)
             // Update the width of the svg element
             //treeDataContainer.scrollLeft = newWidth;
-            console.log("The scroll left BEFORE is set to:", treeDataContainer.scrollLeft);
 
             svg.attr("width", newWidth)
                .attr("height", height)
@@ -2893,7 +2908,6 @@
             const maxScrollLeft = newWidth - treeDataContainer.clientWidth;
             treeDataContainer.scrollLeft = maxScrollLeft; //scroll to the right margin
 
-            console.log("The scroll left AFTER is set to:", treeDataContainer.scrollLeft);
           
         }
 
@@ -3638,7 +3652,6 @@
 
 
         scroll_legend_into_view = function(node,full_screen_btn, node_TreeData){
-            console.log("Left value recalculated in scroll_legend_into_view()");    
             
             if(node !== null){
                 const x = Math.round(node_TreeData.scrollLeft+10);
@@ -3969,9 +3982,12 @@
             document.querySelector('#ClusterInfo').addEventListener('hidden.bs.collapse', function () {
                 let heightMetaDiv = document.querySelector('#ClusterInfo>div').style.height
                 let heightTreeDataDiv = document.querySelector('#TreeData').style.height
+                let resizerHeight = document.querySelector('#resizer-bar').offsetHeight
                 let unitMatchTree = heightTreeDataDiv.match(/.?(\w{1,2})$/)
                 let unitMatchMeta = heightMetaDiv.match(/.?(\w{1,2})$/)
                 let unitTree = unitMatchTree ? unitMatchTree[1] : null;
+                let viewportHeight = window.visualViewport.height;
+                let maxAllowedHeight = window.innerHeight - resizerHeight - 10;
                 /*let unitMeta = unitMatchMeta ? unitMatchMeta[1] : null;
             
                 // Calculate the equivalent pixel value from vh
@@ -3980,11 +3996,15 @@
                     heightMetaDiv = (parseFloat(heightMetaDiv) / 100) * viewportHeight;
                     unitMeta="px"
                 }*/
-               
-                if(unitTree !== null){  
-                    document.querySelector('#TreeData').style.height= parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
-                    document.querySelector('#control_panel').style.height = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)+"px"
+                      
+                if(unitTree !== null){
+                    let calculatedHeight = parseFloat(heightTreeDataDiv) + parseFloat(heightMetaDiv)
+                    let finalHeight = Math.min(calculatedHeight, maxAllowedHeight);
+                    
+                    document.querySelector('#TreeData').style.height= finalHeight +"px"
+                    document.querySelector('#control_panel').style.height = finalHeight +"px"
                 }else{
+                    
                     document.querySelector('#TreeData').style.height=`${window.visualViewport.height-10}px`
                     document.querySelector('#control_panel').style.height=`${window.visualViewport.height-10}px`
                 }
@@ -4148,24 +4168,36 @@
         vertical_div_resize = function(event){
             event.preventDefault()
             let cursor_pos_init = event.y
+            const clusterInfo = document.querySelector('#ClusterInfo');
             metadata_panel = document.querySelector('#ClusterInfo>div')
             treeData_panel = document.querySelector('#TreeData')
             control_panel = document.querySelector('#control_panel')
+
             let metadata_panel_height_init = metadata_panel.getBoundingClientRect().height
             let treeData_panel_height_init = treeData_panel.getBoundingClientRect().height
             let control_panel_height_init = control_panel.getBoundingClientRect().height
             document.addEventListener('mousemove', resize, false)
             document.addEventListener('mouseup', stop_resize, false)
+
+            //Only uncollapse if it was hidden and do not use bsCollapse.show(), the animation will conflict with the mouse move.
+            if (!clusterInfo.classList.contains('show')) {
+                clusterInfo.classList.add('show'); // Force the class on immediately with no animation
+                metadata_panel.style.height = '0px'; // Ensure element starts at 0 height for correct math
+            }
+
             function resize(event){
                 event.stopPropagation();
                 const dy = event.y - cursor_pos_init  
                 metadata_panel.style.height = metadata_panel_height_init - dy+'px'
-                treeData_panel.style.height  = treeData_panel_height_init + dy+'px'
-                control_panel.style.height = control_panel_height_init + dy+'px'
+                treeData_panel.style.height  = treeData_panel_height_init + dy +'px'
+                control_panel.style.height = control_panel_height_init + dy +'px'
             }
             function stop_resize(event){
                 document.removeEventListener('mousemove', resize)
                 document.querySelector('#SelectedNodes').style.Height = `${document.querySelector('#TreeData').offsetHeight - document.querySelector('#tree_menu_buttons').offsetHeight}px`
+            
+                
+
             }   
             
         }
@@ -4254,7 +4286,7 @@
     </script>
 </head>
     <body>
-        <div class="container-fluid m-0">
+        <div id="top-section-container" class="container-fluid m-0">
             <div class="row no-wrap"> <!-- id="TreeSelections" style=""-->
                 <div id="control_panel" class="col-2 border border-primary px-1 position-relative">
                     <div id="tree_menu_buttons" class="row m-0">
@@ -4442,11 +4474,14 @@
                 
         </div>
         
-        <div class="row m-0" style="height:5px;background-color: #0d6efd; position: relative">
+        <div id="resizer-bar" class="row m-0" style="background-color: #0d6efd; 
+        position: relative;">
                 <a  href="#" data-bs-toggle="collapse" data-bs-target="#ClusterInfo"></a>
                 <div class="p-0" onmousedown="vertical_div_resize(event)" 
-                    style="position:absolute; cursor: ns-resize; box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
-                    background-color: #dc3545; width:50px; height:10px; z-index: 2;">
+                    style="position:absolute; cursor: ns-resize; 
+                    box-shadow: 1px 1px 1px 1px rgba(0,0,0,.8); border-radius: 3px; left:50%; 
+                    background-color: #dc3545; width:50px; height:10px; z-index: 2;
+                    left: calc(50% - 25px); top: calc(50% - 5px);">
                 </div>
         </div>
         
