@@ -3696,7 +3696,8 @@
         }    
 
         let select_deselect_nodes_by_field_value = (legend_node, column_index) => {
-            
+            const categoryName = legend_node.getAttribute('data-fieldvalue');
+            const columnName = data_table.column(column_index).header().innerText.trim(); 
             //find indices of filtered data in a metadata table
             let getIndexes = () => {
                 return data_table.rows((idx, data, node) => {
@@ -3709,26 +3710,39 @@
             
             let selected = legend_node.classList.contains('fw-bold') ? true : false
             
+            
+
+            let selected_node_ids = data_table.cells(indexes,0).data();
+
+            if (selected_node_ids.length === 0) {
+               
+                Swal.fire({
+                    title: "Selected Nodes Not Found in Metadata",
+                    html: `The selected category <b>${categoryName}</b> in in column <b>${columnName}</b> contains samples are currently hidden.<br><br>Would you like to clear ALL metadata filters to select these nodes?`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, clear filters"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        data_table.clear();
+                        data_table.rows.add(Array.from(ORIGINAL_DATA.values())).draw();
+                        $("td").addClass("editable");
+                        $("td:not(:first-child)").attr("contenteditable", true);
+                        
+                        select_deselect_nodes_by_field_value(legend_node, column_index);
+                    }
+                });
+                return; 
+            }
+
             if(!selected){
                 legend_node.classList.add('fw-bold');
             }else{
                 legend_node.classList.remove('fw-bold');
             }
-
-            let selected_node_ids = data_table.cells(indexes,0).data();
-
-            // Reset metadata by removing filters if no IDs were found (metadata is likely filtered)
-            if (selected_node_ids.length === 0) {
-                data_table.clear();
-                data_table.rows.add(Array.from(ORIGINAL_DATA.values())).draw();
-                $("td").addClass("editable");
-                $("td:not(:first-child)").attr("contenteditable", true);
                 
-                // Refresh indices after reset
-                indexes = getIndexes();
-                selected_node_ids = data_table.cells(indexes, 0).data();
-            }
-            
 
             for(var i = 0; i < selected_node_ids.length; i++) {
                 let tree_node = document.querySelector( `[id='${selected_node_ids[i]}']`)
