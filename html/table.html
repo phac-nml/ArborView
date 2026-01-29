@@ -184,6 +184,8 @@
 
     </style>
     <meta charset="UTF-8">
+    <meta name="application-name" content="ArborView">
+    <meta name="version" content="0.1.3"> <!-- Update version as needed -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArborView</title> 
 
@@ -2743,14 +2745,29 @@
         };
 
         let SubsetTable = () => {
+            let totalSamples = data_table.rows().count();;
             let filtered = data_table.data().filter((value, idx) => {
                 return SelectedNodes.nodes.has(value[ID_FIELD]);
             });
+            let remainingSamples = filtered.length;
+            let filteredOutSamplesCount = totalSamples - remainingSamples;
       
             data_table.clear();
             data_table.rows.add(filtered).draw();
             $("td").addClass("editable");
             $("td:not(:first-child)").attr("contenteditable", true);
+
+            Swal.fire({
+                title: 'Metadata Table Subsetted based on Selected Nodes',
+                html: `<b>${remainingSamples}</b> samples kept out of <b>${totalSamples}</b>.<br>` + 
+                    `<small class="text-muted"><b>${filteredOutSamplesCount}</b> samples were filtered out.</small>`,
+                icon: 'success',
+                timer: 5000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
 
         };
 
