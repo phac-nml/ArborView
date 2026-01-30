@@ -35,6 +35,16 @@
             flex: 0 0 5px !important;
             min-height: 5px;
         }
+
+        #metadata_wrapper{
+            width:fit-content;
+        }
+
+        #metadata_filter, #metadata_paginate{ 
+            position: sticky;
+            right: 0;
+        }
+       
         
         .tree-svg {
           height: auto;
@@ -137,7 +147,6 @@
     
         .dataTables_filter {
             position: relative;
-            margin-right: 24px;
         }
         .dataTables_wrapper .dataTables_filter input{
             border-radius: 20px !important;
@@ -2492,6 +2501,8 @@
                 //icon.id="tree_fullscreen_btn"
                 //icon.onclick="tree_full_screen_mode()"
 
+                $('#metadata_length').addClass('p-1');
+
                 let html=document.createElement("div");
                 html.className = "paginate_button displayAll"
                 html.id = "paginate_button_all"
@@ -2500,15 +2511,6 @@
                     document.querySelector("#metadata_paginate").appendChild(html)
                 }
 
-                let maximize_button_html=document.createElement("i");
-                maximize_button_html.style = "position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px"
-                maximize_button_html.className="d-flex fs-5 bi-arrow-up-right-square"
-                maximize_button_html.id = "metadata_fullscreen_btn"
-                maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
-                if(document.querySelector("#metadata_fullscreen_btn") === null){
-                    document.querySelector("#metadata_wrapper").appendChild(maximize_button_html)
-                }    
-            
 
                 $('.paginate_button.displayAll:not(.disabled)', this.api().table().container())          
                 .on('click', function(){
@@ -2563,6 +2565,15 @@
                     });
 
             $('#metadata_filter').append(clearBtn);
+
+            let maximize_button_html=document.createElement("i");
+                maximize_button_html.style = "cursor: pointer; color:blue; margin-right:1px"
+                maximize_button_html.className="d-inline-flex p-1 fs-5 bi-arrow-up-right-square"
+                maximize_button_html.id = "metadata_fullscreen_btn"
+                maximize_button_html.setAttribute("onclick", "metadata_full_screen_mode()")
+                if(document.querySelector("#metadata_fullscreen_btn") === null){
+                    document.querySelector("#metadata_filter").appendChild(maximize_button_html);
+                }
             
             // TODO initializing table from json object would minimize copies
             // Saving data as a map, to allow for updating of metadata
@@ -4031,8 +4042,6 @@
 
         
         document.addEventListener("DOMContentLoaded",()=>{
-            let button = document.querySelector('#tree_fullscreen_btn')
-
            /**
              * Handles dynamic layout adjustments when the #ClusterInfo section is shown or hidden.
              *
