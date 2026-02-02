@@ -53,7 +53,7 @@
         
         .tree-svg {
           height: auto;
-          font 10px sans-serif;
+          font: 10px sans-serif;
           user-select: auto;
           overflow: visible;
           margin-left: 1em; 
@@ -2938,6 +2938,7 @@
                         // Only update text elements that start with the nodeId
                         return d3.select(this).text().startsWith(nodeId);
                     })
+                    .attr("xml:space", "preserve") // Prevents SVG from collapsing your padding spaces
                     .text(newLabel).attr("class", "leaf-node-label");
             });
             if (missingMetadataNodes.size > 0) {
@@ -3950,6 +3951,10 @@
             downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
                 (date.getMonth()+1)+'-'+date.getFullYear()+'_'+date.getHours()+'h.svg';
             let svg =  document.getElementById("TreeData").cloneNode(true)
+            let svgElement = svg.querySelector("#TreeSVG");
+            svgElement.style.fontFamily = "monospace";
+            
+        
             //remove duplicated leaf nodes text duplication for more accurate searches
             svg.querySelectorAll('g .tree-node').forEach(node => {
                 text_nodes_leafs = node.querySelectorAll('text[class=""]')
@@ -4431,12 +4436,12 @@
                                         <i class="bi bi-download me-1"></i>Export Meta Table
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a id="export-metadata-view" data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." 
+                                        <li><a id="export-metadata-view" data-toggle="tooltip" data-placement="top" title="Export the currently selected filtered metadata." 
                                         class="dropdown-item text-wrap flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
                                             <i class="bi bi-download me-1"></i>Export Filtered Table
                                             </a>
                                         </li>
-                                        <li><a id="export-metadata-table" data-toggle="tooltip" data-placement="top" title="Export the currently selected metadata." 
+                                        <li><a id="export-metadata-table" data-toggle="tooltip" data-placement="top" title="Export the complete unfiltered metadata." 
                                             class="dropdown-item text-wrap flex-grow-1 me-1 btn-sm btn-primary text-break mb-1" onclick="export_metadata_table(this)" id="export-metadata-view">
                                                 <i class="bi bi-download me-1"></i>Export Full Table
                                             </a>
