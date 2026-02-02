@@ -2581,12 +2581,26 @@
                 }
             
             // TODO initializing table from json object would minimize copies
-            // Saving data as a map, to allow for updating of metadata
+            
+            /**
+             * INITIALIZE ORIGINAL_DATA MAP - Saving data as a map, to allow for updating of metadata
+             * * We iterate through the DataTables API to build a global Map.
+             * Instead of using .data(), we access the DOM nodes directly to extract
+             * .textContent. This prevents symbols like '&' from being stored as '&amp;'.
+             */
             ORIGINAL_DATA = new Map();
-            data_table.rows().data().each((value, index) => {
-                ORIGINAL_DATA.set(value[ID_FIELD], value)
-            });
+            data_table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+                // Get the actual <tr> row DOM element for this row
+                const rowNode = this.node(); 
+    
+                // Extract the textContent from each <td> cell
+                const rawValues = Array.from(rowNode.cells).map(td => td.textContent.trim());
 
+                // Store raw metadata array as a Map based on first column treated as sampleID
+                // Assuming ID_FIELD is the index of your ID column
+                ORIGINAL_DATA.set(rawValues[ID_FIELD], rawValues);
+            });
+       
             
             // TODO This can likely be initialized in the above loop pushing to value 
             for(const [key, value] of ORIGINAL_DATA.entries()){
@@ -2652,7 +2666,7 @@
                 table_body.push("</tr>\n");
             }
 
-            parsed_data = null; // mark old data for GC
+            parsed_data = null; // mark old data for GC and cleanup memory 
             $(table_id).html("<thead>" + table_head + "</thead>" + "<tbody>" + table_body.join() + "</tbody>");
             // ? A bit odd we are making the table with HTML then converting to jquery datatable...
             CreateDataTable();
@@ -3439,6 +3453,7 @@
                 }
                 METADATA = d3.tsvParse(DATA, blankQuitter);
                 TABLE_HEADERS = METADATA.columns;
+                
                 CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                 METADATA = null;
                 initialize_legend_menu();
@@ -3463,6 +3478,7 @@
                     }
                     METADATA = d3.tsvParse(metadata, blankQuitter);
                     TABLE_HEADERS = METADATA.columns;
+
                     CreateTable(METADATA, "#metadata", TABLE_HEADERS);
                     METADATA = null;
                     initialize_legend_menu();
