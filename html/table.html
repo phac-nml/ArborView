@@ -3935,7 +3935,7 @@
             const xmlns = "http://www.w3.org/2000/xmlns/";
             const xlinkns = "http://www.w3.org/1999/xlink";
             const svgns = "http://www.w3.org/2000/svg";
-            svg = svg.cloneNode(true);
+            //svg = svg.cloneNode(true);
                         
             const lgd = document.getElementById("colour-legend");
             const legend_width = lgd.clientWidth;
@@ -3967,7 +3967,7 @@
             tree_svg.style.marginLeft = legend_width + offset_safety_factor;
 
             const serializer = new window.XMLSerializer;
-            const xml_string = serializer.serializeToString(svg);
+            const xml_string = serializer.serializeToString(tree_svg); //we export tree_svg and not svg as pure svg does not support html elements such as legend
             return [new Blob([xml_string], {type: "image/svg+xml"}), xml_string];
         }
 
@@ -3987,7 +3987,8 @@
             let svg =  document.getElementById("TreeData").cloneNode(true)
             let svgElement = svg.querySelector("#TreeSVG");
             const currentViewBox = svgElement.getAttribute("viewBox");
-            svgElement.setAttribute("viewBox", currentViewBox);
+            let [x, y, width, height] = currentViewBox.split(/[\s,]+/).map(Number);
+            svgElement.setAttribute("viewBox", `${x} ${y-20} ${width} ${height}`);
             svgElement.style.fontFamily = "monospace";
             
         
