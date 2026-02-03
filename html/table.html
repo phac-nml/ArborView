@@ -1241,8 +1241,7 @@
             const labelBuffer = maxLabelCharCount * 12; //12px per character 
 
             const width = parseInt(ele_style.width)-TREE_OFFSET + labelBuffer;
-            const height = width; //this plot will have square dimensions
-            console.log(width, height)
+            const height = width; //this plot will have square dimensions with circle inside
             const outerRadius = width / 2; 
             const innerRadius = outerRadius;
             const decimal_places = 4;
@@ -2972,7 +2971,6 @@
             if (isRadial) {
                 const fontSize=12;
                 let longestLabel = "";
-                console.log(MetaDataMap)
                 // Prioritize the Metadata Map that is available upon node text addition from metadata
                 if (MetaDataMap.size > 0) {
                     MetaDataMap.forEach((label) => {
@@ -2989,10 +2987,7 @@
                         }
                     });
                 }
-                
-                console.log("Longest label:", longestLabel);
                 maxLabelPixels = estimateTextWidth(longestLabel, fontSize);
-                console.log("Max label pixels:", maxLabelPixels);
                 height = newWidth;
                 minY = -maxLabelPixels-5; // Add padding to account for label height
                 minX = minY; //left margin also needs to be adjusted
@@ -4003,7 +3998,7 @@
                     text_nodes_leafs[0].remove()
                 }
             })
-            
+
             svg.querySelector("#TreeSVG").style.overflow = "visible"
             const blob = serialize2svg(svg)[0];
             downloadLink.href = window.URL.createObjectURL(blob);
