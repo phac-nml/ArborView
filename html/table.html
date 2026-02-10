@@ -3843,7 +3843,7 @@
             }
             // Bring the terminal node into frame
             let lastId = selected_node_ids[selected_node_ids.length-1];
-            terminal_node = document.querySelector(`[id=${lastId}]`);
+            terminal_node = document.querySelector(`[id="${lastId}"]`);
             if (terminal_node) {
                 terminal_node.scrollIntoView({block: "center", inline: "center"})
             }else{
