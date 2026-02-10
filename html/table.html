@@ -3980,6 +3980,10 @@
                 event.stopPropagation();
                 event.stopImmediatePropagation();
             }
+
+            const versionMeta = document.querySelector('meta[name="version"]');
+            const versionNumber = versionMeta.getAttribute('content');
+
             const date = new Date();
             let downloadLink = document.createElement("a");
             downloadLink.download = 'tree_snapshot_'+date.getDate()+'-'+
@@ -3990,7 +3994,19 @@
             let [x, y, width, height] = currentViewBox.split(/[\s,]+/).map(Number);
             svgElement.setAttribute("viewBox", `${x} ${y-20} ${width} ${height}`);
             svgElement.style.fontFamily = "monospace";
-            
+
+            const versionText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            versionText.textContent = `v${versionNumber}`;
+
+            versionText.setAttribute("x", x + width - 10); // 10px from right edge
+            versionText.setAttribute("y", y - 5);          
+            versionText.setAttribute("fill", "#999999");
+            versionText.setAttribute("font-size", "14px");
+            versionText.setAttribute("font-family", "monospace");
+            versionText.setAttribute("text-anchor", "end"); // Right-aligned sticking to right margin
+
+            svgElement.appendChild(versionText);
+                
         
             //remove duplicated leaf nodes text duplication for more accurate searches
             svg.querySelectorAll('g .tree-node').forEach(node => {
@@ -4111,12 +4127,21 @@
 
           img.onload = function () { //must be inside this image onload event function due to async image load nature
               //render SVG image onto canvas element
+              const versionMeta = document.querySelector('meta[name="version"]');
+              const versionNumber = versionMeta.getAttribute('content');
+
               let ctx = canvas.getContext('2d');
               ctx.fillStyle = "white";
               ctx.fillRect(0, 0, canvas.width, canvas.height);
 
               ctx.drawImage(img, 0,  0, modified_width, modified_height);
 
+              ctx.font = "14px monospace";
+              ctx.fillStyle = "#999999"; // Subtle grey
+              ctx.textAlign = "right";   // Align text to the right edge
+              ctx.textBaseline = "top";  // Align text to the top edge
+              ctx.fillText(`v${versionNumber}`, canvas.width - 10, 5);
+             
               //create PNG image from the canvas
               let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'octet/stream');
               //create download link
