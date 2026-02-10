@@ -310,7 +310,7 @@
             // This table defines average character width multipliers for different font sizes in a typical sans-serif font (like Arial or Helvetica)
             // E.g. Each character averages 0.62 × 12px = 7.44px wide
             // We need to do approximate max label width calculation as DOM is not rendered at this stage preventing usage of bbox()
-            const FONT_METRICS = {
+        const FONT_METRICS = {
                 8:  0.52,  // avg width multiplier for 8px font
                 9:  0.55,
                 10: 0.58,
@@ -321,22 +321,22 @@
                 18: 0.70
             };
 
-            /**
-             * Estimates the pixel width of text based on font size and average character width metrics.
-             * Uses predefined font metrics for accurate estimation without DOM measurement.
-             * 
-             * @function estimateTextWidth
-             * @param {string} text - The text string to measure
-             * @param {number} fontSize - Font size in pixels (must match FONT_METRICS keys for best accuracy)
-             * @returns {number} Estimated width in pixels
-             * 
-             **/
-            function estimateTextWidth(text, fontSize) {
+        /**
+        * Estimates the pixel width of text based on font size and average character width metrics.
+        * Uses predefined font metrics for accurate estimation without DOM measurement.
+        * 
+        * @function estimateTextWidth
+        * @param {string} text - The text string to measure
+        * @param {number} fontSize - Font size in pixels (must match FONT_METRICS keys for best accuracy)
+        * @returns {number} Estimated width in pixels
+        * 
+        **/
+        function estimateTextWidth(text, fontSize) {
                 const AVG_CHAR_WIDTH = FONT_METRICS[fontSize];
                 return text.length * AVG_CHAR_WIDTH * fontSize;
-            }
-            
-
+        }
+        
+        
         function addDisplayDistance(d, rd){
 
             let next_rd = null;
@@ -4249,11 +4249,16 @@
             const controlPanel = document.querySelector('#control_panel');
             const clusterInfo = document.querySelector('#ClusterInfo');
             const ORIGINAL_CONTROL_PANEL_HEIGHT  = controlPanel.getBoundingClientRect().height
+            const versionMeta = document.querySelector('meta[name="version"]');
+    
+            const versionNumber = versionMeta.getAttribute('content');
+            const watermark = document.getElementById('version-watermark');
+            watermark.textContent = `v${versionNumber}`;
 
-            function adjustClusterInfoPanelHeight(controlPanel, clusterInfo) {    
+            function adjustClusterInfoPanelHeight(controlPanel, clusterInfo) { 
+                const resizerHeight = document.querySelector('#resizer-bar').offsetHeight;   
                 // Calculate the desired height for the cluster info panel.
-                let newHeight = window.innerHeight - ORIGINAL_CONTROL_PANEL_HEIGHT;
-
+                let newHeight = window.innerHeight - ORIGINAL_CONTROL_PANEL_HEIGHT - resizerHeight - 4;
                 // Define the minimum height as 10% of the viewport.
                 const minHeightPercentage = 0.10;
                 const tenPercentViewportHeight = window.innerHeight * minHeightPercentage;
@@ -4264,14 +4269,32 @@
                 }
 
                 // Set the height of the cluster info panel's inner div.
-                clusterInfo.querySelector("div").style.height = `${newHeight}px`;
+                clusterInfo.querySelector("div").style.height = `${Math.floor(newHeight)}px`;
             }
 
             adjustClusterInfoPanelHeight(controlPanel, clusterInfo)
 
             const ORIGINAL_METADATA_HIGHT  = clusterInfo.querySelector("div").style.height
             
-            
+            // Ths listener detecta when fullscreen mode ends and restores the layout dimensions to the original values captured on load. This is necessary as exiting fullscreen can cause the layout to resize in unexpected ways, and we want to ensure a consistent user experience by reverting to the known "safe" dimensions.
+            document.addEventListener('fullscreenchange', () => {
+                // If document.fullscreenElement is null, we have just EXITED fullscreen
+                if (!document.fullscreenElement) {
+                    console.debug("Exited fullscreen: Restoring layout dimensions.");
+                    
+                    // Force the layout back to the known "safe" dimensions captured on initial load
+                    if(document.querySelector('#control_panel')){
+                        document.querySelector('#control_panel').style.height = `${ORIGINAL_CONTROL_PANEL_HEIGHT}px`;
+                    }
+                    if(document.querySelector('#TreeData')){
+                        document.querySelector('#TreeData').style.height = `${ORIGINAL_CONTROL_PANEL_HEIGHT}px`;
+                    }
+                    if(document.querySelector('#ClusterInfo>div')){
+                        document.querySelector('#ClusterInfo>div').style.height = ORIGINAL_METADATA_HIGHT;
+                    }
+                    adjustSelectedNodesHeight();
+                }
+            });
 
             if (controlPanel && clusterInfo) {
                 controlPanel.addEventListener('mouseenter', () => {  
@@ -4658,14 +4681,24 @@
                 <div class="position-relative p-0 bg-white col-10 Tree inline-block-child scrollbar-window" 
                 onscroll="scroll_legend_into_view(document.querySelector('#colour-legend'), document.querySelector('#tree_fullscreen_btn'), this)"
                 id="TreeData">
-
+                        
                         <div id="tree-splash" class="w-100 h-100 fs-2 d-flex justify-content-center align-items-center" style="height:50vh;"><i class="bi bi-tree"></i> Your tree will show up here when loaded!</div>
                         
                         <div id="colour-legend"
                         class="d-none p-1 position-absolute border border-primary text-break Tree inline-block-child scrollbar-window" 
                         style="top:0px; left:0px; resize: both; max-height:100%; background-color: rgba(255, 255, 255, 0.9)">   
                         </div>
-                        
+                        <div id="version-watermark" style="
+                            position: fixed; 
+                            top: 0px; 
+                            margin-right: 30px;
+                            right: 10px; 
+                            z-index: 1000; 
+                            font-family: monospace; 
+                            font-weight: bold;
+                            font-size: 14px; 
+                            color: #999;
+                        "></div>
                         <i style="position:absolute; top:0; right: 0; cursor: pointer; color:blue; margin-right:1px" id="tree_fullscreen_btn" 
                         onclick="tree_full_screen_mode()" class="d-flex fs-5 bi-arrow-up-right-square"></i>
                         
@@ -4693,8 +4726,9 @@
                     <table id="metadata" class="w-100 display nowrap overflow-scroll" >
                     </table>
                     </div>    
+
                 </div>            
-                <!-- Need to have the legend be scrollable and situated under the selected nodes-->  
+          <!-- Need to have the legend be scrollable and situated under the selected nodes-->  
         </div> 
         <div id="TestSubTree"></div> 
         
