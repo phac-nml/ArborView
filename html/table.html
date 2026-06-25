@@ -1987,29 +1987,38 @@
 
 
         function isUltrametric(tree){
-            let stack = new Array();
-            let distances = new Set();
-            tree.root.max_length = tree.root.d
-            stack.push(tree.root)
-            while(stack.length > 0){
-                let temp = stack.pop()
-                if(temp.leaf){
-                    // Round the max length, as floating point errors will make numbers
-                    // appear sligthly different
-                    // The max length is not added again, as the child distance is
-                    // added in the else block below
-                    distances.add(temp.max_length.toFixed(2))
-                }else{
-                        temp.children.forEach( (child) => {
-                            child.max_length = temp.max_length + child.d
-                            stack.push(child)
-                        })
-                }
+
+          let stack = new Array();
+          let distances = new Array();
+          let first_distance = null;
+          const epsilon = 0.001; // Precision for floating point comparison
+          tree.root.max_length = tree.root.d
+          stack.push(tree.root)
+          while(stack.length > 0){
+            let temp = stack.pop()
+            if(temp.leaf){
+              if(first_distance === null){
+                first_distance = temp.max_length;
+              }else{
+              // Compute the differce betweent the first value identified and the
+              // current value in temp. As this function also updates the distancees of <thead>
+              // leaf nodes it cannot be broken out of early. Therfore values are appended to 
+              // an array to test for ultrametricity afterwards. Store only the delta to save 
+              // some processing time.
+              let delta = Math.abs(first_distance - temp.max_length) 
+              distances.push(delta);
+              }
+            }else{
+              temp.children.forEach( (child) => {
+                child.max_length = temp.max_length + child.d
+                stack.push(child)})
             }
-            if(distances.size === 1){
-                return true
-            }
-            return false
+          }
+
+          if(distances.every(num => num < epsilon)){
+            return true
+          }
+          return false;
         }
 
 
