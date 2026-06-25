@@ -532,8 +532,10 @@
             let n_minor_divisions = 0, num_major_ticks = 0; 
             let factor_selected = 0;  
             let maxMajorTicks = Math.floor(length / minMajorTickSpacingPx);
-
-            let niceSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]; // "Nice" human-friendly steps
+            //Any tree whose total height falls comfortably between micro (1e-5) and macro (10e+5) tree distances
+            let niceSteps = [0.00001, 0.00002, 0.00005, 0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005,
+                            0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000,
+                            2000, 5000, 10000, 20000, 50000, 100000]; // "Nice" human-friendly steps 
 
             let step = 1;
             let full_steps = 0;
