@@ -532,8 +532,10 @@
             let n_minor_divisions = 0, num_major_ticks = 0; 
             let factor_selected = 0;  
             let maxMajorTicks = Math.floor(length / minMajorTickSpacingPx);
-
-            let niceSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]; // "Nice" human-friendly steps
+            //Any tree whose total height falls comfortably between micro (1e-5) and macro (10e+5) tree distances
+            let niceSteps = [0.00001, 0.00002, 0.00005, 0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005,
+                            0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000,
+                            2000, 5000, 10000, 20000, 50000, 100000]; // "Nice" human-friendly steps 
 
             let step = 1;
             let full_steps = 0;
@@ -1987,29 +1989,38 @@
 
 
         function isUltrametric(tree){
-            let stack = new Array();
-            let distances = new Set();
-            tree.root.max_length = tree.root.d
-            stack.push(tree.root)
-            while(stack.length > 0){
-                let temp = stack.pop()
-                if(temp.leaf){
-                    // Round the max length, as floating point errors will make numbers
-                    // appear sligthly different
-                    // The max length is not added again, as the child distance is
-                    // added in the else block below
-                    distances.add(temp.max_length.toFixed(2))
-                }else{
-                        temp.children.forEach( (child) => {
-                            child.max_length = temp.max_length + child.d
-                            stack.push(child)
-                        })
-                }
+
+          let stack = new Array();
+          let distances = new Array();
+          let first_distance = null;
+          const epsilon = 0.001; // Precision for floating point comparison
+          tree.root.max_length = tree.root.d
+          stack.push(tree.root)
+          while(stack.length > 0){
+            let temp = stack.pop()
+            if(temp.leaf){
+              if(first_distance === null){
+                first_distance = temp.max_length;
+              }else{
+              // Compute the differce betweent the first value identified and the
+              // current value in temp. As this function also updates the distancees of <thead>
+              // leaf nodes it cannot be broken out of early. Therfore values are appended to 
+              // an array to test for ultrametricity afterwards. Store only the delta to save 
+              // some processing time.
+              let delta = Math.abs(first_distance - temp.max_length) 
+              distances.push(delta);
+              }
+            }else{
+              temp.children.forEach( (child) => {
+                child.max_length = temp.max_length + child.d
+                stack.push(child)})
             }
-            if(distances.size === 1){
-                return true
-            }
-            return false
+          }
+
+          if(distances.every(num => num < epsilon)){
+            return true
+          }
+          return false;
         }
 
 
